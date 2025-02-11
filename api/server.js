@@ -4,15 +4,22 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 
 const commandeRoutes = require("./routes/commandeRoutes");
+const salleRoutes = require("./routes/salleRoutes");
+const modeleRoutes = require("./routes/modeleRoutes");
+const machineRoutes = require("./routes/machineRoutes");
 
 dotenv.config();
 
 const app = express();
-app.use("/api/commandes", commandeRoutes);
 
 // Middleware
 app.use(express.json());
 app.use(cors());
+
+app.use("/api/commandes", commandeRoutes);
+app.use("/api/salles", salleRoutes);
+app.use("/api/modeles", modeleRoutes);
+app.use("/api/machines", machineRoutes);
 
 // Connexion à MongoDB
 mongoose.connect(process.env.MONGO_URI, {
