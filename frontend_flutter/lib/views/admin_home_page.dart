@@ -1,19 +1,28 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/views/CommandePage.dart';
 
 class AdminHomePage extends StatelessWidget {
   const AdminHomePage({Key? key}) : super(key: key);
 
   void navigateTo(BuildContext context, String pageName) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => Scaffold(
+    Widget page;
+    switch (pageName) {
+      case 'Commandes':
+        page = const CommandePage(); // Redirection vers la page Commandes
+        break;
+      default:
+        page = Scaffold(
           appBar: AppBar(title: Text(pageName)),
           body: Center(child: Text('Page de $pageName en cours de développement')),
-        ),
-      ),
+        );
+    }
+
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => page),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {

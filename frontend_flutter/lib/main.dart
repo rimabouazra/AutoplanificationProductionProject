@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'providers/commande_provider.dart';
-import 'views/add_commande_page.dart';
+import 'providers/CommandeProvider.dart';
+import 'views/AddCommandePage.dart';
 
 void main() {
   runApp(
@@ -20,7 +20,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Commande App',
+      title: 'Admin Space',
       theme: ThemeData(primarySwatch: Colors.deepPurple),
       supportedLocales: [
         Locale('en', 'US'),  // Support for English
