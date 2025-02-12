@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'providers/commande_provider.dart';
-import 'views/add_commande_page.dart';
+import 'package:provider/provider.dart';
+
+import 'providers/CommandeProvider.dart';
+import 'views/AddCommandePage.dart';
 
 void main() {
   runApp(

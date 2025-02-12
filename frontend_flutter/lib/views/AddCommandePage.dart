@@ -4,7 +4,8 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import '../models/commande.dart';
-import '../providers/commande_provider.dart';
+import '../providers/CommandeProvider.dart';
+
 
 class AddCommandePage extends StatefulWidget {
   @override
