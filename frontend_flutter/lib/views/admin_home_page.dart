@@ -23,18 +23,18 @@ class AdminHomePage extends StatelessWidget {
         centerTitle: true,
       ),
       body: Padding(
-        padding: const EdgeInsets.all(8.0), // Réduction de l'espacement global
+        padding: const EdgeInsets.all(8.0),
         child: GridView.count(
-          crossAxisCount: 3,
-          mainAxisSpacing: 1, // Réduction de l'espacement vertical
-          crossAxisSpacing: 1, // Réduction de l'espacement horizontal
+          crossAxisCount: 6,
+          mainAxisSpacing: 10,
+          crossAxisSpacing: 10,
           children: [
-            buildMenuItem(context, Icons.show_chart, 'Tableau de bord'),
-            buildMenuItem(context, Icons.person, 'Utilisateurs'),
-            buildMenuItem(context, Icons.inventory, 'Stock'),
-            buildMenuItem(context, Icons.mail, 'Commandes'),
-            buildMenuItem(context, Icons.store, 'Salles'),
-            buildMenuItem(context, Icons.event, 'Planification'),
+            buildMenuItem(context, 'assets/icons/dashboard.png', 'Tableau de bord'),
+            buildMenuItem(context, 'assets/icons/planning.png', 'Planification'),
+            buildMenuItem(context, 'assets/icons/users.png', 'Utilisateurs'),
+            buildMenuItem(context, 'assets/icons/stock.png', 'Stock'),
+            buildMenuItem(context, 'assets/icons/orders.png', 'Commandes'),
+            buildMenuItem(context, 'assets/icons/rooms.png', 'Salles'),
           ],
         ),
       ),
@@ -47,18 +47,18 @@ class AdminHomePage extends StatelessWidget {
     );
   }
 
-  Widget buildMenuItem(BuildContext context, IconData icon, String title) {
+  Widget buildMenuItem(BuildContext context, String iconPath, String title) {
     return GestureDetector(
       onTap: () => navigateTo(context, title),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 40), // Réduction de la taille des icônes
-          const SizedBox(height: 4), // Réduction de l'espacement entre l'icône et le texte
+          Image.asset(iconPath, width: 50, height: 50),
+          const SizedBox(height: 4),
           Text(
             title,
             textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13), // Ajustement de la taille du texte
+            style: const TextStyle(fontSize: 13),
           ),
         ],
       ),
