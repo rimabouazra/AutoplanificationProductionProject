@@ -26,8 +26,8 @@ class AdminHomePage extends StatelessWidget {
         padding: const EdgeInsets.all(8.0), // Réduction de l'espacement global
         child: GridView.count(
           crossAxisCount: 3,
-          mainAxisSpacing: 10, // Réduction de l'espacement vertical
-          crossAxisSpacing: 10, // Réduction de l'espacement horizontal
+          mainAxisSpacing: 1, // Réduction de l'espacement vertical
+          crossAxisSpacing: 1, // Réduction de l'espacement horizontal
           children: [
             buildMenuItem(context, Icons.show_chart, 'Tableau de bord'),
             buildMenuItem(context, Icons.person, 'Utilisateurs'),
