@@ -19,6 +19,10 @@ router.post("/add", async (req, res) => {
     try {
         console.log("📩 Nouvelle requête POST reçue :", req.body); // Vérifie les données reçues
 
+        if (!req.body.client || !req.body.quantite || !req.body.couleur || !req.body.taille || !req.body.conditionnement || !req.body.delais) {
+            return res.status(400).json({ message: "Tous les champs sont requis !" });
+        }
+
         const newCommande = new Commande(req.body);
         await newCommande.save();
 
