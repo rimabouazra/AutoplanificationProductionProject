@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'providers/CommandeProvider.dart';
-import 'views/AddCommandePage.dart';
+import 'views/admin_home_page.dart';
 
 void main() {
   runApp(
@@ -31,7 +31,7 @@ class MyApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,  // Add widget localization delegate
         GlobalCupertinoLocalizations.delegate,  // Add Cupertino localization delegate
       ],
-      home: AddCommandePage(),
+      home: AdminHomePage(),
     );
   }
 }

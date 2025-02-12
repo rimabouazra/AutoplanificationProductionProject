@@ -68,10 +68,10 @@ class _AddCommandePageState extends State<AddCommandePage> {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        backgroundColor: Color(0xFFFFF0F5),
+        backgroundColor: Color(0xFFECEFFF1),
         appBar: AppBar(
           title: Text("Ajouter une Commande", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-          backgroundColor: Color(0xFFE6A8D7),
+          backgroundColor: Color(0xFF4DB6AC),
           centerTitle: true,
           elevation: 0,
         ),
@@ -99,19 +99,19 @@ class _AddCommandePageState extends State<AddCommandePage> {
                         title: Text(selectedDate == null
                             ? "Sélectionner une date de livraison"
                             : "Date: ${DateFormat('dd/MM/yyyy', 'fr_FR').format(selectedDate!)}"),
-                        trailing: Icon(Icons.calendar_today, color: Color(0xFFE6A8D7)),
+                        trailing: Icon(Icons.calendar_today, color: Color(0xFF009688)),
                         onTap: () => _selectDate(context),
                       ),
                       SizedBox(height: 20),
                       isLoading
-                          ? CircularProgressIndicator(color: Color(0xFFE6A8D7))
+                          ? CircularProgressIndicator(color: Color(0xFF4DB6AC))
                           : Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           ElevatedButton(
                             onPressed: () => Navigator.pop(context),
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.grey,
+                              backgroundColor: Colors.redAccent,
                               padding: EdgeInsets.symmetric(vertical: 15, horizontal: 30),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
@@ -120,7 +120,7 @@ class _AddCommandePageState extends State<AddCommandePage> {
                           ElevatedButton(
                             onPressed: _submitCommande,
                             style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(0xFFE6A8D7),
+                              backgroundColor: Color(0xFF26A69A),
                               padding: EdgeInsets.symmetric(vertical: 15, horizontal: 30),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                             ),
@@ -147,10 +147,10 @@ class _AddCommandePageState extends State<AddCommandePage> {
         keyboardType: isNumber ? TextInputType.number : TextInputType.text,
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: TextStyle(color: Color(0xFF9B59B6)),
+          labelStyle: TextStyle(color: Color(0xFF004D40)),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
           filled: true,
-          fillColor: Color(0xFFFFF5FF),
+          fillColor: Color(0xFFE0F2F1),
         ),
         validator: (value) {
           if (value!.isEmpty) return "Champ requis";
