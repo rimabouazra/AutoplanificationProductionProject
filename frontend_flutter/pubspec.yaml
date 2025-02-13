@@ -59,6 +59,10 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  fonts:
+    - family: Roboto
+      fonts:
+        - asset: assets/fonts/Roboto-Regular.ttf
   assets:
     - assets/icons/dashboard.png
     - assets/icons/users.png

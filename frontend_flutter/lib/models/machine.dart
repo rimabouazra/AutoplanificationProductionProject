@@ -39,4 +39,18 @@ class Machine {
       'taille': taille,
     };
   }
+
+  // Fonction pour déterminer la couleur en fonction de l'état
+  static String getEtatColor(String etat) {
+    switch (etat) {
+      case 'disponible':
+        return '0xFF4CAF50'; // Vert
+      case 'occupee':
+        return '0xFFFF9800'; // Orange
+      case 'arretee':
+        return '0xFFF44336'; // Rouge
+      default:
+        return '0xFF9E9E9E'; // Gris par défaut
+    }
+  }
 }

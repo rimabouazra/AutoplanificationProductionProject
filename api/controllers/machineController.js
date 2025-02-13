@@ -1,21 +1,19 @@
 const Machine = require("../models/Machine");
 const Modele = require("../models/Modele");
+const Salle = require("../models/Salle");  
 
 exports.ajouterMachine = async (req, res) => {
     try {
         const { nom, etat, salle, modele, taille } = req.body;
-
-        // Vérifier si le modèle existe
         const modeleExistant = await Modele.findById(modele);
         if (!modeleExistant) {
             return res.status(404).json({ message: "Modèle non trouvé" });
         }
-
-        // Vérifier si la taille existe dans le modèle
         if (!modeleExistant.tailles.includes(taille)) {
             return res.status(400).json({ message: "Taille non compatible avec le modèle" });
         }
-
+        
+        // Création de la machine
         const nouvelleMachine = new Machine({
             nom,
             etat,
@@ -23,8 +21,11 @@ exports.ajouterMachine = async (req, res) => {
             modele,
             taille
         });
-
         await nouvelleMachine.save();
+
+        // Mise à jour de la salle pour ajouter la machine
+        await Salle.findByIdAndUpdate(salle, { $push: { machines: nouvelleMachine._id } });
+
         res.status(201).json(nouvelleMachine);
     } catch (error) {
         res.status(500).json({ message: "Erreur lors de l'ajout de la machine", error });
@@ -51,6 +52,22 @@ exports.getMachineById = async (req, res) => {
         res.status(500).json({ message: "Erreur lors de la récupération de la machine", error });
     }
 };
+
+exports.getMachinesBySalle = async (req, res) => {
+    try {
+        const sallesAvecMachines = await Salle.find()
+            .populate({
+                path: "machines",
+                populate: { path: "modele" } // Charger aussi le modèle associé à chaque machine
+            });
+
+        res.status(200).json(sallesAvecMachines);
+    } catch (error) {
+        res.status(500).json({ message: "Erreur lors de la récupération des machines par salle", error });
+    }
+};
+
+
 
 exports.updateMachine = async (req, res) => {
     try {

@@ -2,6 +2,8 @@ const express = require("express");
 const router = express.Router();
 const salleController = require("../controllers/salleController");
 
+router.get("/", salleController.listerToutesLesSalles);
+
 router.post("/", salleController.creerSalle);
 router.put("/:id", salleController.modifierSalle);
 router.delete("/:id", salleController.supprimerSalle);

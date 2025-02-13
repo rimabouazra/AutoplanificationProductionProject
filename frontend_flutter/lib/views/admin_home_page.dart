@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/views/CommandePage.dart';
+import 'package:frontend/views/SalleListPage.dart';
 
 class AdminHomePage extends StatelessWidget {
   const AdminHomePage({Key? key}) : super(key: key);
@@ -9,6 +10,9 @@ class AdminHomePage extends StatelessWidget {
     switch (pageName) {
       case 'Commandes':
         page = const CommandePage(); // Redirection vers la page Commandes
+        break;
+      case 'Salles':
+        page = const SalleListPage(); // Ajout de la page pour afficher les salles
         break;
       default:
         page = Scaffold(

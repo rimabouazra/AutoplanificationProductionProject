@@ -141,4 +141,15 @@ class ApiService {
       return false;
     }
   }
+
+  static Future<List<dynamic>> fetchMachinesParSalle(String salleId) async {
+  final response = await http.get(Uri.parse('http://localhost:5000/api/machines-par-salle/$salleId'));
+
+  if (response.statusCode == 200) {
+    return json.decode(response.body);
+  } else {
+    throw Exception('Échec du chargement des machines pour la salle');
+  }
+}
+
 }

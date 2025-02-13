@@ -37,6 +37,16 @@ exports.supprimerSalle = async (req, res) => {
     }
 };
 
+// Récupérer toutes les salles
+exports.listerToutesLesSalles = async (req, res) => {
+    try {
+        const salles = await Salle.find();
+        res.json(salles);
+    } catch (error) {
+        res.status(500).json({ message: "Erreur lors de la récupération des salles", error });
+    }
+};
+
 //Ajouter une machine à une salle
 exports.ajouterMachine = async (req, res) => {
     try {
