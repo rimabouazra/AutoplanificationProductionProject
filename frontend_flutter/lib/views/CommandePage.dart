@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'AddCommandePage.dart'; // Import de la page d'ajout de commande
-
+import 'package:provider/provider.dart';
+import '../providers/CommandeProvider.dart';
+import '../models/commande.dart';
 class CommandePage extends StatefulWidget {
   const CommandePage({Key? key}) : super(key: key);
 
@@ -11,31 +14,30 @@ class CommandePage extends StatefulWidget {
 class _CommandePageState extends State<CommandePage> {
   String selectedFilter = 'Tous';
   TextEditingController searchController = TextEditingController();
+  @override
+  void initState() {
+    super.initState();
+    // Récupérer les commandes lors de l'initialisation de la page
+    Provider.of<CommandeProvider>(context, listen: false).fetchCommandes();
+  }
 
-  List<Map<String, String>> commandes = [
-    {"num": "123", "client": "AZERTY", "adresse": "...", "date": "1/1/2025", "prix": "12345", "status": "Pending"},
-    {"num": "456", "client": "AZERTY", "adresse": "...", "date": "1/2/2025", "prix": "12345", "status": "Completed"},
-    {"num": "890", "client": "QWERTY", "adresse": "...", "date": "1/3/2025", "prix": "12345", "status": "Working on"},
-    {"num": "369", "client": "ABCDE", "adresse": "...", "date": "1/4/2025", "prix": "12345", "status": "Pending"},
-  ];
-
-  List<Map<String, String>> get filteredCommandes {
+  List<Commande> get filteredCommandes {
+    final commandes = Provider.of<CommandeProvider>(context).commandes;
     return commandes.where((commande) {
-      final matchesFilter = selectedFilter == 'Tous' || commande['status'] == selectedFilter;
-      final matchesSearch = searchController.text.isEmpty || commande['client']!.toLowerCase().contains(searchController.text.toLowerCase());
+      final matchesFilter = selectedFilter == 'Tous' || commande.status == selectedFilter;
+      final matchesSearch = searchController.text.isEmpty || commande.client.toLowerCase().contains(searchController.text.toLowerCase());
       return matchesFilter && matchesSearch;
     }).toList();
   }
 
-  void deleteCommande(String num) {
-    setState(() {
-      commandes.removeWhere((commande) => commande['num'] == num);
-    });
+  void deleteCommande(String id) {
+    // Implémentez la suppression via le provider
+    Provider.of<CommandeProvider>(context, listen: false).deleteCommande(id);
   }
 
-  void editCommande(Map<String, String> commande) {
-    TextEditingController clientController = TextEditingController(text: commande['client']);
-    TextEditingController prixController = TextEditingController(text: commande['prix']);
+  void editCommande(Commande commande) {
+    TextEditingController clientController = TextEditingController(text: commande.client);
+    TextEditingController quantiteController = TextEditingController(text: commande.quantite.toString());
 
     showDialog(
       context: context,
@@ -50,8 +52,8 @@ class _CommandePageState extends State<CommandePage> {
                 decoration: const InputDecoration(labelText: 'Client'),
               ),
               TextField(
-                controller: prixController,
-                decoration: const InputDecoration(labelText: 'Prix'),
+                controller: quantiteController,
+                decoration: const InputDecoration(labelText: 'Quantité'),
                 keyboardType: TextInputType.number,
               ),
             ],
@@ -59,10 +61,18 @@ class _CommandePageState extends State<CommandePage> {
           actions: [
             TextButton(
               onPressed: () {
-                setState(() {
-                  commande['client'] = clientController.text;
-                  commande['prix'] = prixController.text;
-                });
+                // Mettre à jour la commande via le provider
+                final updatedCommande = Commande(
+                  id: commande.id,
+                  client: clientController.text,
+                  quantite: int.parse(quantiteController.text),
+                  couleur: commande.couleur,
+                  taille: commande.taille,
+                  conditionnement: commande.conditionnement,
+                  delais: commande.delais,
+                  status: commande.status,
+                );
+                Provider.of<CommandeProvider>(context, listen: false).updateCommande(updatedCommande);
                 Navigator.pop(context);
               },
               child: const Text('Enregistrer'),
@@ -236,25 +246,25 @@ class _CommandePageState extends State<CommandePage> {
         children: filteredCommandes.map((commande) {
           return Card(
             child: ListTile(
-              leading: Text(commande['num']!),
-              title: Text(commande['client']!),
-              subtitle: Text("${commande['date']} - ${commande['prix']}"),
+              leading: Text(commande.id ?? "N/A"), // Afficher l'ID de la commande
+              title: Text(commande.client),
+              subtitle: Text("${DateFormat('dd/MM/yyyy').format(commande.delais)} - ${commande.quantite} unités"),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    commande['status']!,
+                    commande.status,
                     style: TextStyle(
-                      color: commande['status'] == "Pending"
+                      color: commande.status == "Pending"
                           ? Colors.red
-                          : commande['status'] == "Completed"
+                          : commande.status == "Completed"
                           ? Colors.green
                           : Colors.orange,
                     ),
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete),
-                    onPressed: () => deleteCommande(commande['num']!),
+                    onPressed: () => deleteCommande(commande.id!),
                   ),
                   IconButton(
                     icon: const Icon(Icons.edit),

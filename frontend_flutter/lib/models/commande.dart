@@ -1,11 +1,12 @@
 class Commande {
-  String? id; // Rendre l'id optionnel , le backend génère l'ID
+  String? id;
   final String client;
   final int quantite;
   final String couleur;
   final String taille;
   final String conditionnement;
   final DateTime delais;
+  final String status; // Ajout du statut
 
   Commande({
     this.id,
@@ -15,22 +16,9 @@ class Commande {
     required this.taille,
     required this.conditionnement,
     required this.delais,
+    required this.status, // Nécessaire pour filtrer et afficher
   });
 
-  // Convertir une commande en JSON (pour l'API)
-  Map<String, dynamic> toJson() {
-    return {
-      if (id != null) "id": id, // Ne pas envoyer d'ID si non défini
-      "client": client,
-      "quantite": quantite,
-      "couleur": couleur,
-      "taille": taille,
-      "conditionnement": conditionnement,
-      "delais": delais.toIso8601String(),
-    };
-  }
-
-  // Créer une instance de Commande à partir du JSON
   factory Commande.fromJson(Map<String, dynamic> json) {
     return Commande(
       id: json["_id"],
@@ -40,6 +28,20 @@ class Commande {
       taille: json["taille"],
       conditionnement: json["conditionnement"],
       delais: DateTime.parse(json["delais"]),
+      status: json["status"], // Assurez-vous que l'API renvoie bien un `status`
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      if (id != null) "id": id,
+      "client": client,
+      "quantite": quantite,
+      "couleur": couleur,
+      "taille": taille,
+      "conditionnement": conditionnement,
+      "delais": delais.toIso8601String(),
+      "status": status, // Ajout dans le JSON envoyé à l'API
+    };
   }
 }

@@ -50,6 +50,8 @@ class _AddCommandePageState extends State<AddCommandePage> {
       taille: tailleController.text,
       conditionnement: conditionnementController.text,
       delais: selectedDate!,
+      status: "pending" // TO DO: l'etat de commande se change selon les tache de l'ouvrier ou par l'admin
+
     );
 
     bool success = await Provider.of<CommandeProvider>(context, listen: false).addCommande(newCommande);
