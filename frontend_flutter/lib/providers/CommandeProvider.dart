@@ -10,6 +10,39 @@ class CommandeProvider with ChangeNotifier {
 
   List<Commande> get commandes => _commandes;
 
+  Future<bool> updateCommande(Commande commande) async {
+    try {
+      final response = await http.put(
+        Uri.parse("$_baseUrl/${commande.id}"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode(commande.toJson()),
+      );
+      if (response.statusCode == 200) {
+        fetchCommandes(); // Recharger les commandes après mise à jour
+        return true;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      return false;
+    }
+  }
+
+
+  Future<bool> deleteCommande(String id) async {
+    try {
+      final response = await http.delete(Uri.parse("$_baseUrl/$id"));
+      if (response.statusCode == 200) {
+        fetchCommandes(); // Recharger les commandes après suppression
+        return true;
+      } else {
+        return false;
+      }
+    } catch (error) {
+      return false;
+    }
+  }
+
   Future<bool> addCommande(Commande commande) async {
     try {
       final response = await http.post(
