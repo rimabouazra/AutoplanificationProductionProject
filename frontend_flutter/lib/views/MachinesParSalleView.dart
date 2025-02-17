@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/machine.dart';
-import '../services/api_service.dart'; // Service pour récupérer les données
+import '../services/api_service.dart';
 
 class MachinesParSalleView extends StatefulWidget {
   final String salleId; 
