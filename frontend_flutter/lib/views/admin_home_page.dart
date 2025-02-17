@@ -1,79 +1,70 @@
 import 'package:flutter/material.dart';
-import 'package:frontend/views/CommandePage.dart';
-import 'package:frontend/views/SalleListPage.dart';
+import 'CommandePage.dart';
+import 'SalleListPage.dart';
 
-class AdminHomePage extends StatelessWidget {
+class AdminHomePage extends StatefulWidget {
   const AdminHomePage({Key? key}) : super(key: key);
 
-  void navigateTo(BuildContext context, String pageName) {
-    Widget page;
-    switch (pageName) {
-      case 'Commandes':
-        page = const CommandePage(); // Redirection vers la page Commandes
-        break;
-      case 'Salles':
-        page = const SalleListPage(); // Ajout de la page pour afficher les salles
-        break;
-      default:
-        page = Scaffold(
-          appBar: AppBar(title: Text(pageName)),
-          body: Center(child: Text('Page de $pageName en cours de développement')),
-        );
-    }
+  @override
+  _AdminHomePageState createState() => _AdminHomePageState();
+}
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => page),
-    );
+class _AdminHomePageState extends State<AdminHomePage> {
+  int _selectedIndex = 0;
+
+  final List<Widget> _pages = [
+    Center(child: Text('Planification en développement')), // Placeholder
+    Center(child: Text('Utilisateurs en développement')), // Placeholder
+    Center(child: Text('Stock en développement')), // Placeholder
+    CommandePage(),
+    SalleListPage(),
+  ];
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
   }
-
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Admin Home Page'),
+        title: const Text('Admin Dashboard'),
         centerTitle: true,
+        elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: GridView.count(
-          crossAxisCount: 6,
-          mainAxisSpacing: 10,
-          crossAxisSpacing: 10,
-          children: [
-            buildMenuItem(context, 'assets/icons/dashboard.png', 'Tableau de bord'),
-            buildMenuItem(context, 'assets/icons/planning.png', 'Planification'),
-            buildMenuItem(context, 'assets/icons/users.png', 'Utilisateurs'),
-            buildMenuItem(context, 'assets/icons/stock.png', 'Stock'),
-            buildMenuItem(context, 'assets/icons/orders.png', 'Commandes'),
-            buildMenuItem(context, 'assets/icons/rooms.png', 'Salles'),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => Navigator.pop(context),
-        backgroundColor: Colors.red,
-        child: const Icon(Icons.logout),
-        tooltip: 'Se déconnecter',
-      ),
-    );
-  }
-
-  Widget buildMenuItem(BuildContext context, String iconPath, String title) {
-    return GestureDetector(
-      onTap: () => navigateTo(context, title),
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Image.asset(iconPath, width: 50, height: 50),
-          const SizedBox(height: 4),
-          Text(
-            title,
-            textAlign: TextAlign.center,
-            style: const TextStyle(fontSize: 13),
+      body: _pages[_selectedIndex],
+      bottomNavigationBar: BottomNavigationBar(
+        items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.schedule),
+            label: 'Planification',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.people),
+            label: 'Utilisateurs',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.store),
+            label: 'Stock',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.assignment),
+            label: 'Commandes',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.meeting_room),
+            label: 'Salles',
           ),
         ],
+        currentIndex: _selectedIndex,
+        selectedItemColor: Colors.blue.shade700,
+        unselectedItemColor: Colors.grey,
+        showUnselectedLabels: true,
+        backgroundColor: Colors.white,
+        type: BottomNavigationBarType.fixed,
+        onTap: _onItemTapped,
       ),
     );
   }
