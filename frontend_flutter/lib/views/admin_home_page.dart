@@ -35,7 +35,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
         elevation: 0,
       ),
       body: _pages[_selectedIndex],
-      bottomNavigationBar: BottomNavigationBar(
+      bottomNavigationBar:
+      BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.schedule),
