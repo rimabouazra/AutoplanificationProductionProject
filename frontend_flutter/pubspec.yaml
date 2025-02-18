@@ -62,7 +62,7 @@ flutter:
   fonts:
     - family: Roboto
       fonts:
-        - asset: assets/fonts/Roboto-Regular.ttf
+        - asset: assets/fonts/Roboto.ttf
   assets:
     - assets/icons/dashboard.png
     - assets/icons/users.png

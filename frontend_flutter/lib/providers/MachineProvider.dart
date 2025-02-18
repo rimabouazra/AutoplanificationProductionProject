@@ -9,23 +9,29 @@ class MachineProvider with ChangeNotifier {
   List<Machine> get machines => _machines;
 
   Future<void> fetchMachinesBySalle(String salleId) async {
-    final url = 'http://localhost:5000/api/machines/parSalle';
-    try {
-      final response = await http.get(Uri.parse(url));
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body) as List;
-        var salleData = data.firstWhere((salle) => salle['_id'] == salleId, orElse: () => null);
-        if (salleData != null) {
-          _machines = (salleData['machines'] as List).map((machine) => Machine.fromJson(machine)).toList();
-        } else {
-          _machines = [];
-        }
-      } else {
-        throw Exception("Échec du chargement des machines");
-      }
-      notifyListeners();
-    } catch (error) {
-      throw Exception("Erreur lors du chargement des machines: $error");
+  final url = 'http://localhost:5000/api/machines/parSalle/$salleId';
+  print("🔍 URL requête: $url"); 
+
+  try {
+    final response = await http.get(Uri.parse(url));
+    print("📥 Code réponse: ${response.statusCode}");
+    print("📄 Réponse: ${response.body}");
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      print("✅ Machines reçues: $data");
+
+      _machines = (data as List).map((machine) => Machine.fromJson(machine)).toList();
+    } else {
+      print("❌ Erreur API: ${response.body}");
+      throw Exception("Échec du chargement des machines");
     }
+
+    notifyListeners();
+  } catch (error) {
+    print("⚠️ Erreur de chargement des machines: $error");
+    throw Exception("Erreur de connexion");
   }
+}
+
 }

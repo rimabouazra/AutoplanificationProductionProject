@@ -22,14 +22,36 @@ class ApiService {
   }
 
   // ✅ Ajouter une nouvelle Machine
-  static Future<bool> addMachine(Machine machine) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/machines'),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(machine.toJson()),
-    );
-    return response.statusCode == 201;
+  static Future<void> addMachine({
+    required String nom,
+    required String etat,
+    required String salleId,
+    required String modele,
+    required String taille,
+  }) async {
+    try {
+      var response = await http.post(
+        Uri.parse("$baseUrl/add"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "nom": nom,
+          "etat": etat,
+          "salle": salleId,
+          "modele": modele,
+          "taille": taille,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        print("✅ Machine ajoutée avec succès !");
+      } else {
+        print("❌ Erreur lors de l'ajout : ${response.body}");
+      }
+    } catch (e) {
+      print("⚠️ Erreur de connexion : $e");
+    }
   }
+
 
   // ✅ Récupérer tous les Modèles
   static Future<List<Modele>> getModeles() async {
@@ -143,13 +165,36 @@ class ApiService {
   }
 
   static Future<List<dynamic>> fetchMachinesParSalle(String salleId) async {
-  final response = await http.get(Uri.parse('http://localhost:5000/api/machines-par-salle/$salleId'));
+    final url = 'http://localhost:5000/api/machines/parSalle/$salleId'; // Ajout de salleId
+    print("🔍 Requête envoyée à: $url"); // Debug URL
 
+    try {
+      final response = await http.get(Uri.parse(url));
+
+      print("📥 Réponse API: ${response.statusCode}"); // Code de réponse
+      print("📄 Données brutes: ${response.body}"); // Debug JSON
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        print("✅ Données reçues: $data"); // Vérification de la structure
+        return data; // Retourne directement la liste des machines
+      } else {
+        print("❌ Erreur API: ${response.body}");
+        throw Exception("Échec du chargement des machines");
+      }
+    } catch (e) {
+      print("⚠️ Erreur lors de la récupération des machines: $e");
+      throw Exception("Erreur de connexion");
+    }
+  }
+
+static Future<List<Machine>> getMachinesParSalle(String salleId) async {
+  final response = await http.get(Uri.parse('$baseUrl/salles/$salleId/machines'));
   if (response.statusCode == 200) {
-    return json.decode(response.body);
+    List<dynamic> jsonData = json.decode(response.body);
+    return jsonData.map((json) => Machine.fromJson(json)).toList();
   } else {
-    throw Exception('Échec du chargement des machines pour la salle');
+    throw Exception("Erreur lors de la récupération des machines pour la salle $salleId");
   }
 }
-
 }
