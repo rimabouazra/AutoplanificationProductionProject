@@ -5,32 +5,27 @@ const Salle = require("../models/Salle");
 exports.ajouterMachine = async (req, res) => {
     try {
         const { nom, etat, salle, modele, taille } = req.body;
-        const modeleExistant = await Modele.findById(modele);
-        if (!modeleExistant) {
-            return res.status(404).json({ message: "Modèle non trouvé" });
+
+        // Vérifier que la salle existe
+        const salleExistante = await Salle.findById(salle);
+        if (!salleExistante) {
+            return res.status(404).json({ message: "Salle non trouvée" });
         }
-        if (!modeleExistant.tailles.includes(taille)) {
-            return res.status(400).json({ message: "Taille non compatible avec le modèle" });
-        }
-        
-        // Création de la machine
-        const nouvelleMachine = new Machine({
-            nom,
-            etat,
-            salle,
-            modele,
-            taille
-        });
+
+        // Créer la machine
+        const nouvelleMachine = new Machine({ nom, etat, salle, modele, taille });
         await nouvelleMachine.save();
 
-        // Mise à jour de la salle pour ajouter la machine
-        await Salle.findByIdAndUpdate(salle, { $push: { machines: nouvelleMachine._id } });
+        // Ajouter la machine à la salle
+        salleExistante.machines.push(nouvelleMachine._id);
+        await salleExistante.save();
 
         res.status(201).json(nouvelleMachine);
     } catch (error) {
         res.status(500).json({ message: "Erreur lors de l'ajout de la machine", error });
     }
 };
+
 
 exports.getMachines = async (req, res) => {
     try {
@@ -55,17 +50,25 @@ exports.getMachineById = async (req, res) => {
 
 exports.getMachinesBySalle = async (req, res) => {
     try {
-        const sallesAvecMachines = await Salle.find()
-            .populate({
-                path: "machines",
-                populate: { path: "modele" } // Charger aussi le modèle associé à chaque machine
-            });
+        const { salleId } = req.params;
 
-        res.status(200).json(sallesAvecMachines);
+        // Trouver la salle avec ses machines
+        const salle = await Salle.findById(salleId).populate({
+            path: "machines",
+            populate: { path: "modele" } // Charger aussi le modèle de chaque machine
+        });
+
+        if (!salle) {
+            return res.status(404).json({ message: "Salle non trouvée" });
+        }
+
+        res.status(200).json(salle.machines); // Renvoyer uniquement les machines
     } catch (error) {
-        res.status(500).json({ message: "Erreur lors de la récupération des machines par salle", error });
+        console.error("Erreur lors de la récupération des machines :", error);
+        res.status(500).json({ message: "Erreur serveur" });
     }
 };
+
 
 
 

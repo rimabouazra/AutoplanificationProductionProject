@@ -11,7 +11,7 @@ router.get("/", MachineController.getMachines);
 // Route pour récupérer une machine par ID
 router.get("/:id", MachineController.getMachineById);
 
-router.get("/parSalle", MachineController.getMachinesBySalle);
+router.get("/parSalle/:salleId", MachineController.getMachinesBySalle);
 
 
 // Route pour modifier une machine

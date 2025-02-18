@@ -40,12 +40,14 @@ exports.supprimerSalle = async (req, res) => {
 // Récupérer toutes les salles
 exports.listerToutesLesSalles = async (req, res) => {
     try {
-        const salles = await Salle.find();
+        // Peupler les machines associées à chaque salle
+        const salles = await Salle.find().populate("machines");
         res.json(salles);
     } catch (error) {
         res.status(500).json({ message: "Erreur lors de la récupération des salles", error });
     }
 };
+
 
 //Ajouter une machine à une salle
 exports.ajouterMachine = async (req, res) => {
