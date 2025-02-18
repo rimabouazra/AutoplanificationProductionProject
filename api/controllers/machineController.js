@@ -4,14 +4,14 @@ const Salle = require("../models/Salle");
 
 exports.ajouterMachine = async (req, res) => {
     try {
+        console.log("Requête reçue pour ajouter une machine :", req.body);
         const { nom, etat, salle, modele, taille } = req.body;
-
         // Vérifier que la salle existe
         const salleExistante = await Salle.findById(salle);
         if (!salleExistante) {
+            console.log("Salle non trouvée !");
             return res.status(404).json({ message: "Salle non trouvée" });
         }
-
         // Créer la machine
         const nouvelleMachine = new Machine({ nom, etat, salle, modele, taille });
         await nouvelleMachine.save();
@@ -55,7 +55,7 @@ exports.getMachinesBySalle = async (req, res) => {
         // Trouver la salle avec ses machines
         const salle = await Salle.findById(salleId).populate({
             path: "machines",
-            populate: { path: "modele" } // Charger aussi le modèle de chaque machine
+            populate: [{ path: "modele" }, { path: "salle" }] // Charger aussi la salle et le modéle de chaque machine
         });
 
         if (!salle) {
