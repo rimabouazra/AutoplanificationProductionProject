@@ -46,13 +46,16 @@ exports.getCommandes = async (req, res) => {
     try {
         const commandes = await Commande.find()
             .populate("salleAffectee")
-            .populate("machineAffectee");
+            .populate("machinesAffectees");
+
+        console.log("Commandes fetched:", commandes); // Debugging statement
+
         res.status(200).json(commandes);
     } catch (error) {
+        console.error("Error fetching commandes:", error); // Debugging statement
         res.status(500).json({ message: "Erreur lors de la récupération des commandes", error });
     }
 };
-
 exports.getCommandeById = async (req, res) => {
     try {
         const commande = await Commande.findById(req.params.id)

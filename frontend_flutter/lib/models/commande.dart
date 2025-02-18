@@ -1,55 +1,89 @@
-class Commande {
-  String? id;  // Rendre id optionnel
-  final String client;
-  final int quantite;
-  final String couleur;
-  final String taille;
-  final String conditionnement;
-  final DateTime? delais; // Nullable
-  final String status;
-  final DateTime? createdAt; // Nullable
-  final DateTime? updatedAt; // Nullable
+class CommandeModele {
+  String modele;
+  String taille;
+  String couleur;
+  int quantite;
 
-  Commande({
-     this.id,
-    required this.client,
-    required this.quantite,
-    required this.couleur,
+  CommandeModele({
+    required this.modele,
     required this.taille,
-    required this.conditionnement,
-    this.delais, // Nullable
-    required this.status,
-    this.createdAt, // Nullable
-    this.updatedAt, // Nullable
+    required this.couleur,
+    required this.quantite,
   });
+
+  factory CommandeModele.fromJson(Map<String, dynamic> json) {
+    return CommandeModele(
+      modele: json['modele'] ?? '',
+      taille: json['taille'] ?? '',
+      couleur: json['couleur'] ?? '',
+      quantite: json['quantite'] ?? 0,
+    );
+  }
 
   Map<String, dynamic> toJson() {
     return {
-      "_id": id,
-      "client": client,
-      "quantite": quantite,
-      "couleur": couleur,
-      "taille": taille,
-      "conditionnement": conditionnement,
-      "delais": delais?.toIso8601String(), // Convertit DateTime en String
-      "status": status,
-      "createdAt": createdAt?.toIso8601String(),
-      "updatedAt": updatedAt?.toIso8601String(),
+      'modele': modele,
+      'taille': taille,
+      'couleur': couleur,
+      'quantite': quantite,
     };
   }
+}
+
+class Commande {
+  String? id;
+  String client;
+  List<CommandeModele> modeles;
+  String conditionnement;
+  DateTime? delais;
+  String etat;
+  DateTime? createdAt;
+  DateTime? updatedAt;
+  String? salleAffectee;
+  List<String>? machinesAffectees; // Ensure this is a List
+
+  Commande({
+    this.id,
+    required this.client,
+    required this.modeles,
+    required this.conditionnement,
+    this.delais,
+    required this.etat,
+    this.createdAt,
+    this.updatedAt,
+    this.salleAffectee,
+    this.machinesAffectees,
+  });
 
   factory Commande.fromJson(Map<String, dynamic> json) {
     return Commande(
-      id: json['_id'] ?? '',
+      id: json['_id'],
       client: json['client'] ?? '',
-      quantite: json['quantite'] ?? 0,
-      couleur: json['couleur'] ?? '',
-      taille: json['taille'] ?? '',
+      modeles: (json['modeles'] as List<dynamic>?)
+          ?.map((item) => CommandeModele.fromJson(item))
+          .toList() ?? [],
       conditionnement: json['conditionnement'] ?? '',
-      delais: json['delais'] != null ? DateTime.tryParse(json['delais']) : null, // Utilise tryParse()
-      status: json['etat'] ?? '',
+      delais: json['delais'] != null ? DateTime.tryParse(json['delais']) : null,
+      etat: json['etat'] ?? '',
       createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt']) : null,
       updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt']) : null,
+      salleAffectee: json['salleAffectee'],
+      machinesAffectees: (json['machinesAffectees'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      '_id': id,
+      'client': client,
+      'modeles': modeles.map((m) => m.toJson()).toList(),
+      'conditionnement': conditionnement,
+      'delais': delais?.toIso8601String(),
+      'etat': etat,
+      'createdAt': createdAt?.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
+      'salleAffectee': salleAffectee,
+      'machinesAffectees': machinesAffectees,
+    };
   }
 }
