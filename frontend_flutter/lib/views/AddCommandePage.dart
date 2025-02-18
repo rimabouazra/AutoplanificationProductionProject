@@ -45,13 +45,19 @@ class _AddCommandePageState extends State<AddCommandePage> {
 
     Commande newCommande = Commande(
       client: clientController.text,
-      quantite: int.parse(quantiteController.text),
-      couleur: couleurController.text,
-      taille: tailleController.text,
+      modeles: [
+        CommandeModele(
+          modele: "Modèle par défaut", // À remplacer par un champ de saisie si nécessaire
+          taille: tailleController.text,
+          couleur: couleurController.text,
+          quantite: int.parse(quantiteController.text),
+        )
+      ],
       conditionnement: conditionnementController.text,
-      delais: selectedDate ?? DateTime.now(), // Met la date actuelle si null
-      status: "pending",
+      delais: selectedDate ?? DateTime.now(),
+      etat: "en attente", // Remplace "status" par "etat"
     );
+
 
 
 
@@ -96,7 +102,7 @@ class _AddCommandePageState extends State<AddCommandePage> {
                       _buildTextField(clientController, "Client"),
                       _buildTextField(quantiteController, "Quantité", isNumber: true),
                       _buildTextField(couleurController, "Couleur"),
-                      _buildTextField(tailleController, "Taille"),
+                      _buildTextField(tailleController, "Taille", isNumber: true),
                       _buildTextField(conditionnementController, "Conditionnement"),
                       SizedBox(height: 10),
                       ListTile(

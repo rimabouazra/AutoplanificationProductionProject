@@ -52,7 +52,7 @@ class _CommandePageState extends State<CommandePage> {
   List<Commande> get filteredCommandes {
     final commandes = Provider.of<CommandeProvider>(context).commandes;
     return commandes.where((commande) {
-      final matchesFilter = selectedFilter == 'Tous' || commande.status == selectedFilter;
+      final matchesFilter = selectedFilter == 'Tous' || commande.etat == selectedFilter;
       final matchesSearch = searchController.text.isEmpty || commande.client.toLowerCase().contains(searchController.text.toLowerCase());
       return matchesFilter && matchesSearch;
     }).toList();
@@ -66,7 +66,11 @@ class _CommandePageState extends State<CommandePage> {
 
   void editCommande(Commande commande) {
     TextEditingController clientController = TextEditingController(text: commande.client);
-    TextEditingController quantiteController = TextEditingController(text: commande.quantite.toString());
+
+    // Calculer la somme des quantités à partir de la liste des modèles
+    int totalQuantite = commande.modeles.fold(0, (sum, modele) => sum + modele.quantite);
+
+    TextEditingController quantiteController = TextEditingController(text: totalQuantite.toString());
 
     showDialog(
       context: context,
@@ -82,8 +86,9 @@ class _CommandePageState extends State<CommandePage> {
               ),
               TextField(
                 controller: quantiteController,
-                decoration: const InputDecoration(labelText: 'Quantité'),
+                decoration: const InputDecoration(labelText: 'Quantité totale'),
                 keyboardType: TextInputType.number,
+                enabled: false, // Empêche la modification directe
               ),
             ],
           ),
@@ -94,13 +99,12 @@ class _CommandePageState extends State<CommandePage> {
                 final updatedCommande = Commande(
                   id: commande.id,
                   client: clientController.text,
-                  quantite: int.parse(quantiteController.text),
-                  couleur: commande.couleur,
-                  taille: commande.taille,
+                  modeles: commande.modeles, // On garde les modèles existants
                   conditionnement: commande.conditionnement,
                   delais: commande.delais,
-                  status: commande.status,
+                  etat: commande.etat,
                 );
+
                 Provider.of<CommandeProvider>(context, listen: false).updateCommande(updatedCommande);
                 Navigator.pop(context);
               },
@@ -194,27 +198,27 @@ class _CommandePageState extends State<CommandePage> {
     );
   }
 
-
   Widget buildCommandesTable() {
     return Expanded(
       child: ListView(
         children: filteredCommandes.map((commande) {
+          int totalQuantite = commande.modeles.fold(0, (sum, m) => sum + m.quantite);
           return Card(
             child: ListTile(
               leading: Text(commande.id ?? "N/A"), // Afficher l'ID de la commande
               title: Text(commande.client),
               subtitle: Text(
                 commande.delais != null
-                    ? "${DateFormat('dd/MM/yyyy').format(commande.delais!)} - ${commande.quantite} unités"
-                    : "Date non définie - ${commande.quantite} unités",
+                    ? "${DateFormat('dd/MM/yyyy').format(commande.delais!)} - $totalQuantite unités"
+                    : "Date non définie - $totalQuantite unités",
               ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    commande.status,
+                    commande.etat, // Remplace status par etat
                     style: TextStyle(
-                      color: getStatusColor(commande.status), // Applique la couleur à chaque statut
+                      color: getStatusColor(commande.etat),
                     ),
                   ),
                   IconButton(

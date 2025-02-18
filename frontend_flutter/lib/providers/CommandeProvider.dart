@@ -49,12 +49,10 @@ class CommandeProvider with ChangeNotifier {
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "client": commande.client,
-        "quantite": commande.quantite,
-        "couleur": commande.couleur,
-        "taille": commande.taille,
+        "modeles": commande.modeles.map((modele) => modele.toJson()).toList(),
         "conditionnement": commande.conditionnement,
-        "delais": commande.delais != null ? commande.delais!.toIso8601String() : null,
-        "status": commande.status,
+        "delais": commande.delais?.toIso8601String(),
+        "etat": commande.etat,
       }),
     );
 
