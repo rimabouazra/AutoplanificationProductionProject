@@ -17,9 +17,37 @@ class _CommandePageState extends State<CommandePage> {
   @override
   void initState() {
     super.initState();
-    // Récupérer les commandes lors de l'initialisation de la page
     Provider.of<CommandeProvider>(context, listen: false).fetchCommandes();
   }
+
+  List<String> filters = [
+    "Tous",
+    "En attente",
+    "En coupe",
+    "En moulage",
+    "En presse",
+    "En contrôle",
+    "Emballage",
+    "Terminé"
+  ];
+
+  Color getStatusColor(String status) {
+    if (status == "En attente") {
+      return Colors.red;
+    } else if (status == "Terminé") {
+      return Colors.green;
+    } else if ([
+      "En coupe",
+      "En moulage",
+      "En presse",
+      "En contrôle",
+      "Emballage"
+    ].contains(status)) {
+      return Colors.orange; // Les processus en cours
+    }
+    return Colors.grey; // Par défaut pour tout autre état
+  }
+
 
   List<Commande> get filteredCommandes {
     final commandes = Provider.of<CommandeProvider>(context).commandes;
@@ -29,6 +57,7 @@ class _CommandePageState extends State<CommandePage> {
       return matchesFilter && matchesSearch;
     }).toList();
   }
+
 
   void deleteCommande(String id) {
     // Implémentez la suppression via le provider
@@ -91,64 +120,14 @@ class _CommandePageState extends State<CommandePage> {
   }
 
   // Fonction de navigation vers une page vide
-  void navigateTo(BuildContext context, String pageName) {
-    Widget page;
-    switch (pageName) {
-      case 'tableau de board':
-        page = Scaffold(
-          appBar: AppBar(title: Text('Tableau de bord')),
-          body: Center(child: Text('Page Tableau de bord en cours de développement')),
-        );
-        break;
-      case 'planification':
-        page = Scaffold(
-          appBar: AppBar(title: Text('Planification')),
-          body: Center(child: Text('Page Planification en cours de développement')),
-        );
-        break;
-      case 'Utilisateurs':
-        page = Scaffold(
-          appBar: AppBar(title: Text('Utilisateurs')),
-          body: Center(child: Text('Page Utilisateurs en cours de développement')),
-        );
-        break;
-      case 'Stock':
-        page = Scaffold(
-          appBar: AppBar(title: Text('Stock')),
-          body: Center(child: Text('Page Stock en cours de développement')),
-        );
-        break;
-      case 'Commandes':
-        page = Scaffold(
-          appBar: AppBar(title: Text('Commandes')),
-          body: Center(child: Text('Page Commandes en cours de développement')),
-        );
-        break;
-      case 'Salles':
-        page = Scaffold(
-          appBar: AppBar(title: Text('Salles')),
-          body: Center(child: Text('Page Salles en cours de développement')),
-        );
-        break;
-      default:
-        page = Scaffold(
-          appBar: AppBar(title: Text('Page inconnue')),
-          body: Center(child: Text('Page inconnue')),
-        );
-    }
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => page),
-    );
-  }
+
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Row(
         children: [
-          buildSidebar(),
           Expanded(
             child: Padding(
               padding: const EdgeInsets.all(8.0),
@@ -156,7 +135,7 @@ class _CommandePageState extends State<CommandePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   buildSearchBar(),
-                  buildFilters(),
+                  buildFilters(), // Ajout des filtres ici
                   const SizedBox(height: 10),
                   buildCommandesTable(),
                   buildPagination(),
@@ -174,38 +153,14 @@ class _CommandePageState extends State<CommandePage> {
     );
   }
 
-  Widget buildSidebar() {
-    return Container(
-      width: 200,
-      color: Colors.grey[200],
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          const SizedBox(height: 20),
-          buildSidebarItem("tableau de board"),
-          buildSidebarItem("planification"),
-          buildSidebarItem("Utilisateurs"),
-          buildSidebarItem("Stock"),
-          buildSidebarItem("Commandes"),
-          buildSidebarItem("Salles"),
-        ],
-      ),
-    );
-  }
 
-  Widget buildSidebarItem(String title) {
-    return ListTile(
-      title: Text(title),
-      onTap: () => navigateTo(context, title), // Appel de la fonction de navigation
-    );
-  }
 
   Widget buildSearchBar() {
     return Row(
       mainAxisAlignment: MainAxisAlignment.end,
       children: [
         SizedBox(
-          width: 200,
+          width: 150,
           child: TextField(
             controller: searchController,
             decoration: const InputDecoration(
@@ -221,7 +176,6 @@ class _CommandePageState extends State<CommandePage> {
   }
 
   Widget buildFilters() {
-    List<String> filters = ["Tous", "Pending", "Working on", "Completed"];
     return Row(
       children: filters.map((filter) {
         return Padding(
@@ -240,6 +194,7 @@ class _CommandePageState extends State<CommandePage> {
     );
   }
 
+
   Widget buildCommandesTable() {
     return Expanded(
       child: ListView(
@@ -248,18 +203,18 @@ class _CommandePageState extends State<CommandePage> {
             child: ListTile(
               leading: Text(commande.id ?? "N/A"), // Afficher l'ID de la commande
               title: Text(commande.client),
-              subtitle: Text("${DateFormat('dd/MM/yyyy').format(commande.delais)} - ${commande.quantite} unités"),
+              subtitle: Text(
+                commande.delais != null
+                    ? "${DateFormat('dd/MM/yyyy').format(commande.delais!)} - ${commande.quantite} unités"
+                    : "Date non définie - ${commande.quantite} unités",
+              ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
                     commande.status,
                     style: TextStyle(
-                      color: commande.status == "Pending"
-                          ? Colors.red
-                          : commande.status == "Completed"
-                          ? Colors.green
-                          : Colors.orange,
+                      color: getStatusColor(commande.status), // Applique la couleur à chaque statut
                     ),
                   ),
                   IconButton(
