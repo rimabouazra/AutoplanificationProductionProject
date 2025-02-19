@@ -4,41 +4,63 @@ const Machine = require("../models/Machine");
 
 exports.ajouterCommande = async (req, res) => {
     try {
-        const { client, quantite, couleur, taille, conditionnement, delais, etat, salleAffectee, machineAffectee } = req.body;
+        console.log("Données reçues :", JSON.stringify(req.body, null, 2)); //Vérifier les données reçues
 
-        // Vérifier si la salle existe
+        const { client, conditionnement, delais, etat, salleAffectee, machinesAffectees, modeles } = req.body;
+
+        // Vérifier si une salle affectée est valide
         if (salleAffectee) {
+            console.log("Vérification de la salle :", salleAffectee);
             const salleExistante = await Salle.findById(salleAffectee);
             if (!salleExistante) {
                 return res.status(404).json({ message: "Salle non trouvée" });
             }
         }
 
-        // Vérifier si la machine existe
-        if (machineAffectee) {
-            const machineExistante = await Machine.findById(machineAffectee);
-            if (!machineExistante) {
-                return res.status(404).json({ message: "Machine non trouvée" });
+        // Vérifier si les machines affectées existent
+        if (machinesAffectees && machinesAffectees.length > 0) {
+            console.log("Vérification des machines :", machinesAffectees);
+            for (const machineId of machinesAffectees) {
+                const machineExistante = await Machine.findById(machineId);
+                if (!machineExistante) {
+                    return res.status(404).json({ message: `Machine non trouvée : ${machineId}` });
+                }
             }
         }
 
-        // Création de la commande
+        // Vérifier que modeles est bien un tableau non vide
+        if (!Array.isArray(modeles) || modeles.length === 0) {
+            return res.status(400).json({ message: "Veuillez ajouter au moins un modèle" });
+        }
+
+        // Vérifier que chaque modèle existe avant de l'ajouter
+        for (let item of modeles) {
+            console.log("Vérification du modèle :", item.modele);
+            const modeleExist = await Modele.findById(item.modele);
+            if (!modeleExist) {
+                return res.status(400).json({ message: `Modèle non trouvé: ${item.modele}` });
+            }
+        }
+
+        // Création de la commande avec les modèles et leurs propriétés spécifiques
         const nouvelleCommande = new Commande({
             client,
-            quantite,
-            couleur,
-            taille,
+            modeles, //  Contient {modele, taille, couleur, quantite}
             conditionnement,
             delais,
             etat,
             salleAffectee,
-            machineAffectee
+            machinesAffectees
         });
 
+        // Sauvegarde dans MongoDB
         await nouvelleCommande.save();
+
+        console.log("Commande enregistrée :", nouvelleCommande); // Debug
         res.status(201).json(nouvelleCommande);
     } catch (error) {
-        res.status(500).json({ message: "Erreur lors de l'ajout de la commande", error });
+        console.error("Erreur lors de l'ajout de la commande :", error); // Debug
+        res.status(500).json({ message: "Erreur lors de l'ajout de la commande", error: error.message });
     }
 };
 

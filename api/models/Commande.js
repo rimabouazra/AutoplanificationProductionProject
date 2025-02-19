@@ -1,14 +1,12 @@
 const mongoose = require("mongoose");
 
-// Sous-schéma pour un modèle dans la commande
 const CommandeModeleSchema = new mongoose.Schema({
-  modele: { type: String, required: true },
+  modele: { type: mongoose.Schema.Types.ObjectId, ref: "Modele", required: true }, //  Référence au modèle
   taille: { type: String, required: true },
-  couleur: { type: String, required: true },
-  quantite: { type: Number, required: true }
+  couleur: { type: String, required: true }, //  Chaque modèle a une couleur spécifique pour cette commande
+  quantite: { type: Number, required: true } //  Chaque modèle a une quantité spécifique pour cette commande
 });
 
-// Schéma principal de la commande
 const CommandeSchema = new mongoose.Schema(
   {
     client: { type: String, required: true },
@@ -17,7 +15,7 @@ const CommandeSchema = new mongoose.Schema(
       enum: ["en attente", "en coupe", "en moulage", "en presse", "en contrôle", "emballage", "terminé"],
       default: "en attente"
     },
-    modeles: { type: [CommandeModeleSchema], required: true }, // Liste de modèles
+    modeles: { type: [CommandeModeleSchema], required: true }, //  Liste des modèles AVEC quantité et couleur
     conditionnement: { type: String, required: true },
     delais: { type: Date, required: true },
     salleAffectee: { type: mongoose.Schema.Types.ObjectId, ref: "Salle" },

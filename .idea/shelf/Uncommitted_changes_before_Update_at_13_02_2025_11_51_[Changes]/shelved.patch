@@ -1,0 +1,450 @@
+Index: .idea/AutoplanificationProductionProject.iml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<module type=\"JAVA_MODULE\" version=\"4\">\r\n  <component name=\"NewModuleRootManager\" inherit-compiler-output=\"true\">\r\n    <exclude-output />\r\n    <content url=\"file://$MODULE_DIR$\">\r\n      <excludeFolder url=\"file://$MODULE_DIR$/frontend_flutter/.dart_tool\" />\r\n      <excludeFolder url=\"file://$MODULE_DIR$/frontend_flutter/.pub\" />\r\n      <excludeFolder url=\"file://$MODULE_DIR$/frontend_flutter/build\" />\r\n    </content>\r\n    <orderEntry type=\"inheritedJdk\" />\r\n    <orderEntry type=\"sourceFolder\" forTests=\"false\" />\r\n  </component>\r\n</module>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/AutoplanificationProductionProject.iml b/.idea/AutoplanificationProductionProject.iml
+--- a/.idea/AutoplanificationProductionProject.iml	(revision 5422bce9117df0be9341a854010ac2f7e0da1e57)
++++ b/.idea/AutoplanificationProductionProject.iml	(date 1739439606378)
+@@ -9,5 +9,7 @@
+     </content>
+     <orderEntry type="inheritedJdk" />
+     <orderEntry type="sourceFolder" forTests="false" />
++    <orderEntry type="library" name="Dart SDK" level="project" />
++    <orderEntry type="library" name="Dart Packages" level="project" />
+   </component>
+ </module>
+\ No newline at end of file
+Index: .idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\r\n<project version=\"4\">\r\n  <component name=\"ChangeListManager\">\r\n    <list default=\"true\" id=\"f1b1f5c6-b780-4356-ad10-8b85adb9bdf5\" name=\"Changes\" comment=\"\" />\r\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\r\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\r\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\r\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\r\n  </component>\r\n  <component name=\"Git.Settings\">\r\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\r\n  </component>\r\n  <component name=\"GitHubPullRequestSearchHistory\"><![CDATA[{\r\n  \"lastFilter\": {\r\n    \"state\": \"OPEN\",\r\n    \"assignee\": \"mayarabouwazra\"\r\n  }\r\n}]]></component>\r\n  <component name=\"GithubPullRequestsUISettings\"><![CDATA[{\r\n  \"selectedUrlAndAccountId\": {\r\n    \"url\": \"https://github.com/rimabouazra/AutoplanificationProductionProject\",\r\n    \"accountId\": \"b289365e-b2bf-44cb-b3d7-a5c48bcb55ba\"\r\n  }\r\n}]]></component>\r\n  <component name=\"ProjectColorInfo\"><![CDATA[{\r\n  \"associatedIndex\": 0\r\n}]]></component>\r\n  <component name=\"ProjectId\" id=\"2svujNCfvxvvhAUi4Cn4O1veBz4\" />\r\n  <component name=\"ProjectViewState\">\r\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\r\n    <option name=\"showLibraryContents\" value=\"true\" />\r\n  </component>\r\n  <component name=\"PropertiesComponent\"><![CDATA[{\r\n  \"keyToString\": {\r\n    \"RunOnceActivity.ShowReadmeOnStart\": \"true\",\r\n    \"dart.analysis.tool.window.visible\": \"false\",\r\n    \"git-widget-placeholder\": \"main\",\r\n    \"kotlin-language-version-configured\": \"true\",\r\n    \"last_opened_file_path\": \"C:/Users/mayar/Desktop/PFE/AutoplanificationProductionProject\",\r\n    \"settings.editor.selected.configurable\": \"flutter.settings\",\r\n    \"show.migrate.to.gradle.popup\": \"false\"\r\n  }\r\n}]]></component>\r\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\r\n  <component name=\"TaskManager\">\r\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\r\n      <changelist id=\"f1b1f5c6-b780-4356-ad10-8b85adb9bdf5\" name=\"Changes\" comment=\"\" />\r\n      <created>1739348505178</created>\r\n      <option name=\"number\" value=\"Default\" />\r\n      <option name=\"presentableId\" value=\"Default\" />\r\n      <updated>1739348505178</updated>\r\n    </task>\r\n    <servers />\r\n  </component>\r\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+--- a/.idea/workspace.xml	(revision 5422bce9117df0be9341a854010ac2f7e0da1e57)
++++ b/.idea/workspace.xml	(date 1739443878885)
+@@ -1,7 +1,14 @@
+ <?xml version="1.0" encoding="UTF-8"?>
+ <project version="4">
++  <component name="AutoImportSettings">
++    <option name="autoReloadType" value="SELECTIVE" />
++  </component>
+   <component name="ChangeListManager">
+-    <list default="true" id="f1b1f5c6-b780-4356-ad10-8b85adb9bdf5" name="Changes" comment="" />
++    <list default="true" id="f1b1f5c6-b780-4356-ad10-8b85adb9bdf5" name="Changes" comment="link commande page to the api">
++      <change afterPath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/AutoplanificationProductionProject.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/AutoplanificationProductionProject.iml" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
++    </list>
+     <option name="SHOW_DIALOG" value="false" />
+     <option name="HIGHLIGHT_CONFLICTS" value="true" />
+     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+@@ -10,21 +17,21 @@
+   <component name="Git.Settings">
+     <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$" />
+   </component>
+-  <component name="GitHubPullRequestSearchHistory"><![CDATA[{
+-  "lastFilter": {
+-    "state": "OPEN",
+-    "assignee": "mayarabouwazra"
++  <component name="GitHubPullRequestSearchHistory">{
++  &quot;lastFilter&quot;: {
++    &quot;state&quot;: &quot;OPEN&quot;,
++    &quot;assignee&quot;: &quot;mayarabouwazra&quot;
+   }
+-}]]></component>
+-  <component name="GithubPullRequestsUISettings"><![CDATA[{
+-  "selectedUrlAndAccountId": {
+-    "url": "https://github.com/rimabouazra/AutoplanificationProductionProject",
+-    "accountId": "b289365e-b2bf-44cb-b3d7-a5c48bcb55ba"
++}</component>
++  <component name="GithubPullRequestsUISettings">{
++  &quot;selectedUrlAndAccountId&quot;: {
++    &quot;url&quot;: &quot;https://github.com/rimabouazra/AutoplanificationProductionProject&quot;,
++    &quot;accountId&quot;: &quot;b289365e-b2bf-44cb-b3d7-a5c48bcb55ba&quot;
+   }
+-}]]></component>
+-  <component name="ProjectColorInfo"><![CDATA[{
+-  "associatedIndex": 0
+-}]]></component>
++}</component>
++  <component name="ProjectColorInfo">{
++  &quot;associatedIndex&quot;: 0
++}</component>
+   <component name="ProjectId" id="2svujNCfvxvvhAUi4Cn4O1veBz4" />
+   <component name="ProjectViewState">
+     <option name="hideEmptyMiddlePackages" value="true" />
+@@ -32,15 +39,29 @@
+   </component>
+   <component name="PropertiesComponent"><![CDATA[{
+   "keyToString": {
++    "Flutter.main.dart.executor": "Run",
+     "RunOnceActivity.ShowReadmeOnStart": "true",
++    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+     "dart.analysis.tool.window.visible": "false",
+     "git-widget-placeholder": "main",
++    "io.flutter.reload.alreadyRun": "true",
+     "kotlin-language-version-configured": "true",
+     "last_opened_file_path": "C:/Users/mayar/Desktop/PFE/AutoplanificationProductionProject",
+     "settings.editor.selected.configurable": "flutter.settings",
+     "show.migrate.to.gradle.popup": "false"
+   }
+ }]]></component>
++  <component name="RunManager">
++    <configuration name="main.dart" type="FlutterRunConfigurationType" factoryName="Flutter" temporary="true" nameIsGenerated="true">
++      <option name="filePath" value="$PROJECT_DIR$/frontend_flutter/lib/main.dart" />
++      <method v="2" />
++    </configuration>
++    <recent_temporary>
++      <list>
++        <item itemvalue="Flutter.main.dart" />
++      </list>
++    </recent_temporary>
++  </component>
+   <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+   <component name="TaskManager">
+     <task active="true" id="Default" summary="Default task">
+@@ -50,6 +71,19 @@
+       <option name="presentableId" value="Default" />
+       <updated>1739348505178</updated>
+     </task>
++    <task id="LOCAL-00001" summary="link commande page to the api">
++      <option name="closed" value="true" />
++      <created>1739439590269</created>
++      <option name="number" value="00001" />
++      <option name="presentableId" value="LOCAL-00001" />
++      <option name="project" value="LOCAL" />
++      <updated>1739439590269</updated>
++    </task>
++    <option name="localTasksCounter" value="2" />
+     <servers />
+   </component>
++  <component name="VcsManagerConfiguration">
++    <MESSAGE value="link commande page to the api" />
++    <option name="LAST_COMMIT_MESSAGE" value="link commande page to the api" />
++  </component>
+ </project>
+\ No newline at end of file
+Index: .idea/libraries/Dart_Packages.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/libraries/Dart_Packages.xml b/.idea/libraries/Dart_Packages.xml
+new file mode 100644
+--- /dev/null	(date 1739439606740)
++++ b/.idea/libraries/Dart_Packages.xml	(date 1739439606740)
+@@ -0,0 +1,308 @@
++<component name="libraryTable">
++  <library name="Dart Packages" type="DartPackagesLibraryType">
++    <properties>
++      <option name="packageNameToDirsMap">
++        <entry key="async">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/async-2.11.0/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="boolean_selector">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/boolean_selector-2.1.1/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="characters">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/characters-1.3.0/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="clock">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/clock-1.1.1/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="collection">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/collection-1.18.0/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="cupertino_icons">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/cupertino_icons-1.0.8/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="fake_async">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/fake_async-1.3.1/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="flutter">
++          <value>
++            <list>
++              <option value="$USER_HOME$/OneDrive/Documents/FlutterDev/flutter/packages/flutter/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="flutter_lints">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_lints-3.0.2/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="flutter_localizations">
++          <value>
++            <list>
++              <option value="$USER_HOME$/OneDrive/Documents/FlutterDev/flutter/packages/flutter_localizations/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="flutter_test">
++          <value>
++            <list>
++              <option value="$USER_HOME$/OneDrive/Documents/FlutterDev/flutter/packages/flutter_test/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="flutter_web_plugins">
++          <value>
++            <list>
++              <option value="$USER_HOME$/OneDrive/Documents/FlutterDev/flutter/packages/flutter_web_plugins/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="fluttertoast">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/fluttertoast-8.2.12/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="http">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/http-0.13.6/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="http_parser">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/http_parser-4.0.2/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="intl">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/intl-0.19.0/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="leak_tracker">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/leak_tracker-10.0.4/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="leak_tracker_flutter_testing">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/leak_tracker_flutter_testing-3.0.3/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="leak_tracker_testing">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/leak_tracker_testing-3.0.1/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="lints">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/lints-3.0.0/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="matcher">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/matcher-0.12.16+1/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="material_color_utilities">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/material_color_utilities-0.8.0/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="meta">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/meta-1.12.0/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="nested">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/nested-1.0.0/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="path">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/path-1.9.0/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="provider">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/provider-6.1.2/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="sky_engine">
++          <value>
++            <list>
++              <option value="$USER_HOME$/OneDrive/Documents/FlutterDev/flutter/bin/cache/pkg/sky_engine/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="source_span">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/source_span-1.10.0/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="stack_trace">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/stack_trace-1.11.1/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="stream_channel">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/stream_channel-2.1.2/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="string_scanner">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/string_scanner-1.2.0/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="term_glyph">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/term_glyph-1.2.1/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="test_api">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/test_api-0.7.0/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="typed_data">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/typed_data-1.3.2/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="vector_math">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/vector_math-2.1.4/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="vm_service">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/vm_service-14.2.1/lib" />
++            </list>
++          </value>
++        </entry>
++        <entry key="web">
++          <value>
++            <list>
++              <option value="$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/web-1.1.0/lib" />
++            </list>
++          </value>
++        </entry>
++      </option>
++    </properties>
++    <CLASSES>
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/async-2.11.0/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/boolean_selector-2.1.1/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/characters-1.3.0/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/clock-1.1.1/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/collection-1.18.0/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/cupertino_icons-1.0.8/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/fake_async-1.3.1/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/flutter_lints-3.0.2/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/fluttertoast-8.2.12/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/http-0.13.6/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/http_parser-4.0.2/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/intl-0.19.0/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/leak_tracker-10.0.4/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/leak_tracker_flutter_testing-3.0.3/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/leak_tracker_testing-3.0.1/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/lints-3.0.0/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/matcher-0.12.16+1/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/material_color_utilities-0.8.0/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/meta-1.12.0/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/nested-1.0.0/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/path-1.9.0/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/provider-6.1.2/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/source_span-1.10.0/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/stack_trace-1.11.1/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/stream_channel-2.1.2/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/string_scanner-1.2.0/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/term_glyph-1.2.1/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/test_api-0.7.0/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/typed_data-1.3.2/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/vector_math-2.1.4/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/vm_service-14.2.1/lib" />
++      <root url="file://$USER_HOME$/AppData/Local/Pub/Cache/hosted/pub.dev/web-1.1.0/lib" />
++      <root url="file://$USER_HOME$/OneDrive/Documents/FlutterDev/flutter/bin/cache/pkg/sky_engine/lib" />
++      <root url="file://$USER_HOME$/OneDrive/Documents/FlutterDev/flutter/packages/flutter/lib" />
++      <root url="file://$USER_HOME$/OneDrive/Documents/FlutterDev/flutter/packages/flutter_localizations/lib" />
++      <root url="file://$USER_HOME$/OneDrive/Documents/FlutterDev/flutter/packages/flutter_test/lib" />
++      <root url="file://$USER_HOME$/OneDrive/Documents/FlutterDev/flutter/packages/flutter_web_plugins/lib" />
++    </CLASSES>
++    <JAVADOC />
++    <SOURCES />
++  </library>
++</component>
+\ No newline at end of file

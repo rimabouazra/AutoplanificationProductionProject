@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
 import '../models/commande.dart';
 import '../providers/CommandeProvider.dart';
-
 
 class AddCommandePage extends StatefulWidget {
   @override
@@ -15,12 +13,16 @@ class AddCommandePage extends StatefulWidget {
 class _AddCommandePageState extends State<AddCommandePage> {
   final _formKey = GlobalKey<FormState>();
   final TextEditingController clientController = TextEditingController();
-  final TextEditingController quantiteController = TextEditingController();
-  final TextEditingController couleurController = TextEditingController();
-  final TextEditingController tailleController = TextEditingController();
   final TextEditingController conditionnementController = TextEditingController();
   DateTime? selectedDate;
   bool isLoading = false;
+
+  List<CommandeModele> modeles = [];
+  String? selectedModele;
+  final TextEditingController modeleController = TextEditingController();
+  final TextEditingController couleurController = TextEditingController();
+  final TextEditingController tailleController = TextEditingController();
+  final TextEditingController quantiteController = TextEditingController();
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -35,9 +37,54 @@ class _AddCommandePageState extends State<AddCommandePage> {
     }
   }
 
+  Widget _buildTextField(TextEditingController controller, String label, {bool isNumber = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextFormField(
+        controller: controller,
+        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+        decoration: InputDecoration(
+          labelText: label,
+          labelStyle: TextStyle(color: Color(0xFF004D40)),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+          filled: true,
+          fillColor: Color(0xFFE0F2F1),
+        ),
+        validator: (value) {
+          if (value!.isEmpty) return "Champ requis";
+          if (isNumber && int.tryParse(value) == null) return "Entrer un nombre valide";
+          if (isNumber && int.parse(value) <= 0) return "La quantité doit être positive";
+          return null;
+        },
+      ),
+    );
+  }
+
+  void _addModele() {
+    if (modeleController.text.isEmpty || couleurController.text.isEmpty || tailleController.text.isEmpty || quantiteController.text.isEmpty) {
+      Fluttertoast.showToast(msg: "Veuillez remplir tous les champs pour le modèle.");
+      return;
+    }
+
+    setState(() {
+      modeles.add(CommandeModele(
+        modele: modeleController.text,
+        taille: tailleController.text,
+        couleur: couleurController.text,
+        quantite: int.parse(quantiteController.text),
+      ));
+      // Debug: Print the list of models after adding
+      print("Modeles ajoutés: ${modeles.map((m) => m.toJson()).toList()}");
+      // Ne vide pas les champs après avoir ajouté le modèle
+    });
+  }
+
   Future<void> _submitCommande() async {
-    if (!_formKey.currentState!.validate() || selectedDate == null) {
-      Fluttertoast.showToast(msg: "Veuillez remplir tous les champs.");
+    if (selectedModele != null && couleurController.text.isNotEmpty && tailleController.text.isNotEmpty && quantiteController.text.isNotEmpty) {
+      _addModele(); // Automatically save the last model
+    }
+    if (!_formKey.currentState!.validate() || selectedDate == null || modeles.isEmpty) {
+      Fluttertoast.showToast(msg: "Veuillez remplir tous les champs et ajouter au moins un modèle.");
       return;
     }
 
@@ -45,22 +92,14 @@ class _AddCommandePageState extends State<AddCommandePage> {
 
     Commande newCommande = Commande(
       client: clientController.text,
-      modeles: [
-        CommandeModele(
-          modele: "Modèle par défaut", // À remplacer par un champ de saisie si nécessaire
-          taille: tailleController.text,
-          couleur: couleurController.text,
-          quantite: int.parse(quantiteController.text),
-        )
-      ],
+      modeles: modeles,
       conditionnement: conditionnementController.text,
       delais: selectedDate ?? DateTime.now(),
-      etat: "en attente", // Remplace "status" par "etat"
+      etat: "en attente",
     );
 
-
-
-
+    // **Debug Log**: Check if models are properly added before sending the request
+    print("Modeles envoyés: ${newCommande.modeles.map((m) => m.toJson()).toList()}");
 
     bool success = await Provider.of<CommandeProvider>(context, listen: false).addCommande(newCommande);
     setState(() => isLoading = false);
@@ -72,6 +111,7 @@ class _AddCommandePageState extends State<AddCommandePage> {
       Fluttertoast.showToast(msg: "Erreur lors de l'ajout de la commande.");
     }
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -85,7 +125,7 @@ class _AddCommandePageState extends State<AddCommandePage> {
           centerTitle: true,
           elevation: 0,
         ),
-        body: SingleChildScrollView(  // Make the entire form scrollable
+        body: SingleChildScrollView(
           child: Padding(
             padding: const EdgeInsets.all(20.0),
             child: Card(
@@ -100,9 +140,6 @@ class _AddCommandePageState extends State<AddCommandePage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _buildTextField(clientController, "Client"),
-                      _buildTextField(quantiteController, "Quantité", isNumber: true),
-                      _buildTextField(couleurController, "Couleur"),
-                      _buildTextField(tailleController, "Taille", isNumber: true),
                       _buildTextField(conditionnementController, "Conditionnement"),
                       SizedBox(height: 10),
                       ListTile(
@@ -112,6 +149,21 @@ class _AddCommandePageState extends State<AddCommandePage> {
                         trailing: Icon(Icons.calendar_today, color: Color(0xFF009688)),
                         onTap: () => _selectDate(context),
                       ),
+                      SizedBox(height: 20),
+                      Text("Ajouter un modèle", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      _buildModeleForm(),
+                      SizedBox(height: 20),
+                      ...modeles.map((modele) => ListTile(
+                        title: Text("${modele.modele} - taille : ${modele.taille} - couleur : ${modele.couleur} - ${modele.quantite} unités"),
+                        trailing: IconButton(
+                          icon: Icon(Icons.delete, color: Colors.red),
+                          onPressed: () {
+                            setState(() {
+                              modeles.remove(modele);
+                            });
+                          },
+                        ),
+                      )).toList(),
                       SizedBox(height: 20),
                       isLoading
                           ? CircularProgressIndicator(color: Color(0xFF4DB6AC))
@@ -149,26 +201,20 @@ class _AddCommandePageState extends State<AddCommandePage> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, {bool isNumber = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: controller,
-        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-        decoration: InputDecoration(
-          labelText: label,
-          labelStyle: TextStyle(color: Color(0xFF004D40)),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
-          filled: true,
-          fillColor: Color(0xFFE0F2F1),
+  Widget _buildModeleForm() {
+    return Column(
+      children: [
+        _buildTextField(modeleController, "Nom du Modèle"),
+        SizedBox(height: 10),
+        _buildTextField(couleurController, "Couleur"),
+        _buildTextField(tailleController, "Taille"),
+        _buildTextField(quantiteController, "Quantité", isNumber: true),
+        SizedBox(height: 10),
+        ElevatedButton(
+          onPressed: _addModele,
+          child: Text("Ajouter Modèle"),
         ),
-        validator: (value) {
-          if (value!.isEmpty) return "Champ requis";
-          if (isNumber && int.tryParse(value) == null) return "Entrer un nombre valide";
-          if (isNumber && int.parse(value) <= 0) return "La quantité doit être positive";
-          return null;
-        },
-      ),
+      ],
     );
   }
 }

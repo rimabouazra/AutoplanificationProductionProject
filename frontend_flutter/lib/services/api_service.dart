@@ -116,7 +116,7 @@ class ApiService {
     return response.statusCode == 201;
   }
 
-  // ✅ Récupérer toutes les Planifications
+  //  Récupérer toutes les Planifications
   static Future<List<Planification>> getPlanifications() async {
     final response = await http.get(Uri.parse('$baseUrl/planifications'));
     if (response.statusCode == 200) {
@@ -127,7 +127,7 @@ class ApiService {
     }
   }
 
-  // ✅ Ajouter une nouvelle Planification
+  // Ajouter une nouvelle Planification
   static Future<bool> addPlanification(Planification planification) async {
     final response = await http.post(
       Uri.parse('$baseUrl/planifications'),
@@ -137,7 +137,7 @@ class ApiService {
     return response.statusCode == 201;
   }
 
-  // ✅ Récupérer toutes les Commandes
+  // Récupérer toutes les Commandes
   static Future<List<Commande>> getCommandes() async {
     final response = await http.get(Uri.parse('$baseUrl/commandes'));
     if (response.statusCode == 200) {
@@ -148,7 +148,7 @@ class ApiService {
     }
   }
 
-  // ✅ Ajouter une nouvelle Commande
+  //  Ajouter une nouvelle Commande
   static Future<bool> addCommande(Commande commande) async {
     final response = await http.post(
       Uri.parse('$baseUrl/commandes/add'),
@@ -176,14 +176,14 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print("✅ Données reçues: $data"); // Vérification de la structure
+        print("Données reçues: $data"); // Vérification de la structure
         return data; // Retourne directement la liste des machines
       } else {
-        print("❌ Erreur API: ${response.body}");
+        print("Erreur API: ${response.body}");
         throw Exception("Échec du chargement des machines");
       }
     } catch (e) {
-      print("⚠️ Erreur lors de la récupération des machines: $e");
+      print(" Erreur lors de la récupération des machines: $e");
       throw Exception("Erreur de connexion");
     }
   }
