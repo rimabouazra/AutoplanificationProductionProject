@@ -60,17 +60,50 @@ class _CommandePageState extends State<CommandePage> {
 
 
   void deleteCommande(String id) {
-    // Implémentez la suppression via le provider
-    Provider.of<CommandeProvider>(context, listen: false).deleteCommande(id);
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Confirmation de suppression'),
+          content: const Text('Voulez-vous vraiment supprimer cette commande ?'),
+          actions: [
+            TextButton(
+              onPressed: () {
+                // Annuler la suppression
+                Navigator.pop(context);
+              },
+              child: const Text('Non'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Supprimer la commande via le provider
+                Provider.of<CommandeProvider>(context, listen: false).deleteCommande(id);
+                Navigator.pop(context);
+              },
+              child: const Text('Oui'),
+            ),
+          ],
+        );
+      },
+    );
   }
+
 
   void editCommande(Commande commande) {
     TextEditingController clientController = TextEditingController(text: commande.client);
 
-    // Calculer la somme des quantités à partir de la liste des modèles
-    int totalQuantite = commande.modeles.fold(0, (sum, modele) => sum + modele.quantite);
+    // Création des contrôleurs pour les champs modifiables (taille, couleur, quantité)
+    List<TextEditingController> tailleControllers = [];
+    List<TextEditingController> couleurControllers = [];
+    List<TextEditingController> quantiteControllers = [];
+    List<CommandeModele> updatedModeles = List.from(commande.modeles); // Conserver les modèles existants
 
-    TextEditingController quantiteController = TextEditingController(text: totalQuantite.toString());
+    // Initialiser les contrôleurs pour les modèles existants
+    for (var modele in commande.modeles) {
+      tailleControllers.add(TextEditingController(text: modele.taille));
+      couleurControllers.add(TextEditingController(text: modele.couleur));
+      quantiteControllers.add(TextEditingController(text: modele.quantite.toString()));
+    }
 
     showDialog(
       context: context,
@@ -83,23 +116,61 @@ class _CommandePageState extends State<CommandePage> {
               TextField(
                 controller: clientController,
                 decoration: const InputDecoration(labelText: 'Client'),
+                enabled: false, // Désactiver le champ client si non modifiable
               ),
-              TextField(
-                controller: quantiteController,
-                decoration: const InputDecoration(labelText: 'Quantité totale'),
-                keyboardType: TextInputType.number,
-                enabled: false, // Empêche la modification directe
+              ...List.generate(updatedModeles.length, (index) {
+                return Column(
+                  children: [
+                    TextField(
+                      controller: tailleControllers[index],
+                      decoration: const InputDecoration(labelText: 'Taille'),
+                    ),
+                    TextField(
+                      controller: couleurControllers[index],
+                      decoration: const InputDecoration(labelText: 'Couleur'),
+                    ),
+                    TextField(
+                      controller: quantiteControllers[index],
+                      decoration: const InputDecoration(labelText: 'Quantité'),
+                      keyboardType: TextInputType.number,
+                    ),
+                  ],
+                );
+              }),
+              TextButton(
+                onPressed: () {
+                  // Ajouter un nouveau modèle à la commande
+                  setState(() {
+                    updatedModeles.add(CommandeModele(
+                      modele: "Nouveau Modèle", // Ajout d'un modèle vide
+                      taille: "M", // Valeur par défaut
+                      couleur: "Blanc", // Valeur par défaut
+                      quantite: 1, // Quantité par défaut
+                    ));
+                    tailleControllers.add(TextEditingController(text: "M"));
+                    couleurControllers.add(TextEditingController(text: "Blanc"));
+                    quantiteControllers.add(TextEditingController(text: "1"));
+                  });
+                },
+                child: const Text('Ajouter un modèle'),
               ),
             ],
           ),
           actions: [
             TextButton(
               onPressed: () {
+                // Mettre à jour les modèles de la commande
+                for (int i = 0; i < updatedModeles.length; i++) {
+                  updatedModeles[i].taille = tailleControllers[i].text;
+                  updatedModeles[i].couleur = couleurControllers[i].text;
+                  updatedModeles[i].quantite = int.parse(quantiteControllers[i].text);
+                }
+
                 // Mettre à jour la commande via le provider
                 final updatedCommande = Commande(
                   id: commande.id,
-                  client: clientController.text,
-                  modeles: commande.modeles, // On garde les modèles existants
+                  client: commande.client, // Le client reste inchangé
+                  modeles: updatedModeles,
                   conditionnement: commande.conditionnement,
                   delais: commande.delais,
                   etat: commande.etat,
@@ -115,6 +186,7 @@ class _CommandePageState extends State<CommandePage> {
       },
     );
   }
+
 
   void navigateToAddCommande() {
     Navigator.push(
@@ -142,7 +214,6 @@ class _CommandePageState extends State<CommandePage> {
                   buildFilters(), // Ajout des filtres ici
                   const SizedBox(height: 10),
                   buildCommandesTable(),
-                  buildPagination(),
                 ],
               ),
             ),
@@ -238,16 +309,7 @@ class _CommandePageState extends State<CommandePage> {
     );
   }
 
-  Widget buildPagination() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        TextButton(onPressed: () {}, child: const Text("< AVANT")),
-        const SizedBox(width: 10),
-        ...List.generate(3, (index) => TextButton(onPressed: () {}, child: Text("0${index + 1}"))),
-        const SizedBox(width: 10),
-        TextButton(onPressed: () {}, child: const Text("APRES >")),
-      ],
-    );
-  }
+
+
+
 }

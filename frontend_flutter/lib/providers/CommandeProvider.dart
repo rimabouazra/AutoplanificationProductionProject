@@ -1,8 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import '../models/commande.dart'; // Gardez uniquement cette importation
-
+import '../models/commande.dart'; 
 class CommandeProvider with ChangeNotifier {
   final String _baseUrl = "http://localhost:5000/api/commandes";
 

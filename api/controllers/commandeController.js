@@ -1,6 +1,8 @@
 const Commande = require("../models/Commande");
 const Salle = require("../models/Salle");
 const Machine = require("../models/Machine");
+const Modele = require("../models/modele");
+
 
 exports.ajouterCommande = async (req, res) => {
     try {
@@ -34,13 +36,13 @@ exports.ajouterCommande = async (req, res) => {
         }
 
         // Vérifier que chaque modèle existe avant de l'ajouter
-        for (let item of modeles) {
-            console.log("Vérification du modèle :", item.modele);
-            const modeleExist = await Modele.findById(item.modele);
-            if (!modeleExist) {
-                return res.status(400).json({ message: `Modèle non trouvé: ${item.modele}` });
-            }
-        }
+         for (let item of modeles) {
+                    const modeleExist = await Modele.findOne({ nom: item.modele }); // Trouver par nom
+                    if (!modeleExist) {
+                        return res.status(400).json({ message: `Modèle non trouvé: ${item.modele}` });
+                    }
+                    item.modele = modeleExist._id; // Remplacer le nom par l'ID
+                }
 
         // Création de la commande avec les modèles et leurs propriétés spécifiques
         const nouvelleCommande = new Commande({
