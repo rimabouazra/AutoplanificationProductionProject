@@ -7,7 +7,7 @@ router.post("/add", async (req, res) => {
     try {
         const { nom, tailles } = req.body;
         const newModele = new Modele({ nom, tailles });
-        await newModele.save();
+        await newModele.save(); 
         res.status(201).json(newModele);
     } catch (error) {
         res.status(500).json({ message: "Erreur serveur", error: error.message });
