@@ -6,6 +6,7 @@ const Modele = require("../models/modele");
 
 exports.ajouterCommande = async (req, res) => {
     try {
+
         console.log("Données reçues :", JSON.stringify(req.body, null, 2)); //Vérifier les données reçues
 
         const { client, conditionnement, delais, etat, salleAffectee, machinesAffectees, modeles } = req.body;
