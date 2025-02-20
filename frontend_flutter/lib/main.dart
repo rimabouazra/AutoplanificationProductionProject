@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'providers/CommandeProvider.dart';
+import 'package:frontend/providers/modeleProvider.dart';
 import 'views/admin_home_page.dart';
 
 void main() {
@@ -9,6 +10,8 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => CommandeProvider()),
+        ChangeNotifierProvider(create: (context) => ModeleProvider()..fetchModeles()),
+
       ],
       child: MyApp(),
     ),

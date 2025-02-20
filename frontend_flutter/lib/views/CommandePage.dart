@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import '../providers/modeleProvider.dart';
 import 'AddCommandePage.dart'; // Import de la page d'ajout de commande
 import 'package:provider/provider.dart';
 import '../providers/CommandeProvider.dart';
@@ -60,61 +61,151 @@ class _CommandePageState extends State<CommandePage> {
 
 
   void deleteCommande(String id) {
-    // Implémentez la suppression via le provider
-    Provider.of<CommandeProvider>(context, listen: false).deleteCommande(id);
-  }
-
-  void editCommande(Commande commande) {
-    TextEditingController clientController = TextEditingController(text: commande.client);
-
-    // Calculer la somme des quantités à partir de la liste des modèles
-    int totalQuantite = commande.modeles.fold(0, (sum, modele) => sum + modele.quantite);
-
-    TextEditingController quantiteController = TextEditingController(text: totalQuantite.toString());
-
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Modifier Commande'),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: clientController,
-                decoration: const InputDecoration(labelText: 'Client'),
-              ),
-              TextField(
-                controller: quantiteController,
-                decoration: const InputDecoration(labelText: 'Quantité totale'),
-                keyboardType: TextInputType.number,
-                enabled: false, // Empêche la modification directe
-              ),
-            ],
-          ),
+          title: const Text('Confirmation de suppression'),
+          content: const Text('Voulez-vous vraiment supprimer cette commande ?'),
           actions: [
             TextButton(
               onPressed: () {
-                // Mettre à jour la commande via le provider
-                final updatedCommande = Commande(
-                  id: commande.id,
-                  client: clientController.text,
-                  modeles: commande.modeles, // On garde les modèles existants
-                  conditionnement: commande.conditionnement,
-                  delais: commande.delais,
-                  etat: commande.etat,
-                );
-
-                Provider.of<CommandeProvider>(context, listen: false).updateCommande(updatedCommande);
+                // Annuler la suppression
                 Navigator.pop(context);
               },
-              child: const Text('Enregistrer'),
+              child: const Text('Non'),
+            ),
+            TextButton(
+              onPressed: () {
+                // Supprimer la commande via le provider
+                Provider.of<CommandeProvider>(context, listen: false).deleteCommande(id);
+                Navigator.pop(context);
+              },
+              child: const Text('Oui'),
             ),
           ],
         );
       },
     );
   }
+
+
+  void editCommande(Commande commande) {
+    TextEditingController clientController = TextEditingController(text: commande.client);
+
+    // Initialiser les contrôleurs pour chaque modèle
+    List<TextEditingController> tailleControllers = [];
+    List<TextEditingController> couleurControllers = [];
+    List<TextEditingController> quantiteControllers = [];
+
+    List<CommandeModele> updatedModeles = List.from(commande.modeles);
+
+    for (var modele in commande.modeles) {
+      tailleControllers.add(TextEditingController(text: modele.taille));
+      couleurControllers.add(TextEditingController(text: modele.couleur));
+      quantiteControllers.add(TextEditingController(text: modele.quantite.toString()));
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: const Text('Modifier Commande'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: clientController,
+                      decoration: const InputDecoration(labelText: 'Client'),
+                      enabled: false,
+                    ),
+                    ...List.generate(updatedModeles.length, (index) {
+                      return Column(
+                        children: [
+                          TextField(
+                            controller: tailleControllers[index],
+                            decoration: const InputDecoration(labelText: 'Taille'),
+                          ),
+                          TextField(
+                            controller: couleurControllers[index],
+                            decoration: const InputDecoration(labelText: 'Couleur'),
+                          ),
+                          TextField(
+                            controller: quantiteControllers[index],
+                            decoration: const InputDecoration(labelText: 'Quantité'),
+                            keyboardType: TextInputType.number,
+                          ),
+                          const Divider(),
+                        ],
+                      );
+                    }),
+                    TextButton(
+                      onPressed: () {
+                        setState(() {
+                          updatedModeles.add(CommandeModele(
+                            modele: "", // L'utilisateur saisira le modèle
+                            taille: "",
+                            couleur: "",
+                            quantite: 0,
+                          ));
+                          tailleControllers.add(TextEditingController());
+                          couleurControllers.add(TextEditingController());
+                          quantiteControllers.add(TextEditingController());
+                        });
+                      },
+                      child: const Text('Ajouter un modèle'),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Annuler'),
+                ),
+                TextButton(
+                  onPressed: () {
+                    for (int i = 0; i < updatedModeles.length; i++) {
+                      updatedModeles[i].taille = tailleControllers[i].text;
+                      updatedModeles[i].couleur = couleurControllers[i].text;
+                      updatedModeles[i].quantite = int.tryParse(quantiteControllers[i].text) ?? 1;
+                    }
+
+                    // Mise à jour de la commande
+                    Provider.of<CommandeProvider>(context, listen: false).updateCommande(
+                      commande.id!,
+                      updatedModeles,
+                    ).then((success) {
+                      if (success) {
+                        // Si la mise à jour dans la base de données est réussie,
+                        // mettre à jour localement sans recharger toute la liste
+                        Commande updatedCommande = Provider.of<CommandeProvider>(context, listen: false)
+                            .commandes
+                            .firstWhere((cmd) => cmd.id == commande.id!);
+
+                        // Remplacer la commande modifiée dans la liste locale
+                        updatedCommande.modeles = updatedModeles;
+
+                        // Notifier les écouteurs pour mettre à jour l'UI
+                        Provider.of<CommandeProvider>(context, listen: false).notifyListeners();
+
+                        Navigator.pop(context);
+                      }
+                    });
+                  },
+                  child: const Text('Enregistrer'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
 
   void navigateToAddCommande() {
     Navigator.push(
@@ -142,7 +233,6 @@ class _CommandePageState extends State<CommandePage> {
                   buildFilters(), // Ajout des filtres ici
                   const SizedBox(height: 10),
                   buildCommandesTable(),
-                  buildPagination(),
                 ],
               ),
             ),
@@ -204,33 +294,63 @@ class _CommandePageState extends State<CommandePage> {
         children: filteredCommandes.map((commande) {
           int totalQuantite = commande.modeles.fold(0, (sum, m) => sum + m.quantite);
           return Card(
-            child: ListTile(
-              leading: Text(commande.id ?? "N/A"), // Afficher l'ID de la commande
-              title: Text(commande.client),
-              subtitle: Text(
-                commande.delais != null
-                    ? "${DateFormat('dd/MM/yyyy').format(commande.delais!)} - $totalQuantite unités"
-                    : "Date non définie - $totalQuantite unités",
-              ),
+            elevation: 3,
+            child: ExpansionTile(
+              leading: Text(commande.id ?? "N/A"), // TO DO : change to commande ref not ID
+              title: Text(commande.client, style: const TextStyle(fontWeight: FontWeight.bold)),
+
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    commande.etat, // Remplace status par etat
+                    commande.etat,
                     style: TextStyle(
                       color: getStatusColor(commande.etat),
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.delete),
-                    onPressed: () => deleteCommande(commande.id!),
+                    icon: const Icon(Icons.edit, color: Colors.blue),
+                    onPressed: () => editCommande(commande),
                   ),
                   IconButton(
-                    icon: const Icon(Icons.edit),
-                    onPressed: () => editCommande(commande),
+                    icon: const Icon(Icons.delete, color: Colors.red),
+                    onPressed: () => deleteCommande(commande.id!),
                   ),
                 ],
               ),
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text("Détails de la commande:", style: TextStyle(fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 5),
+                      Text("Client: ${commande.client}"),
+                      Text("Conditionnement: ${commande.conditionnement}"),
+                      Text("Salle affectée: ${commande.salleAffectee ?? 'Non assignée'}"),
+                      Text("Machines affectées: ${commande.machinesAffectees?.join(', ') ?? 'Aucune'}"),
+                      const SizedBox(height: 10),
+                      const Text("Modèles:", style: TextStyle(fontWeight: FontWeight.bold)),
+                      // Liste des modèles
+                      Column(
+                        children: commande.modeles.map((commandeModele) {
+                          // Utiliser modeleMap pour obtenir le nom du modèle
+                          final modeleNom = Provider.of<ModeleProvider>(context)
+                              .modeleMap[commandeModele.modele]?.nom ?? "Non défini";
+
+                          return ListTile(
+                            leading: const Icon(Icons.label, color: Colors.purple),
+                            title: Text("Modèle: $modeleNom"),  // Affiche le nom du modèle
+                            subtitle: Text("Taille: ${commandeModele.taille}, Couleur: ${commandeModele.couleur}, Quantité: ${commandeModele.quantite}"),
+                          );
+                        }).toList(),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           );
         }).toList(),
@@ -238,16 +358,9 @@ class _CommandePageState extends State<CommandePage> {
     );
   }
 
-  Widget buildPagination() {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        TextButton(onPressed: () {}, child: const Text("< AVANT")),
-        const SizedBox(width: 10),
-        ...List.generate(3, (index) => TextButton(onPressed: () {}, child: Text("0${index + 1}"))),
-        const SizedBox(width: 10),
-        TextButton(onPressed: () {}, child: const Text("APRES >")),
-      ],
-    );
-  }
+
+
+
+
+
 }

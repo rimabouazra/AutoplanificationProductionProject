@@ -6,4 +6,7 @@ const ModeleSchema = new mongoose.Schema({
     derives: [{ type: mongoose.Schema.Types.ObjectId, ref: "Modele" }] // Référence aux dérivés futurs
 });
 
-module.exports = mongoose.model("Modele", ModeleSchema);
+// Vérifie si le modèle existe déjà avant de le définir
+const Modele = mongoose.models.Modele || mongoose.model("Modele", ModeleSchema);
+
+module.exports = Modele;

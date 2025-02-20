@@ -1,11 +1,11 @@
 class CommandeModele {
-  String modele;
+  String? modele; // Référence à un Modele
   String taille;
   String couleur;
   int quantite;
 
   CommandeModele({
-    required this.modele,
+    this.modele,
     required this.taille,
     required this.couleur,
     required this.quantite,
@@ -13,10 +13,10 @@ class CommandeModele {
 
   factory CommandeModele.fromJson(Map<String, dynamic> json) {
     return CommandeModele(
-      modele: json['modele'] ?? '',
-      taille: json['taille'] ?? '',
-      couleur: json['couleur'] ?? '',
-      quantite: json['quantite'] ?? 0,
+      modele: json['modele'],
+      taille: json['taille'],
+      couleur: json['couleur'],
+      quantite: json['quantite'],
     );
   }
 
@@ -29,6 +29,7 @@ class CommandeModele {
     };
   }
 }
+
 
 class Commande {
   String? id;

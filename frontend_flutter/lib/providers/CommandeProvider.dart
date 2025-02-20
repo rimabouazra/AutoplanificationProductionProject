@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import '../models/commande.dart'; // Gardez uniquement cette importation
-
+import '../models/commande.dart';
+import '../models/modele.dart';
 class CommandeProvider with ChangeNotifier {
   final String _baseUrl = "http://localhost:5000/api/commandes";
 
@@ -10,38 +10,82 @@ class CommandeProvider with ChangeNotifier {
 
   List<Commande> get commandes => _commandes;
 
-  Future<bool> updateCommande(Commande commande) async {
+  Future<bool> updateCommande(String commandeId, List<CommandeModele> updatedModeles) async {
     try {
+      // Récupérer la commande existante dans la liste locale
+      Commande? commandeExistante;
+      try {
+        commandeExistante = _commandes.firstWhere((cmd) => cmd.id == commandeId);
+      } catch (e) {
+        commandeExistante = null;
+      }
+
+      if (commandeExistante == null) {
+        print("Commande non trouvée");
+        return false;
+      }
+
+      // Mise à jour des modèles localement
+      commandeExistante.modeles = updatedModeles;
+
+      // Envoi de la mise à jour au backend
       final response = await http.put(
-        Uri.parse("$_baseUrl/${commande.id}"),
+        Uri.parse("$_baseUrl/$commandeId"),
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode(commande.toJson()),
+        body: jsonEncode({
+          "client": commandeExistante.client,
+          "modeles": commandeExistante.modeles.map((modele) => {
+            "modele": modele.modele, // Ensure the modele ID is passed
+            "taille": modele.taille,
+            "couleur": modele.couleur,
+            "quantite": modele.quantite,
+          }).toList(),
+          "conditionnement": commandeExistante.conditionnement,
+          "delais": commandeExistante.delais?.toIso8601String(),
+          "etat": commandeExistante.etat,
+          "salleAffectee": commandeExistante.salleAffectee,
+          "machinesAffectees": commandeExistante.machinesAffectees,
+        }),
       );
+
+
       if (response.statusCode == 200) {
-        fetchCommandes(); // Recharger les commandes après mise à jour
+        // La commande a été mise à jour avec succès, on met à jour localement sans recharger
+        _commandes = _commandes.map((commande) {
+          return commande.id == commandeId ? commandeExistante! : commande;
+        }).toList();
+
+        notifyListeners(); // Notifier les widgets écoutant pour qu'ils se mettent à jour
         return true;
       } else {
+        print("Erreur HTTP ${response.statusCode}: ${response.body}");
         return false;
       }
     } catch (error) {
+      print("Erreur updateCommande: $error");
       return false;
     }
   }
-
 
   Future<bool> deleteCommande(String id) async {
     try {
       final response = await http.delete(Uri.parse("$_baseUrl/$id"));
+
       if (response.statusCode == 200) {
-        fetchCommandes(); // Recharger les commandes après suppression
+        // Supprimer la commande localement sans recharger toute la liste
+        _commandes.removeWhere((c) => c.id == id);
+        notifyListeners();
         return true;
       } else {
+        print("Erreur suppression: ${response.body}");
         return false;
       }
     } catch (error) {
+      print("Erreur réseau deleteCommande: $error");
       return false;
     }
   }
+
 
   Future<bool> addCommande(Commande commande) async {
     final response = await http.post(
