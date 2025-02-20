@@ -13,6 +13,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
+    Center(child: Text('Statistique en développement')), // Placeholder
     Center(child: Text('Planification en développement')), // Placeholder
     Center(child: Text('Utilisateurs en développement')), // Placeholder
     Center(child: Text('Stock en développement')), // Placeholder
@@ -38,6 +39,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
       bottomNavigationBar:
       BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
+          BottomNavigationBarItem(
+            icon: Icon(Icons.stacked_line_chart),
+            label: 'Statistique',
+          ),
           BottomNavigationBarItem(
             icon: Icon(Icons.schedule),
             label: 'Planification',
