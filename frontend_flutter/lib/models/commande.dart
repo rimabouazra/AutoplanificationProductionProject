@@ -1,8 +1,8 @@
 class CommandeModele {
   String? modele; // Référence à un Modele
   String taille;
-  String couleur; // 🔥 Couleur spécifique à cette commande
-  int quantite; // 🔥 Quantité spécifique à cette commande
+  String couleur;
+  int quantite;
 
   CommandeModele({
     this.modele,
