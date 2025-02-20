@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/providers/salleProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'providers/CommandeProvider.dart';
@@ -11,6 +12,7 @@ void main() {
       providers: [
         ChangeNotifierProvider(create: (_) => CommandeProvider()),
         ChangeNotifierProvider(create: (context) => ModeleProvider()..fetchModeles()),
+        ChangeNotifierProvider(create: (context) => SalleProvider()),
 
       ],
       child: MyApp(),

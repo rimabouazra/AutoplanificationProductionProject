@@ -112,14 +112,28 @@ class ApiService {
   }
 
   // Ajouter une nouvelle Salle
-  static Future<bool> addSalle(Salle salle) async {
+  static Future<bool> ajouterSalle(String nom, String type) async {
     final response = await http.post(
       Uri.parse('$baseUrl/salles'),
       headers: {"Content-Type": "application/json"},
-      body: jsonEncode(salle.toJson()),
+      body: jsonEncode({"nom": nom, "type": type}),
     );
     return response.statusCode == 201;
   }
+
+  static Future<bool> supprimerSalle(String id) async {
+  final response = await http.delete(Uri.parse('$baseUrl/salles/$id'));
+  return response.statusCode == 200;
+}
+
+  static Future<bool> modifierSalle(String id, String nom) async {
+  final response = await http.put(
+    Uri.parse('$baseUrl/salles/$id'),
+    headers: {"Content-Type": "application/json"},
+    body: jsonEncode({"nom": nom}),
+  );
+  return response.statusCode == 200;
+}
 
   // Récupérer tous les Utilisateurs
   static Future<List<User>> getUsers() async {

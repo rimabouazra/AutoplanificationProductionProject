@@ -20,8 +20,7 @@ class _SalleListPageState extends State<SalleListPage> {
   }
 
   Future<void> fetchSalles() async {
-    final response =
-        await http.get(Uri.parse('http://localhost:5000/api/salles'));
+    final response = await http.get(Uri.parse('http://localhost:5000/api/salles'));
 
     if (response.statusCode == 200) {
       setState(() {
@@ -32,6 +31,131 @@ class _SalleListPageState extends State<SalleListPage> {
     }
   }
 
+  // Ajouter une salle
+  Future<void> ajouterSalle(String nom, String type) async {
+    final response = await http.post(
+      Uri.parse('http://localhost:5000/api/salles'),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"nom": nom, "type": type}),
+    );
+
+    if (response.statusCode == 201) {
+      fetchSalles(); // Rafraîchir la liste après l'ajout
+    } else {
+      print("Erreur lors de l'ajout de la salle: ${response.body}"); //DEBUG
+      throw Exception('Erreur lors de l\'ajout de la salle');
+    }
+  }
+
+  // Modifier une salle
+  Future<void> modifierSalle(String id, String nouveauNom) async {
+    final response = await http.put(
+      Uri.parse('http://localhost:5000/api/salles/$id'),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"nom": nouveauNom}),
+    );
+
+    if (response.statusCode == 200) {
+      fetchSalles(); // Rafraîchir la liste après la modification
+    } else {
+      throw Exception('Erreur lors de la modification de la salle');
+    }
+  }
+
+  // Supprimer une salle
+  Future<void> supprimerSalle(String id) async {
+    final response = await http.delete(Uri.parse('http://localhost:5000/api/salles/$id'));
+
+    if (response.statusCode == 200) {
+      fetchSalles(); // Rafraîchir la liste après la suppression
+    } else {
+      throw Exception('Erreur lors de la suppression de la salle');
+    }
+  }
+
+  // Afficher le dialogue pour ajouter/modifier une salle
+void afficherDialogueSalle({String? id, String? nomActuel, String? typeActuel, bool isModification = false}) {
+  TextEditingController nomController = TextEditingController(text: nomActuel ?? "");
+  String selectedType = typeActuel ?? "noir"; // Valeur par défaut
+
+  showDialog(
+    context: context,
+    builder: (context) {
+      return AlertDialog(
+        title: Text(isModification ? "Modifier la salle" : "Ajouter une salle"),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: nomController,
+              decoration: const InputDecoration(labelText: "Nom de la salle"),
+            ),
+            const SizedBox(height: 10), // Espacement
+            DropdownButtonFormField<String>(
+              value: selectedType,
+              items: ["noir", "blanc"].map((String type) {
+                return DropdownMenuItem<String>(
+                  value: type,
+                  child: Text(type),
+                );
+              }).toList(),
+              onChanged: (newValue) {
+                selectedType = newValue!;
+              },
+              decoration: const InputDecoration(labelText: "Type de salle"),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Annuler"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (isModification) {
+                modifierSalle(id!, nomController.text);
+              } else {
+                ajouterSalle(nomController.text, selectedType);
+              }
+              Navigator.pop(context);
+            },
+            child: Text(isModification ? "Modifier" : "Ajouter"),
+          ),
+        ],
+      );
+    },
+  );
+}
+
+
+  // Afficher le dialogue de confirmation de suppression
+  void afficherConfirmationSuppression(String id) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Confirmer la suppression"),
+          content: const Text("Voulez-vous vraiment supprimer cette salle ?"),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("Annuler"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                supprimerSalle(id);
+                Navigator.pop(context);
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+              child: const Text("Supprimer"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -39,6 +163,12 @@ class _SalleListPageState extends State<SalleListPage> {
         title: const Text('Liste des Salles'),
         backgroundColor: const Color.fromARGB(255, 35, 99, 132),
         centerTitle: true,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.add, color: Colors.white),
+            onPressed: () => afficherDialogueSalle(), // Ajouter une salle
+          ),
+        ],
       ),
       body: Container(
         decoration: BoxDecoration(
@@ -51,7 +181,7 @@ class _SalleListPageState extends State<SalleListPage> {
         child: salles.isEmpty
             ? const Center(child: CircularProgressIndicator())
             : ListView.builder(
-                padding: EdgeInsets.all(10),
+                padding: const EdgeInsets.all(10),
                 itemCount: salles.length,
                 itemBuilder: (context, index) {
                   final salle = salles[index];
@@ -61,23 +191,37 @@ class _SalleListPageState extends State<SalleListPage> {
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: ListTile(
-                      leading: Icon(Icons.meeting_room, color: const Color.fromARGB(255, 116, 162, 185)),
+                      leading: const Icon(Icons.meeting_room, color: Color.fromARGB(255, 116, 162, 185)),
                       title: Text(
                         salle['nom'],
-                        style: TextStyle(fontWeight: FontWeight.bold),
+                        style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       subtitle: Text(
-                        'Capacité: ${salle['capacité']}',
+                        'Capacité: ${salle['capacité'] ?? "Non spécifiée"}',
                         style: TextStyle(color: Colors.grey[600]),
                       ),
-                      trailing: Icon(Icons.arrow_forward_ios,
-                          color: Colors.blueGrey),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            icon: const Icon(Icons.edit, color: Colors.orange),
+                            onPressed: () => afficherDialogueSalle(
+                              id: salle['_id'],
+                              nomActuel: salle['nom'],
+                              isModification: true,
+                            ),
+                          ),
+                          IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () => afficherConfirmationSuppression(salle['_id']),
+                          ),
+                        ],
+                      ),
                       onTap: () {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) =>
-                                MachinesParSalleView(salleId: salle['_id']),
+                            builder: (context) => MachinesParSalleView(salleId: salle['_id']),
                           ),
                         );
                       },
