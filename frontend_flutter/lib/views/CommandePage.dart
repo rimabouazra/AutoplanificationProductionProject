@@ -180,8 +180,18 @@ class _CommandePageState extends State<CommandePage> {
                       updatedModeles,
                     ).then((success) {
                       if (success) {
-                        // Rafraîchir la liste des commandes
-                        Provider.of<CommandeProvider>(context, listen: false).fetchCommandes();
+                        // Si la mise à jour dans la base de données est réussie,
+                        // mettre à jour localement sans recharger toute la liste
+                        Commande updatedCommande = Provider.of<CommandeProvider>(context, listen: false)
+                            .commandes
+                            .firstWhere((cmd) => cmd.id == commande.id!);
+
+                        // Remplacer la commande modifiée dans la liste locale
+                        updatedCommande.modeles = updatedModeles;
+
+                        // Notifier les écouteurs pour mettre à jour l'UI
+                        Provider.of<CommandeProvider>(context, listen: false).notifyListeners();
+
                         Navigator.pop(context);
                       }
                     });

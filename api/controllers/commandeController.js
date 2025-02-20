@@ -108,7 +108,7 @@ exports.getCommandesBySalle = async (req, res) => {
 
 exports.updateCommande = async (req, res) => {
     try {
-        const { client, quantite, couleur, taille, conditionnement, delais, etat, salleAffectee, machineAffectee } = req.body;
+        const { client, quantite, couleur, taille, conditionnement, delais, etat, salleAffectee, machineAffectee, modeles } = req.body;
         const commande = await Commande.findById(req.params.id);
 
         if (!commande) {
@@ -123,24 +123,17 @@ exports.updateCommande = async (req, res) => {
         if (conditionnement) commande.conditionnement = conditionnement;
         if (delais) commande.delais = delais;
         if (etat) commande.etat = etat;
-        if (salleAffectee) {
-            const salleExistante = await Salle.findById(salleAffectee);
-            if (!salleExistante) {
-                return res.status(404).json({ message: "Salle non trouvée" });
-            }
-            commande.salleAffectee = salleAffectee;
-        }
-        if (machineAffectee) {
-            const machineExistante = await Machine.findById(machineAffectee);
-            if (!machineExistante) {
-                return res.status(404).json({ message: "Machine non trouvée" });
-            }
-            commande.machineAffectee = machineAffectee;
-        }
+        if (salleAffectee) commande.salleAffectee = salleAffectee;
+        if (machineAffectee) commande.machineAffectee = machineAffectee;
+        if (modeles) commande.modeles = modeles;  // Assurez-vous que les modèles sont bien mis à jour.
+
+        console.log("Commande après mise à jour:", commande);
 
         await commande.save();
+
         res.status(200).json(commande);
     } catch (error) {
+        console.error("Erreur lors de la mise à jour de la commande:", error);
         res.status(500).json({ message: "Erreur lors de la mise à jour de la commande", error });
     }
 };

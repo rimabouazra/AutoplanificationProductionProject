@@ -12,7 +12,7 @@ class CommandeProvider with ChangeNotifier {
 
   Future<bool> updateCommande(String commandeId, List<CommandeModele> updatedModeles) async {
     try {
-      // Récupérer la commande existante
+      // Récupérer la commande existante dans la liste locale
       Commande? commandeExistante;
       try {
         commandeExistante = _commandes.firstWhere((cmd) => cmd.id == commandeId);
@@ -25,18 +25,37 @@ class CommandeProvider with ChangeNotifier {
         return false;
       }
 
-      // Mise à jour des modèles
+      // Mise à jour des modèles localement
       commandeExistante.modeles = updatedModeles;
 
-      // Envoyer la mise à jour au backend
+      // Envoi de la mise à jour au backend
       final response = await http.put(
         Uri.parse("$_baseUrl/$commandeId"),
         headers: {"Content-Type": "application/json"},
-        body: jsonEncode(commandeExistante.toJson()), // Ensure updated models are included
+        body: jsonEncode({
+          "client": commandeExistante.client,
+          "modeles": commandeExistante.modeles.map((modele) => {
+            "modele": modele.modele, // Ensure the modele ID is passed
+            "taille": modele.taille,
+            "couleur": modele.couleur,
+            "quantite": modele.quantite,
+          }).toList(),
+          "conditionnement": commandeExistante.conditionnement,
+          "delais": commandeExistante.delais?.toIso8601String(),
+          "etat": commandeExistante.etat,
+          "salleAffectee": commandeExistante.salleAffectee,
+          "machinesAffectees": commandeExistante.machinesAffectees,
+        }),
       );
 
+
       if (response.statusCode == 200) {
-        await fetchCommandes(); // Recharger les commandes après mise à jour
+        // La commande a été mise à jour avec succès, on met à jour localement sans recharger
+        _commandes = _commandes.map((commande) {
+          return commande.id == commandeId ? commandeExistante! : commande;
+        }).toList();
+
+        notifyListeners(); // Notifier les widgets écoutant pour qu'ils se mettent à jour
         return true;
       } else {
         print("Erreur HTTP ${response.statusCode}: ${response.body}");
