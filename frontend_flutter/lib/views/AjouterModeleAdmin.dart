@@ -14,6 +14,7 @@ class AjouterModeleAdmin extends StatefulWidget {
 class _AjouterModeleAdminState extends State<AjouterModeleAdmin> {
   List<Modele> modeles = [];
   Modele? selectedModele;
+  String? selectedModeleId;
   String? selectedTaille;
   bool isLoading = false;
 

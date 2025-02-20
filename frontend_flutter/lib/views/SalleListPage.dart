@@ -37,13 +37,13 @@ class _SalleListPageState extends State<SalleListPage> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Liste des Salles'),
-        backgroundColor: Colors.blueGrey[900],
+        backgroundColor: const Color.fromARGB(255, 35, 99, 132),
         centerTitle: true,
       ),
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.blueGrey.shade900, Colors.blueGrey.shade600],
+            colors: [Colors.blueGrey.shade900, const Color.fromARGB(255, 69, 129, 157)],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -61,7 +61,7 @@ class _SalleListPageState extends State<SalleListPage> {
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: ListTile(
-                      leading: Icon(Icons.meeting_room, color: Colors.blueGrey),
+                      leading: Icon(Icons.meeting_room, color: const Color.fromARGB(255, 116, 162, 185)),
                       title: Text(
                         salle['nom'],
                         style: TextStyle(fontWeight: FontWeight.bold),

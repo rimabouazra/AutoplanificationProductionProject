@@ -14,22 +14,24 @@ class MachineProvider with ChangeNotifier {
 
   try {
     final response = await http.get(Uri.parse(url));
-    print("📥 Code réponse: ${response.statusCode}");
-    print("📄 Réponse: ${response.body}");
+    print("Code réponse: ${response.statusCode}");
+    print("Réponse: ${response.body}");
 
     if (response.statusCode == 200) {
       final data = json.decode(response.body);
-      print("✅ Machines reçues: $data");
+      print("Machines reçues: $data");
 
-      _machines = (data as List).map((machine) => Machine.fromJson(machine)).toList();
+       _machines = (data as List).map((machine) {
+        return Machine.fromJson(machine);
+      }).toList();
     } else {
-      print("❌ Erreur API: ${response.body}");
+      print("Erreur API: ${response.body}");
       throw Exception("Échec du chargement des machines");
     }
 
     notifyListeners();
   } catch (error) {
-    print("⚠️ Erreur de chargement des machines: $error");
+    print("Erreur de chargement des machines: $error");
     throw Exception("Erreur de connexion");
   }
 }

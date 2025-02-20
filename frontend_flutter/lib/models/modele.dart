@@ -12,8 +12,9 @@ class Modele {
   });
 
   factory Modele.fromJson(Map<String, dynamic> json) {
+    print("JSON reçu pour Modele: $json");  // Debug pour voir les données reçues
     return Modele(
-      id: json['_id'],
+      id: json.containsKey('_id') ? json['_id'] ?? '' : '', 
       nom: json['nom'],
       tailles: List<String>.from(json['tailles']),
       derives: json['derives'] != null

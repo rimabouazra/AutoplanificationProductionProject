@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/models/modele.dart';
 import 'package:frontend/views/AjouterModeleAdmin.dart';
 import '../models/machine.dart';
 import '../services/api_service.dart';
@@ -24,6 +25,7 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
   Future<void> fetchMachinesParSalle() async {
     try {
       var data = await ApiService.fetchMachinesParSalle(widget.salleId);
+      print("Données reçues de l'API : $data"); // Debug
       setState(() {
         machines = data;
       });
@@ -34,36 +36,125 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
 
   Future<void> _showAddMachineDialog() async {
     TextEditingController nomController = TextEditingController();
+    String? selectedModele;
+    String? selectedTaille;
+    List<Modele> modeles = [];
 
+    // Récupérer les modèles depuis l'API
+    try {
+      modeles = await ApiService.getModeles();
+      print("Modèles récupérés : $modeles"); // DEBUG
+    } catch (e) {
+      print("Erreur lors du chargement des modèles : $e");
+    }
+    // Vérifiez si la liste est vide
+    if (modeles.isEmpty) {
+      print("Aucun modèle disponible !");
+    }
     await showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text("Ajouter une Machine"),
-          content: TextField(
-            controller: nomController,
-            decoration: InputDecoration(labelText: "Nom de la machine"),
-          ),
-          actions: [
-            TextButton(
-              child: Text("Annuler"),
-              onPressed: () => Navigator.pop(context),
-            ),
-            ElevatedButton(
-              child: Text("Ajouter"),
-              onPressed: () async {
-                String nom = nomController.text;
-                if (nom.isNotEmpty) {
-                  await ApiService.addMachine(
-                      nom: nom, salleId: widget.salleId);
-                  Navigator.pop(context);
-                  fetchMachinesParSalle();
-                } else {
-                  print("Veuillez remplir le champ.");
-                }
-              },
-            ),
-          ],
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text("Ajouter une Machine"),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextField(
+                      controller: nomController,
+                      decoration: InputDecoration(
+                        labelText: "Nom de la machine",
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      value: selectedModele,
+                      hint: Text("Sélectionner un modèle"),
+                      items: modeles.map<DropdownMenuItem<String>>((modele) {
+                        return DropdownMenuItem<String>(
+                          value: modele.id,
+                          child: Text(modele.nom),
+                        );
+                      }).toList(),
+                      onChanged: (value) {
+                        setState(() {
+                          selectedModele = value;
+                          selectedTaille =
+                              null; // Réinitialiser la taille si modèle change
+                        });
+                      },
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 10),
+                      ),
+                    ),
+                    SizedBox(height: 10),
+                    if (selectedModele != null)
+                      DropdownButtonFormField<String>(
+                        value: selectedTaille,
+                        hint: Text("Sélectionner une taille"),
+                        items: modeles
+                            .firstWhere(
+                              (m) => m.id == selectedModele,
+                              orElse: () => Modele(
+                                  id: '',
+                                  nom: '',
+                                  tailles: []), // Retourne un objet Modele vide si non trouvé
+                            )
+                            .tailles
+                            .map<DropdownMenuItem<String>>((taille) {
+                          return DropdownMenuItem<String>(
+                            value: taille,
+                            child: Text(taille),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          setState(() {
+                            selectedTaille = value;
+                          });
+                        },
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(),
+                          contentPadding: EdgeInsets.symmetric(horizontal: 10),
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  child: Text("Annuler"),
+                  onPressed: () => Navigator.pop(context),
+                ),
+                ElevatedButton(
+                  child: Text("Ajouter"),
+                  onPressed: () async {
+                    String nom = nomController.text.trim();
+                    if (nom.isEmpty) {
+                      print("Veuillez remplir le champ du nom.");
+                      return;
+                    }
+
+                    try {
+                      await ApiService.addMachine(
+                        nom: nom,
+                        salleId: widget.salleId,
+                        modele: selectedModele,
+                        taille: selectedTaille,
+                      );
+                      Navigator.pop(context);
+                      fetchMachinesParSalle();
+                    } catch (e) {
+                      print("Erreur lors de l'ajout de la machine : $e");
+                    }
+                  },
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -174,6 +265,54 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
                         ElevatedButton(
                           onPressed: () => _showEditMachineDialog(machine),
                           child: Text("Modifier"),
+                        ),
+                        SizedBox(height: 5), // Ajoutez un petit espace
+                        IconButton(
+                          icon: Icon(Icons.delete, color: Colors.red),
+                          onPressed: () async {
+                            bool confirm = await showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: Text("Confirmer la suppression"),
+                                content: Text(
+                                    "Voulez-vous vraiment supprimer cette machine ?"),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, false),
+                                    child: Text("Annuler"),
+                                  ),
+                                  TextButton(
+                                    onPressed: () =>
+                                        Navigator.pop(context, true),
+                                    child: Text(
+                                      "Supprimer",
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+
+                            if (confirm) {
+                              try {
+                                await ApiService.deleteMachine(machine["_id"]);
+                                setState(() {
+                                  machines.removeAt(
+                                      index); // Met à jour la liste sans recharger
+                                });
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text("Machine supprimée")),
+                                );
+                              } catch (e) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                      content: Text(
+                                          "Erreur lors de la suppression")),
+                                );
+                              }
+                            }
+                          },
                         ),
                       ],
                     ),

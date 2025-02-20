@@ -22,37 +22,28 @@ class ApiService {
   }
 
   // Ajouter une nouvelle Machine
-  static Future<void> addMachine({
-    required String nom,
-    required String salleId,
-    String etat = "disponible", // Valeur par défaut
-    String? modele, // optionnel
-    String? taille, // optionnel
-  }) async {
-    try {
-      var response = await http.post(
-        Uri.parse("$baseUrl/machines/add"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "nom": nom,
-          "etat": etat,
-          "salle": salleId,
-          "modele": modele,
-          "taille": taille,
-        }),
-      );
-
-      if (response.statusCode == 201) {
-        print(" Machine ajoutée avec succès !");
-      } else {
-        print("Erreur lors de l'ajout : ${response.body}");
-      }
-    } catch (e) {
-      print("Erreur de connexion : $e");
+  static Future<void> addMachine(
+      {required String nom,
+      required String salleId,
+      String? modele,
+      String? taille}) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/machines/add'),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "nom": nom,
+        "salle": salleId,
+        "modele": modele, // Peut être null
+        "taille": taille // Peut être null
+      }),
+    );
+    if (response.statusCode != 201) {
+      throw Exception(
+          "Erreur lors de l'ajout de la machine : ${response.body}");
     }
   }
 
-   //Mettre à jour une machine
+  //Mettre à jour une machine
   static Future<void> updateMachine(String id, String nom, String etat) async {
     await http.put(
       Uri.parse("$baseUrl/machines/$id"),
@@ -61,11 +52,22 @@ class ApiService {
     );
   }
 
+  // Supprimer une machine
+  static Future<void> deleteMachine(String id) async {
+    final response = await http.delete(Uri.parse('$baseUrl/machines/$id'));
+
+    if (response.statusCode != 200) {
+      throw Exception(
+          "Erreur lors de la suppression de la machine : ${response.body}");
+    }
+  }
+
   // Récupérer tous les Modèles
   static Future<List<Modele>> getModeles() async {
     final response = await http.get(Uri.parse('$baseUrl/modeles'));
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
+      print("Modèles récupérés: $jsonData"); // Debug des données reçues
       return jsonData.map((json) => Modele.fromJson(json)).toList();
     } else {
       throw Exception("Erreur lors de la récupération des modèles");
@@ -84,18 +86,19 @@ class ApiService {
     }
   }
 
-  static Future<bool> updateMachineModele(String machineId, String modeleId, String taille) async {
-  final response = await http.put(
-    Uri.parse('$baseUrl/machines/$machineId'),
-    headers: {"Content-Type": "application/json"},
-    body: jsonEncode({
-      "modele": modeleId,
-      "taille": taille,
-    }),
-  );
+  static Future<bool> updateMachineModele(
+      String machineId, String modeleId, String taille) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/machines/$machineId'),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({
+        "modele": modeleId,
+        "taille": taille,
+      }),
+    );
 
-  return response.statusCode == 200;
-}
+    return response.statusCode == 200;
+  }
 
   // Récupérer toutes les Salles
   static Future<List<Salle>> getSalles() async {

@@ -107,6 +107,13 @@ exports.deleteMachine = async (req, res) => {
         if (!machine) {
             return res.status(404).json({ message: "Machine non trouvée" });
         }
+        if (machine.salle) {
+            await Salle.findByIdAndUpdate(machine.salle, { 
+                $pull: { machines: machine._id } 
+            });
+        }
+
+        await Machine.findByIdAndDelete(req.params.id);
         res.status(200).json({ message: "Machine supprimée avec succès" });
     } catch (error) {
         res.status(500).json({ message: "Erreur lors de la suppression de la machine", error });
