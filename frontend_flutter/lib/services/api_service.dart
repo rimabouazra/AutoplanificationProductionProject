@@ -122,18 +122,18 @@ class ApiService {
   }
 
   static Future<bool> supprimerSalle(String id) async {
-  final response = await http.delete(Uri.parse('$baseUrl/salles/$id'));
-  return response.statusCode == 200;
-}
+    final response = await http.delete(Uri.parse('$baseUrl/salles/$id'));
+    return response.statusCode == 200;
+  }
 
   static Future<bool> modifierSalle(String id, String nom) async {
-  final response = await http.put(
-    Uri.parse('$baseUrl/salles/$id'),
-    headers: {"Content-Type": "application/json"},
-    body: jsonEncode({"nom": nom}),
-  );
-  return response.statusCode == 200;
-}
+    final response = await http.put(
+      Uri.parse('$baseUrl/salles/$id'),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"nom": nom}),
+    );
+    return response.statusCode == 200;
+  }
 
   // Récupérer tous les Utilisateurs
   static Future<List<User>> getUsers() async {

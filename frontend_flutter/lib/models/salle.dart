@@ -21,6 +21,7 @@ class Salle {
       machines: json['machines'] != null
           ? (json['machines'] as List).map((m) => Machine.fromJson(m)).toList()
           : [],
+
     );
   }
 

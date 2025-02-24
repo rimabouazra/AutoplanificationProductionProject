@@ -17,8 +17,8 @@ exports.creerSalle = async (req, res) => {
 exports.modifierSalle = async (req, res) => {
     try {
         const { id } = req.params;
-        const { nom } = req.body;
-        const salle = await Salle.findByIdAndUpdate(id, { nom }, { new: true });
+        const { nom, type } = req.body;
+        const salle = await Salle.findByIdAndUpdate(id, { nom, type }, { new: true });
         if (!salle) return res.status(404).json({ message: "Salle non trouvée" });
         res.json(salle);
     } catch (error) {
@@ -44,6 +44,33 @@ exports.listerToutesLesSalles = async (req, res) => {
         const salles = await Salle.find().populate("machines");
         res.json(salles);
     } catch (error) {
+        res.status(500).json({ message: "Erreur lors de la récupération des salles", error });
+    }
+};
+
+// Récupérer toutes les salles avec le nombre de machines
+exports.getAllSalles = async (req, res) => {
+    try {
+        const salles = await Salle.find().populate("machines");
+        console.log("Salles trouvées:", JSON.stringify(salles, null, 2)); // 🔍 Debug: Vérifier les salles et leurs machines
+
+        // Vérifier le vrai nombre de machines dans la base
+        for (const salle of salles) {
+            const nombreMachinesBDD = await Machine.countDocuments({ salle: salle._id });
+            console.log(`Salle: ${salle.nom}, Machines dans la salle:`, salle.machines.length);
+            console.log(`Salle: ${salle.nom}, NombreMachines BDD:`, nombreMachinesBDD);
+        }
+
+        // Calcul du nombre de machines
+        const sallesAvecNombreMachines = salles.map(salle => ({
+            ...salle.toObject(),
+            nombreMachines: salle.machines.length, 
+        }));
+
+        console.log("Salles avec nombreMachines correct:", JSON.stringify(sallesAvecNombreMachines, null, 2));
+        res.status(200).json(sallesAvecNombreMachines);
+    } catch (error) {
+        console.error("Erreur lors de la récupération des salles:", error);
         res.status(500).json({ message: "Erreur lors de la récupération des salles", error });
     }
 };

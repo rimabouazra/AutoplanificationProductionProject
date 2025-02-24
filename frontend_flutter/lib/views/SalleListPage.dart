@@ -20,11 +20,13 @@ class _SalleListPageState extends State<SalleListPage> {
   }
 
   Future<void> fetchSalles() async {
-    final response = await http.get(Uri.parse('http://localhost:5000/api/salles'));
+    final response =
+        await http.get(Uri.parse('http://localhost:5000/api/salles'));
 
     if (response.statusCode == 200) {
       setState(() {
         salles = json.decode(response.body);
+        print("Salles mises à jour: $salles"); // DEBUG
       });
     } else {
       throw Exception('Échec du chargement des salles');
@@ -48,13 +50,17 @@ class _SalleListPageState extends State<SalleListPage> {
   }
 
   // Modifier une salle
-  Future<void> modifierSalle(String id, String nouveauNom) async {
+  Future<void> modifierSalle(
+      String id, String nouveauNom, String nouveauType) async {
     final response = await http.put(
       Uri.parse('http://localhost:5000/api/salles/$id'),
       headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"nom": nouveauNom}),
+      body: jsonEncode({
+        "nom": nouveauNom,
+        "type": nouveauType,
+      }),
     );
-
+  print("Réponse du serveur: ${response.statusCode} - ${response.body}"); // DEBUG
     if (response.statusCode == 200) {
       fetchSalles(); // Rafraîchir la liste après la modification
     } else {
@@ -64,7 +70,8 @@ class _SalleListPageState extends State<SalleListPage> {
 
   // Supprimer une salle
   Future<void> supprimerSalle(String id) async {
-    final response = await http.delete(Uri.parse('http://localhost:5000/api/salles/$id'));
+    final response =
+        await http.delete(Uri.parse('http://localhost:5000/api/salles/$id'));
 
     if (response.statusCode == 200) {
       fetchSalles(); // Rafraîchir la liste après la suppression
@@ -74,60 +81,75 @@ class _SalleListPageState extends State<SalleListPage> {
   }
 
   // Afficher le dialogue pour ajouter/modifier une salle
-void afficherDialogueSalle({String? id, String? nomActuel, String? typeActuel, bool isModification = false}) {
-  TextEditingController nomController = TextEditingController(text: nomActuel ?? "");
-  String selectedType = typeActuel ?? "noir"; // Valeur par défaut
+  void afficherDialogueSalle(
+      {String? id,
+      String? nomActuel,
+      String? typeActuel,
+      bool isModification = false}) {
+    TextEditingController nomController =
+        TextEditingController(text: nomActuel ?? "");
+    String selectedType = typeActuel ?? "noir"; // Valeur par défaut
 
-  showDialog(
-    context: context,
-    builder: (context) {
-      return AlertDialog(
-        title: Text(isModification ? "Modifier la salle" : "Ajouter une salle"),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: nomController,
-              decoration: const InputDecoration(labelText: "Nom de la salle"),
-            ),
-            const SizedBox(height: 10), // Espacement
-            DropdownButtonFormField<String>(
-              value: selectedType,
-              items: ["noir", "blanc"].map((String type) {
-                return DropdownMenuItem<String>(
-                  value: type,
-                  child: Text(type),
-                );
-              }).toList(),
-              onChanged: (newValue) {
-                selectedType = newValue!;
-              },
-              decoration: const InputDecoration(labelText: "Type de salle"),
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text("Annuler"),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (isModification) {
-                modifierSalle(id!, nomController.text);
-              } else {
-                ajouterSalle(nomController.text, selectedType);
-              }
-              Navigator.pop(context);
-            },
-            child: Text(isModification ? "Modifier" : "Ajouter"),
-          ),
-        ],
-      );
-    },
-  );
-}
-
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          // Ajout de StatefulBuilder pour la mise à jour du DropdownButton
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text(
+                  isModification ? "Modifier la salle" : "Ajouter une salle"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  TextField(
+                    controller: nomController,
+                    decoration:
+                        const InputDecoration(labelText: "Nom de la salle"),
+                  ),
+                  const SizedBox(height: 10), // Espacement
+                  DropdownButtonFormField<String>(
+                    value: selectedType,
+                    items: ["noir", "blanc"].map((String type) {
+                      return DropdownMenuItem<String>(
+                        value: type,
+                        child: Text(type),
+                      );
+                    }).toList(),
+                    onChanged: (newValue) {
+                      setState(() {
+                        selectedType = newValue?? "noir";
+                      });
+                    },
+                    decoration:
+                        const InputDecoration(labelText: "Type de salle"),
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Annuler"),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (isModification) {
+                      modifierSalle(id!, nomController.text,
+                          selectedType);
+                    } else {
+                      ajouterSalle(nomController.text, selectedType);
+                    }
+                    Navigator.pop(context);
+                  },
+                  child: Text(isModification ? "Modifier" : "Ajouter"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
 
   // Afficher le dialogue de confirmation de suppression
   void afficherConfirmationSuppression(String id) {
@@ -173,7 +195,10 @@ void afficherDialogueSalle({String? id, String? nomActuel, String? typeActuel, b
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.blueGrey.shade900, const Color.fromARGB(255, 69, 129, 157)],
+            colors: [
+              Colors.blueGrey.shade900,
+              const Color.fromARGB(255, 69, 129, 157)
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
           ),
@@ -191,14 +216,27 @@ void afficherDialogueSalle({String? id, String? nomActuel, String? typeActuel, b
                       borderRadius: BorderRadius.circular(15),
                     ),
                     child: ListTile(
-                      leading: const Icon(Icons.meeting_room, color: Color.fromARGB(255, 116, 162, 185)),
+                      leading: const Icon(Icons.meeting_room,
+                          color: Color.fromARGB(255, 116, 162, 185)),
                       title: Text(
                         salle['nom'],
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
-                      subtitle: Text(
-                        'Capacité: ${salle['capacité'] ?? "Non spécifiée"}',
-                        style: TextStyle(color: Colors.grey[600]),
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Type : ${salle['type'].toUpperCase()}", // Affichage du type de salle
+                            style: TextStyle(
+                                color: salle['type'] == 'noir'
+                                    ? Colors.black
+                                    : Colors.blue),
+                          ),
+                          Text(
+                            "Nombre de machines: ${salle['machines'].length}",
+                            style: TextStyle(color: Colors.grey[600]),
+                          ),
+                        ],
                       ),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
@@ -208,12 +246,14 @@ void afficherDialogueSalle({String? id, String? nomActuel, String? typeActuel, b
                             onPressed: () => afficherDialogueSalle(
                               id: salle['_id'],
                               nomActuel: salle['nom'],
+                              typeActuel: salle['type'],
                               isModification: true,
                             ),
                           ),
                           IconButton(
                             icon: const Icon(Icons.delete, color: Colors.red),
-                            onPressed: () => afficherConfirmationSuppression(salle['_id']),
+                            onPressed: () =>
+                                afficherConfirmationSuppression(salle['_id']),
                           ),
                         ],
                       ),
@@ -221,7 +261,8 @@ void afficherDialogueSalle({String? id, String? nomActuel, String? typeActuel, b
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => MachinesParSalleView(salleId: salle['_id']),
+                            builder: (context) =>
+                                MachinesParSalleView(salleId: salle['_id']),
                           ),
                         );
                       },
