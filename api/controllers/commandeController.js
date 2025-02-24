@@ -38,13 +38,11 @@ exports.ajouterCommande = async (req, res) => {
 
         // Vérifier que chaque modèle existe avant de l'ajouter
          for (let item of modeles) {
-                    const modeleExist = await Modele.findOne({ nom: item.modele }); // Trouver par nom
-                    if (!modeleExist) {
-                        return res.status(400).json({ message: `Modèle non trouvé: ${item.modele}` });
-                    }
-                    item.modele = modeleExist._id; // Remplacer le nom par l'ID
-                }
-
+             const modeleExist = await Modele.findById(item.modele); // Recherche par ID
+             if (!modeleExist) {
+                 return res.status(400).json({ message: `Modèle non trouvé: ${item.modele}` });
+             }
+         }
         // Création de la commande avec les modèles et leurs propriétés spécifiques
         const nouvelleCommande = new Commande({
             client,
@@ -107,37 +105,58 @@ exports.getCommandesBySalle = async (req, res) => {
     }
 };
 
+
 exports.updateCommande = async (req, res) => {
     try {
-        const { client, quantite, couleur, taille, conditionnement, delais, etat, salleAffectee, machineAffectee, modeles } = req.body;
-        const commande = await Commande.findById(req.params.id);
+        console.log(" Requête de mise à jour reçue :", JSON.stringify(req.body, null, 2));
 
+        const { client, conditionnement, delais, etat, salleAffectee, machinesAffectees, modeles } = req.body;
+        const commandeId = req.params.id;
+
+        // Vérifier si la commande existe
+        const commande = await Commande.findById(commandeId);
         if (!commande) {
             return res.status(404).json({ message: "Commande non trouvée" });
         }
 
-        // Mise à jour des champs si fournis
-        if (client) commande.client = client;
-        if (quantite) commande.quantite = quantite;
-        if (couleur) commande.couleur = couleur;
-        if (taille) commande.taille = taille;
-        if (conditionnement) commande.conditionnement = conditionnement;
-        if (delais) commande.delais = delais;
-        if (etat) commande.etat = etat;
-        if (salleAffectee) commande.salleAffectee = salleAffectee;
-        if (machineAffectee) commande.machineAffectee = machineAffectee;
-        if (modeles) commande.modeles = modeles;  // Assurez-vous que les modèles sont bien mis à jour.
+        // Vérifier que la liste des modèles est bien fournie
+        if (!Array.isArray(modeles) || modeles.length === 0) {
+            return res.status(400).json({ message: "La commande doit contenir au moins un modèle." });
+        }
 
-        console.log("Commande après mise à jour:", commande);
+        // Vérifier que chaque modèle a un ID valide
+        for (let item of modeles) {
+            if (!item.modele) {
+                return res.status(400).json({ message: `Un modèle dans la commande n'a pas d'ID valide.` });
+            }
 
-        await commande.save();
+            // Vérifier si l'ID du modèle existe dans la base
+            const modeleExist = await Modele.findById(item.modele);
+            if (!modeleExist) {
+                return res.status(400).json({ message: `Modèle non trouvé: ${item.modele}` });
+            }
+        }
 
-        res.status(200).json(commande);
+        // Mise à jour des champs de la commande
+        commande.client = client || commande.client;
+        commande.conditionnement = conditionnement || commande.conditionnement;
+        commande.delais = delais || commande.delais;
+        commande.etat = etat || commande.etat;
+        commande.salleAffectee = salleAffectee || commande.salleAffectee;
+        commande.machinesAffectees = machinesAffectees || commande.machinesAffectees;
+        commande.modeles = modeles;
+
+        // Sauvegarde dans MongoDB
+        const updatedCommande = await commande.save();
+        console.log("Commande mise à jour :", updatedCommande);
+
+        res.status(200).json(updatedCommande);
     } catch (error) {
-        console.error("Erreur lors de la mise à jour de la commande:", error);
-        res.status(500).json({ message: "Erreur lors de la mise à jour de la commande", error });
+        console.error("Erreur lors de la mise à jour de la commande :", error);
+        res.status(500).json({ message: "Erreur serveur", error: error.message });
     }
 };
+
 
 exports.deleteCommande = async (req, res) => {
     try {

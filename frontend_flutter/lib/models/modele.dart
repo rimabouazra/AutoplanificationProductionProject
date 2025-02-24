@@ -14,14 +14,15 @@ class Modele {
   factory Modele.fromJson(Map<String, dynamic> json) {
     print("JSON reçu pour Modele: $json");  // Debug pour voir les données reçues
     return Modele(
-      id: json.containsKey('_id') ? json['_id'] ?? '' : '', 
-      nom: json['nom'],
-      tailles: List<String>.from(json['tailles']),
+      id: json['_id'] ?? '',
+      nom: json['nom'] ?? '',  // nom est toujours présent
+      tailles: List<String>.from(json['tailles'] ?? []), //  tailles est une liste valide
       derives: json['derives'] != null
-          ? (json['derives'] as List).map((m) => Modele.fromJson(m)).toList()
+          ? List<Modele>.from(json['derives'].map((m) => Modele.fromJson(m)))
           : [],
     );
   }
+
 
   Map<String, dynamic> toJson() {
     return {

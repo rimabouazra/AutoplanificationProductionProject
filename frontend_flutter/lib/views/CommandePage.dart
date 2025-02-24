@@ -90,22 +90,39 @@ class _CommandePageState extends State<CommandePage> {
   }
 
 
-  void editCommande(Commande commande) {
+  Future<void> editCommande(Commande commande) async {
     TextEditingController clientController = TextEditingController(text: commande.client);
 
-    // Initialiser les contrôleurs pour chaque modèle
+    List<TextEditingController> nomModeleControllers = [];
     List<TextEditingController> tailleControllers = [];
     List<TextEditingController> couleurControllers = [];
     List<TextEditingController> quantiteControllers = [];
 
     List<CommandeModele> updatedModeles = List.from(commande.modeles);
 
-    for (var modele in commande.modeles) {
+    // Assurer que chaque modèle a un nom valide
+    for (var modele in updatedModeles) {
+      if (modele.nomModele.isEmpty && modele.modele != null) {
+        print("Recherche du nom pour l'ID du modèle : ${modele.modele}");
+        String? fetchedNom = await Provider.of<CommandeProvider>(context, listen: false).getModeleNom(modele.modele!);
+        modele.nomModele = fetchedNom ?? "Modèle inconnu";
+      }
+    }
+
+    // Remplissage des contrôleurs avec les valeurs actuelles
+    nomModeleControllers.clear();
+    tailleControllers.clear();
+    couleurControllers.clear();
+    quantiteControllers.clear();
+
+    for (var modele in updatedModeles) {
+      nomModeleControllers.add(TextEditingController(text: modele.nomModele));
       tailleControllers.add(TextEditingController(text: modele.taille));
       couleurControllers.add(TextEditingController(text: modele.couleur));
       quantiteControllers.add(TextEditingController(text: modele.quantite.toString()));
     }
 
+    // Affichage du formulaire de modification
     showDialog(
       context: context,
       builder: (context) {
@@ -125,6 +142,10 @@ class _CommandePageState extends State<CommandePage> {
                     ...List.generate(updatedModeles.length, (index) {
                       return Column(
                         children: [
+                          TextField(
+                            controller: nomModeleControllers[index],
+                            decoration: const InputDecoration(labelText: 'Nom du modèle'),
+                          ),
                           TextField(
                             controller: tailleControllers[index],
                             decoration: const InputDecoration(labelText: 'Taille'),
@@ -146,11 +167,13 @@ class _CommandePageState extends State<CommandePage> {
                       onPressed: () {
                         setState(() {
                           updatedModeles.add(CommandeModele(
-                            modele: "", // L'utilisateur saisira le modèle
+                            modele: null,
+                            nomModele: "",
                             taille: "",
                             couleur: "",
                             quantite: 0,
                           ));
+                          nomModeleControllers.add(TextEditingController());
                           tailleControllers.add(TextEditingController());
                           couleurControllers.add(TextEditingController());
                           quantiteControllers.add(TextEditingController());
@@ -167,34 +190,36 @@ class _CommandePageState extends State<CommandePage> {
                   child: const Text('Annuler'),
                 ),
                 TextButton(
-                  onPressed: () {
+                  onPressed: () async {
                     for (int i = 0; i < updatedModeles.length; i++) {
+                      // Vérifier que l'ID du modèle est bien défini
+                      if (updatedModeles[i].modele == null) {
+                        String? modeleId = await Provider.of<CommandeProvider>(context, listen: false)
+                            .getModeleId(updatedModeles[i].nomModele);
+                        updatedModeles[i].modele = modeleId;
+                      }
+
                       updatedModeles[i].taille = tailleControllers[i].text;
                       updatedModeles[i].couleur = couleurControllers[i].text;
                       updatedModeles[i].quantite = int.tryParse(quantiteControllers[i].text) ?? 1;
                     }
 
-                    // Mise à jour de la commande
-                    Provider.of<CommandeProvider>(context, listen: false).updateCommande(
-                      commande.id!,
-                      updatedModeles,
-                    ).then((success) {
-                      if (success) {
-                        // Si la mise à jour dans la base de données est réussie,
-                        // mettre à jour localement sans recharger toute la liste
-                        Commande updatedCommande = Provider.of<CommandeProvider>(context, listen: false)
-                            .commandes
-                            .firstWhere((cmd) => cmd.id == commande.id!);
+                    // Envoi de la mise à jour au backend
+                    bool success = await Provider.of<CommandeProvider>(context, listen: false)
+                        .updateCommande(commande.id!, updatedModeles);
 
-                        // Remplacer la commande modifiée dans la liste locale
-                        updatedCommande.modeles = updatedModeles;
+                    if (success) {
+                      Commande updatedCommande = Provider.of<CommandeProvider>(context, listen: false)
+                          .commandes
+                          .firstWhere((cmd) => cmd.id == commande.id!);
 
-                        // Notifier les écouteurs pour mettre à jour l'UI
-                        Provider.of<CommandeProvider>(context, listen: false).notifyListeners();
+                      updatedCommande.modeles = updatedModeles;
+                      Provider.of<CommandeProvider>(context, listen: false).notifyListeners();
 
-                        Navigator.pop(context);
-                      }
-                    });
+                      Navigator.pop(context);
+                    } else {
+                      print("Erreur lors de la mise à jour de la commande.");
+                    }
                   },
                   child: const Text('Enregistrer'),
                 ),
@@ -205,7 +230,6 @@ class _CommandePageState extends State<CommandePage> {
       },
     );
   }
-
 
   void navigateToAddCommande() {
     Navigator.push(

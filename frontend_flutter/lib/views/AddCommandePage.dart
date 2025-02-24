@@ -68,7 +68,7 @@ class _AddCommandePageState extends State<AddCommandePage> {
 
     setState(() {
       modeles.add(CommandeModele(
-        modele: modeleController.text,
+        nomModele: modeleController.text,
         taille: tailleController.text,
         couleur: couleurController.text,
         quantite: int.parse(quantiteController.text),
@@ -83,6 +83,7 @@ class _AddCommandePageState extends State<AddCommandePage> {
     if (selectedModele != null && couleurController.text.isNotEmpty && tailleController.text.isNotEmpty && quantiteController.text.isNotEmpty) {
       _addModele(); // Automatically save the last model
     }
+
     if (!_formKey.currentState!.validate() || selectedDate == null || modeles.isEmpty) {
       Fluttertoast.showToast(msg: "Veuillez remplir tous les champs et ajouter au moins un modèle.");
       return;
@@ -90,18 +91,36 @@ class _AddCommandePageState extends State<AddCommandePage> {
 
     setState(() => isLoading = true);
 
+    final commandeProvider = Provider.of<CommandeProvider>(context, listen: false);
+
+    List<CommandeModele> modelesWithId = []; // List of CommandeModele objects
+
+    for (var modele in modeles) {
+      String? modeleId = await commandeProvider.getModeleId(modele.nomModele); // Call Provider method to get the ID
+      if (modeleId != null) {
+        modelesWithId.add(CommandeModele(
+          modele: modeleId,  // Pass the ID of the modele instead of the name
+          nomModele: modele.nomModele,  // Keep the model name
+          taille: modele.taille,
+          couleur: modele.couleur,
+          quantite: modele.quantite,
+        ));
+      } else {
+        Fluttertoast.showToast(msg: "Erreur : Modèle '${modele.nomModele}' non trouvé.");
+        setState(() => isLoading = false);
+        return;
+      }
+    }
+
     Commande newCommande = Commande(
       client: clientController.text,
-      modeles: modeles,
+      modeles: modelesWithId,  // Now passing List<CommandeModele>
       conditionnement: conditionnementController.text,
       delais: selectedDate ?? DateTime.now(),
       etat: "en attente",
     );
 
-    // **Debug Log**: Check if models are properly added before sending the request
-    print("Modeles envoyés: ${newCommande.modeles.map((m) => m.toJson()).toList()}");
-
-    bool success = await Provider.of<CommandeProvider>(context, listen: false).addCommande(newCommande);
+    bool success = await commandeProvider.addCommande(newCommande);
     setState(() => isLoading = false);
 
     if (success) {
