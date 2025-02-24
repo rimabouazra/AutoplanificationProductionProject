@@ -7,6 +7,7 @@ const commandeRoutes = require("./routes/commandeRoutes");
 const salleRoutes = require("./routes/salleRoutes");
 const modeleRoutes = require("./routes/modeleRoutes");
 const machineRoutes = require("./routes/machineRoutes");
+const matiereRoutes = require("./routes/matiereRoutes");
 
 dotenv.config();
 
@@ -20,6 +21,7 @@ app.use("/api/commandes", commandeRoutes);
 app.use("/api/salles", salleRoutes);
 app.use("/api/modeles", modeleRoutes);
 app.use("/api/machines", machineRoutes);
+app.use("/api/matieres", matiereRoutes);
 
 // Connexion à MongoDB
 mongoose.connect(process.env.MONGO_URI, {

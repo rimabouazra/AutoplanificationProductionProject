@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:frontend/models/matiere.dart';
 import 'package:http/http.dart' as http;
 import '../models/machine.dart';
 import '../models/modele.dart';
@@ -238,6 +239,53 @@ class ApiService {
     } else {
       throw Exception(
           "Erreur lors de la récupération des machines pour la salle $salleId");
+    }
+  }
+
+  // Récupérer les matières
+  static Future<List<dynamic>> getMatieres() async {
+    final response = await http.get(Uri.parse('$baseUrl/matieres'));
+    if (response.statusCode == 200) {
+      return json.decode(response.body);
+    } else {
+      throw Exception("Erreur lors du chargement des matières");
+    }
+  }
+
+  // Ajouter une matière
+  static Future<Map<String, dynamic>> addMatiere(Matiere matiere) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/matieres/add'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode(matiere.toJson()),
+    );
+    print("Réponse API : ${response.statusCode} - ${response.body}");
+    if (response.statusCode == 201) {
+      return json.decode(response.body);
+    } else {
+      throw Exception("Erreur lors de l'ajout de la matière");
+    }
+  }
+
+  // Supprimer une matière
+  static Future<void> deleteMatiere(String id) async {
+    final response = await http.delete(Uri.parse('$baseUrl/matieres/$id'));
+    if (response.statusCode != 200) {
+      throw Exception("Erreur lors de la suppression de la matière");
+    }
+  }
+
+  static Future<Matiere?> updateMatiere(String id, int newQuantite) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/matiere/update/$id'),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"quantite": newQuantite}),
+    );
+
+    if (response.statusCode == 200) {
+      return Matiere.fromJson(jsonDecode(response.body));
+    } else {
+      return null;
     }
   }
 }
