@@ -20,14 +20,13 @@ class CommandeProvider with ChangeNotifier {
       }
 
       if (commandeExistante == null) {
-        print(" Commande non trouvée");
+        print("Commande non trouvée");
         return false;
       }
 
-      // Vérifier que chaque modèle a bien un ID avant l'envoi
       for (int i = 0; i < updatedModeles.length; i++) {
         if (updatedModeles[i].modele == null || updatedModeles[i].modele!.isEmpty) {
-          print(" Récupération de l'ID pour le modèle: ${updatedModeles[i].nomModele}");
+          print("Récupération de l'ID pour le modèle: ${updatedModeles[i].nomModele}");
           String? modeleId = await getModeleId(updatedModeles[i].nomModele);
           if (modeleId != null) {
             updatedModeles[i].modele = modeleId;
@@ -38,17 +37,17 @@ class CommandeProvider with ChangeNotifier {
         }
       }
 
-      // Mise à jour locale des modèles
       commandeExistante.modeles = updatedModeles;
 
       // Envoi au backend
-      print(" Envoi des données au backend : ${jsonEncode(updatedModeles)}");
+      print("Envoi des données au backend : ${jsonEncode(updatedModeles)}");
       final response = await http.put(
         Uri.parse("$_baseUrl/$commandeId"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "client": commandeExistante.client,
-          "modeles": commandeExistante.modeles.map((modele) => {
+          "modeles": updatedModeles.map((modele) => {
+            // Assure-toi que l'objet envoyé est conforme au format attendu par l'API
             "modele": modele.modele,
             "nomModele": modele.nomModele,
             "taille": modele.taille,
@@ -72,7 +71,7 @@ class CommandeProvider with ChangeNotifier {
         print("Commande mise à jour avec succès !");
         return true;
       } else {
-        print(" Erreur HTTP ${response.statusCode}: ${response.body}");
+        print("Erreur HTTP ${response.statusCode}: ${response.body}");
         return false;
       }
     } catch (error) {
@@ -110,7 +109,7 @@ class CommandeProvider with ChangeNotifier {
       print("Réponse HTTP: ${response.statusCode}");
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
-        String? modeleId = data["id"]; // Extract the ID from the response
+        String? modeleId = data["id"];
         print("ID du modèle trouvé: $modeleId");
         return modeleId;
       } else {

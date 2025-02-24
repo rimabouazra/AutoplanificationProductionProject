@@ -100,7 +100,6 @@ class _CommandePageState extends State<CommandePage> {
 
     List<CommandeModele> updatedModeles = List.from(commande.modeles);
 
-    // Assurer que chaque modèle a un nom valide
     for (var modele in updatedModeles) {
       if (modele.nomModele.isEmpty && modele.modele != null) {
         print("Recherche du nom pour l'ID du modèle : ${modele.modele}");
@@ -192,7 +191,6 @@ class _CommandePageState extends State<CommandePage> {
                 TextButton(
                   onPressed: () async {
                     for (int i = 0; i < updatedModeles.length; i++) {
-                      // Vérifier que l'ID du modèle est bien défini
                       if (updatedModeles[i].modele == null) {
                         String? modeleId = await Provider.of<CommandeProvider>(context, listen: false)
                             .getModeleId(updatedModeles[i].nomModele);
@@ -204,7 +202,6 @@ class _CommandePageState extends State<CommandePage> {
                       updatedModeles[i].quantite = int.tryParse(quantiteControllers[i].text) ?? 1;
                     }
 
-                    // Envoi de la mise à jour au backend
                     bool success = await Provider.of<CommandeProvider>(context, listen: false)
                         .updateCommande(commande.id!, updatedModeles);
 
@@ -238,7 +235,6 @@ class _CommandePageState extends State<CommandePage> {
     );
   }
 
-  // Fonction de navigation vers une page vide
 
 
 

@@ -6,13 +6,8 @@
   <component name="ChangeListManager">
     <list default="true" id="f1b1f5c6-b780-4356-ad10-8b85adb9bdf5" name="Changes" comment="update order in the backend">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/controllers/commandeController.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/controllers/commandeController.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/models/Commande.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/models/Commande.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/routes/commandeRoutes.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/routes/commandeRoutes.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/routes/modeleRoutes.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/routes/modeleRoutes.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/models/commande.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/models/commande.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/providers/CommandeProvider.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/providers/CommandeProvider.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/AddCommandePage.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/AddCommandePage.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/providers/modeleProvider.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/providers/modeleProvider.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/CommandePage.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/CommandePage.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -183,7 +178,15 @@
       <option name="project" value="LOCAL" />
       <updated>1740048159443</updated>
     </task>
-    <option name="localTasksCounter" value="13" />
+    <task id="LOCAL-00013" summary="update order in the backend">
+      <option name="closed" value="true" />
+      <created>1740393125198</created>
+      <option name="number" value="00013" />
+      <option name="presentableId" value="LOCAL-00013" />
+      <option name="project" value="LOCAL" />
+      <updated>1740393125198</updated>
+    </task>
+    <option name="localTasksCounter" value="14" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
