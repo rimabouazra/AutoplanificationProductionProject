@@ -16,7 +16,7 @@ const CommandeSchema = new mongoose.Schema(
       default: "en attente"
     },
     modeles: { type: [CommandeModeleSchema], required: true },
-    conditionnement: { type: String, required: true },
+    conditionnement: { type: String, required: false },
     delais: { type: Date, required: true },
     salleAffectee: { type: mongoose.Schema.Types.ObjectId, ref: "Salle" },
     machinesAffectees: [{ type: mongoose.Schema.Types.ObjectId, ref: "Machine" }]

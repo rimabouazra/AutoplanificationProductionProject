@@ -36,7 +36,7 @@ class _AddCommandePageState extends State<AddCommandePage> {
     }
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {bool isNumber = false}) {
+  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {bool isNumber = false, bool isOptional = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
@@ -51,9 +51,13 @@ class _AddCommandePageState extends State<AddCommandePage> {
           fillColor: Colors.white,
         ),
         validator: (value) {
-          if (value!.isEmpty) return "Champ requis";
-          if (isNumber && int.tryParse(value) == null) return "Entrer un nombre valide";
-          if (isNumber && int.parse(value) <= 0) return "La quantité doit être positive";
+          if (!isOptional && value!.isEmpty) return "Champ requis";
+          if (isNumber && int.tryParse(value!) == null) {
+            return "Entrer un nombre valide";
+          }
+          if (isNumber && int.parse(value!) <= 0) {
+            return "La quantité doit être positive";
+          }
           return null;
         },
       ),
@@ -150,7 +154,7 @@ class _AddCommandePageState extends State<AddCommandePage> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _buildTextField(clientController, "Client", Icons.person),
-                      _buildTextField(conditionnementController, "Conditionnement", Icons.inventory),
+                      _buildTextField(conditionnementController, "Conditionnement", Icons.inventory, isOptional: true),
                       const SizedBox(height: 10),
                       ListTile(
                         tileColor: Colors.grey.shade200,
@@ -191,7 +195,7 @@ class _AddCommandePageState extends State<AddCommandePage> {
                           ),
                           ElevatedButton(
                             onPressed: _submitCommande,
-                            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal.shade700),
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal.shade300),
                             child: const Text("Ajouter"),
                           ),
                         ],

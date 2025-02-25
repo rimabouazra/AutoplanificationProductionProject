@@ -39,7 +39,7 @@ class Commande {
   String? id;
   String client;
   List<CommandeModele> modeles;
-  String conditionnement;
+  String? conditionnement;
   DateTime? delais;
   String etat;
   DateTime? createdAt;
@@ -51,7 +51,7 @@ class Commande {
     this.id,
     required this.client,
     required this.modeles,
-    required this.conditionnement,
+    this.conditionnement,
     this.delais,
     required this.etat,
     this.createdAt,

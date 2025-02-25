@@ -1,12 +1,13 @@
-import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 import '../providers/modeleProvider.dart';
-import 'AddCommandePage.dart'; // Import de la page d'ajout de commande
+import 'AddCommandePage.dart';
 import 'package:provider/provider.dart';
 import '../providers/CommandeProvider.dart';
 import '../models/commande.dart';
+import 'package:pdf/pdf.dart';
+import 'package:pdf/widgets.dart' as pw;
+import 'package:printing/printing.dart';
 
 class CommandePage extends StatefulWidget {
   const CommandePage({Key? key}) : super(key: key);
@@ -96,6 +97,68 @@ class _CommandePageState extends State<CommandePage> {
     );
   }
 
+  Future<void> printCommande(Commande commande) async {
+    final pdf = pw.Document();
+    for (var modele in commande.modeles) {
+      if (modele.nomModele.isEmpty && modele.modele != null) {
+        // Fetch the model name using the modele ID
+        String? fetchedNom = await Provider.of<CommandeProvider>(context, listen: false)
+            .getModeleNom(modele.modele!);
+        modele.nomModele = fetchedNom ?? "Modèle inconnu";
+      }
+    }
+    pdf.addPage(
+      pw.Page(
+        build: (pw.Context context) {
+          return pw.Column(
+            crossAxisAlignment: pw.CrossAxisAlignment.start,
+            children: [
+              pw.Text('Commande Details', style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 20),
+              pw.Text('Client: ${commande.client}'),
+              pw.Text('Conditionnement: ${commande.conditionnement}'),
+              pw.Text('Salle Affectée: ${commande.salleAffectee ?? 'Non assignée'}'),
+              pw.Text('Machines Affectées: ${commande.machinesAffectees?.join(', ') ?? 'Aucune'}'),
+              pw.SizedBox(height: 20),
+              pw.Text('Modèles:', style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
+              pw.SizedBox(height: 10),
+              pw.Table(
+                border: pw.TableBorder.all(),
+                children: [
+                  pw.TableRow(
+                    children: [
+                      pw.Text('Modèle'),
+                      pw.Text('Taille'),
+                      pw.Text('Couleur'),
+                      pw.Text('Quantité'),
+                    ],
+                  ),
+                  ...commande.modeles.map((modele) {
+                    return pw.TableRow(
+                      children: [
+                        pw.Text(modele.nomModele),
+                        pw.Text(modele.taille),
+                        pw.Text(modele.couleur),
+                        pw.Text(modele.quantite.toString()),
+                      ],
+                    );
+                  }).toList(),
+                ],
+              ),
+            ],
+          );
+        },
+      ),
+    );
+
+    await Printing.layoutPdf(
+      onLayout: (PdfPageFormat format) async => pdf.save(),
+    );
+  }
+
+
+
+
   Future<void> editCommande(Commande commande) async {
     TextEditingController clientController = TextEditingController(text: commande.client);
 
@@ -106,7 +169,6 @@ class _CommandePageState extends State<CommandePage> {
 
     List<CommandeModele> updatedModeles = List.from(commande.modeles);
 
-    // Vérifie si le modèle a besoin de récupérer le nom
     for (var modele in updatedModeles) {
       if (modele.nomModele.isEmpty && modele.modele != null) {
         print("Recherche du nom pour l'ID du modèle : ${modele.modele}");
@@ -120,7 +182,6 @@ class _CommandePageState extends State<CommandePage> {
     couleurControllers.clear();
     quantiteControllers.clear();
 
-    // Initialisation des contrôleurs pour les champs de chaque modèle
     for (var modele in updatedModeles) {
       nomModeleControllers.add(TextEditingController(text: modele.nomModele));
       tailleControllers.add(TextEditingController(text: modele.taille));
@@ -134,6 +195,7 @@ class _CommandePageState extends State<CommandePage> {
         return StatefulBuilder(
           builder: (context, setState) {
             bool isLoading = false;
+            bool isSavingModeles = false;
 
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
@@ -156,7 +218,6 @@ class _CommandePageState extends State<CommandePage> {
                         enabled: false,
                       ),
                       const SizedBox(height: 15),
-                      // Génère les champs de texte pour chaque modèle
                       ...List.generate(updatedModeles.length, (index) {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -252,6 +313,31 @@ class _CommandePageState extends State<CommandePage> {
                           label: const Text('Ajouter un modèle'),
                         ),
                       ),
+                      if (isSavingModeles)
+                        const Center(child: CircularProgressIndicator()),
+                      if (!isSavingModeles)
+                        Align(
+                          alignment: Alignment.center,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              setState(() {
+                                isSavingModeles = true;
+                              });
+
+                              for (int i = 0; i < updatedModeles.length; i++) {
+                                updatedModeles[i].nomModele = nomModeleControllers[i].text;
+                                updatedModeles[i].taille = tailleControllers[i].text;
+                                updatedModeles[i].couleur = couleurControllers[i].text;
+                                updatedModeles[i].quantite = int.tryParse(quantiteControllers[i].text) ?? 1;
+                              }
+
+                              setState(() {
+                                isSavingModeles = false;
+                              });
+                            },
+                            child: const Text('Enregistrer Modèles'),
+                          ),
+                        ),
                     ],
                   ),
                 ),
@@ -272,7 +358,6 @@ class _CommandePageState extends State<CommandePage> {
                     // Valider et mettre à jour les modèles
                     for (int i = 0; i < updatedModeles.length; i++) {
                       futures.add(() async {
-                        // Recherche de l'ID du modèle à partir du nom si nécessaire
                         if (updatedModeles[i].nomModele.isEmpty && updatedModeles[i].modele != null) {
                           String? modeleNom = await Provider.of<CommandeProvider>(context, listen: false).getModeleNom(updatedModeles[i].modele!);
                           if (modeleNom != null) {
@@ -282,7 +367,6 @@ class _CommandePageState extends State<CommandePage> {
                           }
                         }
 
-                        // Recherche de l'ID du modèle si le nom est rempli
                         if ((updatedModeles[i].modele == null || updatedModeles[i].modele!.isEmpty) &&
                             updatedModeles[i].nomModele.isNotEmpty) {
                           String? modeleId = await Provider.of<CommandeProvider>(context, listen: false).getModeleId(updatedModeles[i].nomModele);
@@ -306,7 +390,7 @@ class _CommandePageState extends State<CommandePage> {
                         isLoading = false;
                       });
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("❌ Erreur dans les modèles.")),
+                        const SnackBar(content: Text("Erreur dans les modèles.")),
                       );
                       return;
                     }
@@ -318,14 +402,14 @@ class _CommandePageState extends State<CommandePage> {
                     });
 
                     if (success) {
-                      print("✅ Commande mise à jour !");
+                      print("Commande mise à jour !");
                       await Provider.of<CommandeProvider>(context, listen: false).fetchCommandes();
                       Provider.of<CommandeProvider>(context, listen: false).notifyListeners();
                       Navigator.pop(context);
                     } else {
-                      print("❌ Erreur lors de la mise à jour de la commande.");
+                      print("Erreur lors de la mise à jour de la commande.");
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text("❌ Erreur lors de la mise à jour de la commande.")),
+                        const SnackBar(content: Text("Erreur lors de la mise à jour de la commande.")),
                       );
                     }
                   },
@@ -338,6 +422,7 @@ class _CommandePageState extends State<CommandePage> {
       },
     );
   }
+
 
   void navigateToAddCommande() {
     Navigator.push(
@@ -473,6 +558,10 @@ class _CommandePageState extends State<CommandePage> {
                   IconButton(
                     icon: Icon(Icons.delete, color: Colors.red[700]),
                     onPressed: () => deleteCommande(commande.id!),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.print, color: Colors.green[700]),
+                    onPressed: () => printCommande(commande),
                   ),
                 ],
               ),
