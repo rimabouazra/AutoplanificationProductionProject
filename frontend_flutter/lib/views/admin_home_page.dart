@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'CommandePage.dart';
 import 'SalleListPage.dart';
+import 'matiereView.dart';
+
 
 class AdminHomePage extends StatefulWidget {
   const AdminHomePage({Key? key}) : super(key: key);
@@ -16,7 +18,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     Center(child: Text('Statistique en développement')), // Placeholder
     Center(child: Text('Planification en développement')), // Placeholder
     Center(child: Text('Utilisateurs en développement')), // Placeholder
-    Center(child: Text('Stock en développement')), // Placeholder
+    MatiereView(), 
     CommandePage(),
     SalleListPage(),
   ];

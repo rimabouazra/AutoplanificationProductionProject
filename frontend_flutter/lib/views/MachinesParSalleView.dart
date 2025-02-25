@@ -267,8 +267,11 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
                           child: Text("Modifier"),
                         ),
                         SizedBox(height: 5), // Ajoutez un petit espace
-                        IconButton(
-                          icon: Icon(Icons.delete, color: Colors.red),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red, // Couleur du bouton
+                            foregroundColor: Colors.white, // Couleur du texte
+                          ),
                           onPressed: () async {
                             bool confirm = await showDialog(
                               context: context,
@@ -298,8 +301,8 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
                               try {
                                 await ApiService.deleteMachine(machine["_id"]);
                                 setState(() {
-                                  machines.removeAt(
-                                      index); // Met à jour la liste sans recharger
+                                  machines
+                                      .removeAt(index); // Met à jour la liste
                                 });
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(content: Text("Machine supprimée")),
@@ -313,6 +316,7 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
                               }
                             }
                           },
+                          child: Text("Supprimer"),
                         ),
                       ],
                     ),

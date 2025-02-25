@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/providers/matiereProvider.dart';
+import 'package:frontend/providers/salleProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'providers/CommandeProvider.dart';
@@ -10,8 +12,10 @@ void main() {
     MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => CommandeProvider()),
-        ChangeNotifierProvider(create: (context) => ModeleProvider()..fetchModeles()),
-
+        ChangeNotifierProvider(
+            create: (context) => ModeleProvider()..fetchModeles()),
+        ChangeNotifierProvider(create: (context) => SalleProvider()),
+        ChangeNotifierProvider(create: (context) => MatiereProvider()),
       ],
       child: MyApp(),
     ),
@@ -26,13 +30,14 @@ class MyApp extends StatelessWidget {
       title: 'Admin Space',
       theme: ThemeData(primarySwatch: Colors.deepPurple),
       supportedLocales: [
-        Locale('en', 'US'),  // Support for English
-        Locale('fr', 'FR'),  // Support for French
+        Locale('en', 'US'), // Support for English
+        Locale('fr', 'FR'), // Support for French
       ],
       localizationsDelegates: [
-        GlobalMaterialLocalizations.delegate,  // Add localization delegate
-        GlobalWidgetsLocalizations.delegate,  // Add widget localization delegate
-        GlobalCupertinoLocalizations.delegate,  // Add Cupertino localization delegate
+        GlobalMaterialLocalizations.delegate, // Add localization delegate
+        GlobalWidgetsLocalizations.delegate, // Add widget localization delegate
+        GlobalCupertinoLocalizations
+            .delegate, // Add Cupertino localization delegate
       ],
       home: AdminHomePage(),
     );

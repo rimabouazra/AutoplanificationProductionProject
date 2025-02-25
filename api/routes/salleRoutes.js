@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const salleController = require("../controllers/salleController");
 
-router.get("/", salleController.listerToutesLesSalles);
+router.get("/", salleController.getAllSalles);
 
 router.post("/", salleController.creerSalle);
 router.put("/:id", salleController.modifierSalle);
