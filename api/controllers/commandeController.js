@@ -108,18 +108,19 @@ exports.getCommandesBySalle = async (req, res) => {
 
 exports.updateCommande = async (req, res) => {
     try {
-        console.log(" Requête de mise à jour reçue :", JSON.stringify(req.body, null, 2));
+        console.log("🔄 Requête de mise à jour reçue :", JSON.stringify(req.body, null, 2));
 
         const { client, conditionnement, delais, etat, salleAffectee, machinesAffectees, modeles } = req.body;
         const commandeId = req.params.id;
 
         // Vérifier si la commande existe
-        const commande = await Commande.findById(commandeId);
+        let commande = await Commande.findById(commandeId);
         if (!commande) {
             return res.status(404).json({ message: "Commande non trouvée" });
         }
 
-        // Vérifier que la liste des modèles est bien fournie
+        console.log(" Avant mise à jour : ", JSON.stringify(commande, null, 2));
+
         if (!Array.isArray(modeles) || modeles.length === 0) {
             return res.status(400).json({ message: "La commande doit contenir au moins un modèle." });
         }
@@ -127,10 +128,9 @@ exports.updateCommande = async (req, res) => {
         // Vérifier que chaque modèle a un ID valide
         for (let item of modeles) {
             if (!item.modele) {
-                return res.status(400).json({ message: `Un modèle dans la commande n'a pas d'ID valide.` });
+                return res.status(400).json({ message: "Un modèle dans la commande n'a pas d'ID valide."});
             }
 
-            // Vérifier si l'ID du modèle existe dans la base
             const modeleExist = await Modele.findById(item.modele);
             if (!modeleExist) {
                 return res.status(400).json({ message: `Modèle non trouvé: ${item.modele}` });
@@ -146,17 +146,16 @@ exports.updateCommande = async (req, res) => {
         commande.machinesAffectees = machinesAffectees || commande.machinesAffectees;
         commande.modeles = modeles;
 
-        // Sauvegarde dans MongoDB
-        const updatedCommande = await commande.save();
-        console.log("Commande mise à jour :", updatedCommande);
+        commande = await Commande.findByIdAndUpdate(commandeId, { $set: commande }, { new: true });
 
-        res.status(200).json(updatedCommande);
+        console.log(" Après mise à jour : ", JSON.stringify(commande, null, 2));
+
+        res.status(200).json(commande);
     } catch (error) {
-        console.error("Erreur lors de la mise à jour de la commande :", error);
+        console.error(" Erreur lors de la mise à jour de la commande :", error);
         res.status(500).json({ message: "Erreur serveur", error: error.message });
     }
 };
-
 
 exports.deleteCommande = async (req, res) => {
     try {

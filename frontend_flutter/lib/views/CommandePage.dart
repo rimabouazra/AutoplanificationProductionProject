@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import '../providers/modeleProvider.dart';
@@ -104,6 +106,7 @@ class _CommandePageState extends State<CommandePage> {
 
     List<CommandeModele> updatedModeles = List.from(commande.modeles);
 
+    // Vérifie si le modèle a besoin de récupérer le nom
     for (var modele in updatedModeles) {
       if (modele.nomModele.isEmpty && modele.modele != null) {
         print("Recherche du nom pour l'ID du modèle : ${modele.modele}");
@@ -117,6 +120,7 @@ class _CommandePageState extends State<CommandePage> {
     couleurControllers.clear();
     quantiteControllers.clear();
 
+    // Initialisation des contrôleurs pour les champs de chaque modèle
     for (var modele in updatedModeles) {
       nomModeleControllers.add(TextEditingController(text: modele.nomModele));
       tailleControllers.add(TextEditingController(text: modele.taille));
@@ -129,12 +133,16 @@ class _CommandePageState extends State<CommandePage> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
+            bool isLoading = false;
+
             return AlertDialog(
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
               title: const Text('Modifier Commande', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              content: SingleChildScrollView(
+              content: isLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : SingleChildScrollView(
                 child: SizedBox(
-                  width: MediaQuery.of(context).size.width * 0.7, // Largeur de 50% de l'écran
+                  width: MediaQuery.of(context).size.width * 0.7,
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -148,6 +156,7 @@ class _CommandePageState extends State<CommandePage> {
                         enabled: false,
                       ),
                       const SizedBox(height: 15),
+                      // Génère les champs de texte pour chaque modèle
                       ...List.generate(updatedModeles.length, (index) {
                         return Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -254,35 +263,73 @@ class _CommandePageState extends State<CommandePage> {
                 ),
                 ElevatedButton(
                   onPressed: () async {
-                    for (int i = 0; i < updatedModeles.length; i++) {
-                      if (updatedModeles[i].modele == null) {
-                        String? modeleId = await Provider.of<CommandeProvider>(context, listen: false)
-                            .getModeleId(updatedModeles[i].nomModele);
-                        updatedModeles[i].modele = modeleId;
-                      }
+                    bool hasError = false;
+                    List<Future<void>> futures = [];
+                    setState(() {
+                      isLoading = true;
+                    });
 
-                      updatedModeles[i].taille = tailleControllers[i].text;
-                      updatedModeles[i].couleur = couleurControllers[i].text;
-                      updatedModeles[i].quantite = int.tryParse(quantiteControllers[i].text) ?? 1;
+                    // Valider et mettre à jour les modèles
+                    for (int i = 0; i < updatedModeles.length; i++) {
+                      futures.add(() async {
+                        // Recherche de l'ID du modèle à partir du nom si nécessaire
+                        if (updatedModeles[i].nomModele.isEmpty && updatedModeles[i].modele != null) {
+                          String? modeleNom = await Provider.of<CommandeProvider>(context, listen: false).getModeleNom(updatedModeles[i].modele!);
+                          if (modeleNom != null) {
+                            updatedModeles[i].nomModele = modeleNom;
+                          } else {
+                            hasError = true;
+                          }
+                        }
+
+                        // Recherche de l'ID du modèle si le nom est rempli
+                        if ((updatedModeles[i].modele == null || updatedModeles[i].modele!.isEmpty) &&
+                            updatedModeles[i].nomModele.isNotEmpty) {
+                          String? modeleId = await Provider.of<CommandeProvider>(context, listen: false).getModeleId(updatedModeles[i].nomModele);
+                          if (modeleId != null) {
+                            updatedModeles[i].modele = modeleId;
+                          } else {
+                            hasError = true;
+                          }
+                        }
+
+                        updatedModeles[i].taille = tailleControllers[i].text;
+                        updatedModeles[i].couleur = couleurControllers[i].text;
+                        updatedModeles[i].quantite = int.tryParse(quantiteControllers[i].text) ?? 1;
+                      }());
                     }
 
-                    bool success = await Provider.of<CommandeProvider>(context, listen: false)
-                        .updateCommande(commande.id!, updatedModeles);
+                    await Future.wait(futures);
+
+                    if (hasError) {
+                      setState(() {
+                        isLoading = false;
+                      });
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("❌ Erreur dans les modèles.")),
+                      );
+                      return;
+                    }
+
+                    bool success = await Provider.of<CommandeProvider>(context, listen: false).updateCommande(commande.id!, updatedModeles);
+
+                    setState(() {
+                      isLoading = false;
+                    });
 
                     if (success) {
-                      Commande updatedCommande = Provider.of<CommandeProvider>(context, listen: false)
-                          .commandes
-                          .firstWhere((cmd) => cmd.id == commande.id!);
-
-                      updatedCommande.modeles = updatedModeles;
+                      print("✅ Commande mise à jour !");
+                      await Provider.of<CommandeProvider>(context, listen: false).fetchCommandes();
                       Provider.of<CommandeProvider>(context, listen: false).notifyListeners();
-
                       Navigator.pop(context);
                     } else {
-                      print("Erreur lors de la mise à jour de la commande.");
+                      print("❌ Erreur lors de la mise à jour de la commande.");
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("❌ Erreur lors de la mise à jour de la commande.")),
+                      );
                     }
                   },
-                  child: const Text('Enregistrer'),
+                  child: const Text('Enregistrer Commande'),
                 ),
               ],
             );

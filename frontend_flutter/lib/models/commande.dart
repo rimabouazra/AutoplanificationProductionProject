@@ -7,7 +7,7 @@ class CommandeModele {
 
   CommandeModele({
     this.modele,
-    required this.nomModele, // Nouveau champ
+    required this.nomModele,
     required this.taille,
     required this.couleur,
     required this.quantite,
@@ -16,7 +16,7 @@ class CommandeModele {
   factory CommandeModele.fromJson(Map<String, dynamic> json) {
     return CommandeModele(
       modele: json['modele'],
-      nomModele: json['nomModele'] ?? '', // Récupération du nom du modèle
+      nomModele: json['nomModele'] ?? '',
       taille: json['taille'],
       couleur: json['couleur'],
       quantite: json['quantite'],
