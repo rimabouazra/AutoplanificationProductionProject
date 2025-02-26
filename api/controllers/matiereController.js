@@ -4,7 +4,12 @@ const Matiere = require("../models/matiere");
 exports.addMatiere = async (req, res) => {
   try {
     const { reference, couleur, quantite } = req.body;
-    const newMatiere = new Matiere({ reference, couleur, quantite });
+    const newMatiere = new Matiere({
+        reference,
+        couleur,
+        quantite,
+        historique: [{ action: "ajout", quantite, date: new Date() }]
+      });
     await newMatiere.save();
     res.status(201).json({ message: "Matière ajoutée avec succès", matiere: newMatiere });
   } catch (error) {
@@ -12,6 +17,18 @@ exports.addMatiere = async (req, res) => {
   }
 };
 
+exports.getHistoriqueMatiere = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const matiere = await Matiere.findById(id).select("historique");
+      if (!matiere) {
+        return res.status(404).json({ message: "Matière non trouvée" });
+      }
+      res.status(200).json(matiere.historique);
+    } catch (error) {
+      res.status(500).json({ message: "Erreur lors de la récupération de l'historique", error });
+    }
+  };
 // Obtenir toutes les matières
 exports.getMatieres = async (req, res) => {
   try {
@@ -35,19 +52,31 @@ exports.deleteMatiere = async (req, res) => {
 
 exports.updateMatiere = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { quantite } = req.body;
-
-        const matiere = await Matiere.findById(id);
-        if (!matiere) {
-            return res.status(404).json({ message: "Matière non trouvée" });
+      const { id } = req.params;
+      const { quantite, action } = req.body; // action = "ajout" ou "consommation"
+      
+      const matiere = await Matiere.findById(id);
+      if (!matiere) {
+        return res.status(404).json({ message: "Matière introuvable" });
+      }
+  
+      // Enregistrement de l'historique
+      matiere.historique.push({ action, quantite, date: new Date() });
+  
+      // Mise à jour de la quantité
+      if (action === "ajout") {
+        matiere.quantite += quantite;
+      } else if (action === "consommation") {
+        if (matiere.quantite < quantite) {
+          return res.status(400).json({ message: "Quantité insuffisante" });
         }
-
-        matiere.quantite = quantite; // Mise à jour de la quantité
-        await matiere.save();
-
-        res.status(200).json(matiere);
+        matiere.quantite -= quantite;
+      }
+  
+      await matiere.save();
+      res.status(200).json(matiere);
     } catch (error) {
-        res.status(500).json({ message: "Erreur serveur", error });
+      res.status(500).json({ message: "Erreur lors de la mise à jour de la matière", error });
     }
-};
+  };
+  
