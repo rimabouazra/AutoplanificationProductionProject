@@ -23,6 +23,8 @@ class _CommandePageState extends State<CommandePage> {
   void initState() {
     super.initState();
     Provider.of<CommandeProvider>(context, listen: false).fetchCommandes();
+    Provider.of<ModeleProvider>(context, listen: false).fetchModeles();
+
   }
 
   List<String> filters = [
@@ -236,16 +238,36 @@ class _CommandePageState extends State<CommandePage> {
                                 const SizedBox(width: 10),
                                 IconButton(
                                   icon: const Icon(Icons.delete, color: Colors.red),
-                                  onPressed: () {
-                                    setState(() {
-                                      updatedModeles.removeAt(index);
-                                      nomModeleControllers.removeAt(index);
-                                      tailleControllers.removeAt(index);
-                                      couleurControllers.removeAt(index);
-                                      quantiteControllers.removeAt(index);
-                                    });
+                                  onPressed: () async {
+                                    bool confirmDelete = await showDialog(
+                                      context: context,
+                                      builder: (context) => AlertDialog(
+                                        title: const Text('Confirmer la suppression'),
+                                        content: const Text('Êtes-vous sûr de vouloir supprimer ce modèle ?'),
+                                        actions: [
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(context, false),
+                                            child: const Text('Annuler'),
+                                          ),
+                                          TextButton(
+                                            onPressed: () => Navigator.pop(context, true),
+                                            child: const Text('Supprimer', style: TextStyle(color: Colors.red)),
+                                          ),
+                                        ],
+                                      ),
+                                    ) ?? false;
+
+                                    if (confirmDelete) {
+                                      setState(() {
+                                        updatedModeles.removeAt(index);
+                                        nomModeleControllers.removeAt(index);
+                                        tailleControllers.removeAt(index);
+                                        couleurControllers.removeAt(index);
+                                        quantiteControllers.removeAt(index);
+                                      });
+                                    }
                                   },
-                                ),
+                                )
                               ],
                             ),
                             const SizedBox(height: 10),
@@ -446,7 +468,7 @@ class _CommandePageState extends State<CommandePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   buildSearchBar(),
-                  buildFilters(), // Ajout des filtres ici
+                  buildFilters(),
                   const SizedBox(height: 10),
                   buildCommandesTable(),
                 ],
@@ -456,7 +478,7 @@ class _CommandePageState extends State<CommandePage> {
         ],
       ),
       floatingActionButton: Padding(
-        padding: const EdgeInsets.only(bottom: 20.0), // Décale le bouton vers le haut
+        padding: const EdgeInsets.only(bottom: 20.0),
         child: FloatingActionButton(
           onPressed: navigateToAddCommande,
           backgroundColor: Colors.purple[200],

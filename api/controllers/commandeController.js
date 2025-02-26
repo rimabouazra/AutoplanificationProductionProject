@@ -11,7 +11,6 @@ exports.ajouterCommande = async (req, res) => {
 
         const { client, conditionnement, delais, etat, salleAffectee, machinesAffectees, modeles } = req.body;
 
-        // Vérifier si une salle affectée est valide
         if (salleAffectee) {
             console.log("Vérification de la salle :", salleAffectee);
             const salleExistante = await Salle.findById(salleAffectee);
@@ -20,7 +19,6 @@ exports.ajouterCommande = async (req, res) => {
             }
         }
 
-        // Vérifier si les machines affectées existent
         if (machinesAffectees && machinesAffectees.length > 0) {
             console.log("Vérification des machines :", machinesAffectees);
             for (const machineId of machinesAffectees) {
@@ -31,19 +29,16 @@ exports.ajouterCommande = async (req, res) => {
             }
         }
 
-        // Vérifier que modeles est bien un tableau non vide
         if (!Array.isArray(modeles) || modeles.length === 0) {
             return res.status(400).json({ message: "Veuillez ajouter au moins un modèle" });
         }
 
-        // Vérifier que chaque modèle existe avant de l'ajouter
          for (let item of modeles) {
              const modeleExist = await Modele.findById(item.modele); // Recherche par ID
              if (!modeleExist) {
                  return res.status(400).json({ message: `Modèle non trouvé: ${item.modele}` });
              }
          }
-        // Création de la commande avec les modèles et leurs propriétés spécifiques
         const nouvelleCommande = new Commande({
             client,
             modeles, //  Contient {modele, taille, couleur, quantite}
@@ -54,7 +49,6 @@ exports.ajouterCommande = async (req, res) => {
             machinesAffectees
         });
 
-        // Sauvegarde dans MongoDB
         await nouvelleCommande.save();
 
         console.log("Commande enregistrée :", nouvelleCommande); // Debug

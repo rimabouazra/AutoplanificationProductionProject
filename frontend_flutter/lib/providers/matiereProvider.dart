@@ -7,7 +7,6 @@ class MatiereProvider with ChangeNotifier {
 
   List<Matiere> get matieres => _matieres;
 
-  // Charger les matières depuis l'API
   Future<void> fetchMatieres() async {
     try {
       final response = await ApiService.getMatieres();
@@ -46,7 +45,7 @@ class MatiereProvider with ChangeNotifier {
       int index = _matieres.indexWhere((m) => m.id == id);
       if (index != -1) {
         _matieres[index] = updatedMatiere; // Met à jour la matière
-        notifyListeners(); // Rafraîchit la liste
+        notifyListeners();
       }
     }
   } catch (e) {
