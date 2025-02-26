@@ -20,14 +20,15 @@ class MatiereProvider with ChangeNotifier {
 
   // Ajouter une matière
   Future<void> addMatiere(Matiere matiere) async {
-    try {
-      final newMatiere = await ApiService.addMatiere(matiere);
-      _matieres.add(Matiere.fromJson(newMatiere));
-      notifyListeners();
-    } catch (e) {
-      print("Erreur lors de l'ajout de la matière : $e");
-    }
+  try {
+    await ApiService.addMatiere(matiere);
+    await fetchMatieres();
+  } catch (e) {
+    print("Erreur lors de l'ajout de la matière : $e");
   }
+}
+
+
 
   // Supprimer une matière
   Future<void> deleteMatiere(String id) async {
@@ -41,16 +42,38 @@ class MatiereProvider with ChangeNotifier {
   }
   Future<void> updateMatiere(String id, int newQuantite) async {
   try {
+    print("Début de updateMatiere pour l'ID : $id avec quantité : $newQuantite");//DEBUG
     final updatedMatiere = await ApiService.updateMatiere(id, newQuantite);
+    print("Réponse de l'API (updateMatiere) : $updatedMatiere");//DEBUG
     if (updatedMatiere != null) {
       int index = _matieres.indexWhere((m) => m.id == id);
+      print("Index trouvé dans _matieres : $index");//DEBUG
       if (index != -1) {
         _matieres[index] = updatedMatiere; // Met à jour la matière
         notifyListeners(); // Rafraîchit la liste
+        print("Matière mise à jour avec succès !");//DEBUG
+      }else {
+        print("Matière non trouvée dans la liste !");//DEBUG
       }
+    }else {
+      print("Erreur : L'API n'a pas retourné la matière mise à jour !");//DEBUG
     }
   } catch (e) {
     print("Erreur de mise à jour : $e");
+  }
+}
+Future<List<Historique>> fetchHistorique(String id) async {
+  try {
+    final response = await ApiService.getHistoriqueMatiere(id);
+    if (response is List) {
+      return response.map((json) => Historique.fromJson(json as Map<String, dynamic>)).toList();
+    } else {
+      print("Erreur : La réponse de l'API n'est pas une liste.");
+      return [];
+    }
+  } catch (e) {
+    print("Erreur lors du chargement de l'historique : $e");
+    return [];
   }
 }
 

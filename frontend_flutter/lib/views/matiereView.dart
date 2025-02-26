@@ -37,16 +37,26 @@ class _MatiereViewState extends State<MatiereView> {
     try {
       await provider.addMatiere(
         Matiere(
-            id: '', reference: reference, couleur: couleur, quantite: quantite),
+  id: '',
+  reference: reference,
+  couleur: couleur,
+  quantite: quantite,
+  dateAjout: DateTime.now(),
+  historique: [],
+)
+
       );
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
             content: Text("Matière ajoutée avec succès !"),
             backgroundColor: Colors.green),
       );
+
       referenceController.clear();
       couleurController.clear();
       quantiteController.clear();
+      Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Erreur : $e"), backgroundColor: Colors.red),
@@ -60,6 +70,52 @@ class _MatiereViewState extends State<MatiereView> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
           content: Text("Matière supprimée"), backgroundColor: Colors.blue),
+    );
+  }
+
+  void _modifierQuantite(BuildContext context, Matiere matiere, bool ajouter) {
+    TextEditingController quantiteController = TextEditingController();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(ajouter ? "Ajouter Quantité" : "Consommer Quantité"),
+        content: TextField(
+          controller: quantiteController,
+          decoration: InputDecoration(labelText: "Quantité"),
+          keyboardType: TextInputType.number,
+        ),
+        actions: [
+          TextButton(
+              onPressed: () => Navigator.pop(context), child: Text("Annuler")),
+          ElevatedButton(
+            onPressed: () async {
+              final provider =
+                  Provider.of<MatiereProvider>(context, listen: false);
+              int valeur = int.tryParse(quantiteController.text) ?? 0;
+
+              if (valeur <= 0) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                      content: Text("Veuillez entrer une quantité valide"),
+                      backgroundColor: Colors.red),
+                );
+                return;
+              }
+
+              int nouvelleQuantite = ajouter
+                  ? matiere.quantite + valeur
+                  : (matiere.quantite - valeur)
+                      .clamp(0, double.infinity)
+                      .toInt();
+
+              await provider.updateMatiere(matiere.id, nouvelleQuantite);
+              Navigator.pop(context);
+            },
+            child: Text("Confirmer"),
+          ),
+        ],
+      ),
     );
   }
 
@@ -90,10 +146,7 @@ class _MatiereViewState extends State<MatiereView> {
           TextButton(
               onPressed: () => Navigator.pop(context), child: Text("Annuler")),
           ElevatedButton(
-              onPressed: () {
-                _ajouterMatiere(context);
-                Navigator.pop(context);
-              },
+              onPressed: () => _ajouterMatiere(context),
               child: Text("Ajouter")),
         ],
       ),
@@ -134,54 +187,45 @@ class _MatiereViewState extends State<MatiereView> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       IconButton(
-                        icon: Icon(Icons.edit, color: Colors.blue),
-                        onPressed: () {
-                          showDialog(
-                            context: context,
-                            builder: (context) {
-                              int newQuantite =
-                                  matiere.quantite; // Quantité actuelle
-
-                              return AlertDialog(
-                                title: Text("Modifier la quantité"),
-                                content: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    TextField(
-                                      keyboardType: TextInputType.number,
-                                      decoration: InputDecoration(
-                                          labelText: "Nouvelle quantité"),
-                                      onChanged: (value) {
-                                        newQuantite = int.tryParse(value) ??
-                                            matiere.quantite;
-                                      },
-                                    ),
-                                  ],
-                                ),
-                                actions: [
-                                  TextButton(
-                                    child: Text("Annuler"),
-                                    onPressed: () => Navigator.pop(context),
-                                  ),
-                                  ElevatedButton(
-                                    child: Text("Modifier"),
-                                    onPressed: () {
-                                      Provider.of<MatiereProvider>(context,
-                                              listen: false)
-                                          .updateMatiere(
-                                              matiere.id, newQuantite);
-                                      Navigator.pop(context);
-                                    },
-                                  ),
-                                ],
-                              );
-                            },
-                          );
-                        },
+                        icon: Icon(Icons.add, color: Colors.green),
+                        onPressed: () =>
+                            _modifierQuantite(context, matiere, true),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.remove, color: Colors.orange),
+                        onPressed: () =>
+                            _modifierQuantite(context, matiere, false),
                       ),
                       IconButton(
                         icon: Icon(Icons.delete, color: Colors.red),
                         onPressed: () => _supprimerMatiere(context, matiere.id),
+                      ),
+                      ElevatedButton(
+                        onPressed: () async {
+                          final provider = Provider.of<MatiereProvider>(context,
+                              listen: false);
+                          List<Historique> historique =
+                              await provider.fetchHistorique(matiere.id);
+                          showDialog(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: Text("Historique de ${matiere.reference}"),
+                              content: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                children: historique
+                                    .map((h) => Text(
+                                        "${h.date} - ${h.action}: ${h.quantite}"))
+                                    .toList(),
+                              ),
+                              actions: [
+                                TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: Text("Fermer"))
+                              ],
+                            ),
+                          );
+                        },
+                        child: Text("Voir Historique"),
                       ),
                     ],
                   ),
