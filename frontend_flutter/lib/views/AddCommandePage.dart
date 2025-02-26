@@ -18,7 +18,6 @@ class _AddCommandePageState extends State<AddCommandePage> {
   bool isLoading = false;
 
   List<CommandeModele> modeles = [];
-  String? selectedModele;
   final TextEditingController modeleController = TextEditingController();
   final TextEditingController couleurController = TextEditingController();
   final TextEditingController tailleController = TextEditingController();
@@ -37,23 +36,28 @@ class _AddCommandePageState extends State<AddCommandePage> {
     }
   }
 
-  Widget _buildTextField(TextEditingController controller, String label, {bool isNumber = false}) {
+  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {bool isNumber = false, bool isOptional = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: controller,
         keyboardType: isNumber ? TextInputType.number : TextInputType.text,
         decoration: InputDecoration(
+          prefixIcon: Icon(icon, color: Colors.teal),
           labelText: label,
-          labelStyle: TextStyle(color: Color(0xFF004D40)),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15), borderSide: BorderSide.none),
+          labelStyle: const TextStyle(color: Colors.teal),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
           filled: true,
-          fillColor: Color(0xFFE0F2F1),
+          fillColor: Colors.white,
         ),
         validator: (value) {
-          if (value!.isEmpty) return "Champ requis";
-          if (isNumber && int.tryParse(value) == null) return "Entrer un nombre valide";
-          if (isNumber && int.parse(value) <= 0) return "La quantité doit être positive";
+          if (!isOptional && value!.isEmpty) return "Champ requis";
+          if (isNumber && int.tryParse(value!) == null) {
+            return "Entrer un nombre valide";
+          }
+          if (isNumber && int.parse(value!) <= 0) {
+            return "La quantité doit être positive";
+          }
           return null;
         },
       ),
@@ -68,40 +72,51 @@ class _AddCommandePageState extends State<AddCommandePage> {
 
     setState(() {
       modeles.add(CommandeModele(
-        modele: modeleController.text,
+        nomModele: modeleController.text,
         taille: tailleController.text,
         couleur: couleurController.text,
         quantite: int.parse(quantiteController.text),
       ));
-      // Debug: Print the list of models after adding
-      print("Modeles ajoutés: ${modeles.map((m) => m.toJson()).toList()}");
-      // Ne vide pas les champs après avoir ajouté le modèle
     });
   }
 
   Future<void> _submitCommande() async {
-    if (selectedModele != null && couleurController.text.isNotEmpty && tailleController.text.isNotEmpty && quantiteController.text.isNotEmpty) {
-      _addModele(); // Automatically save the last model
-    }
     if (!_formKey.currentState!.validate() || selectedDate == null || modeles.isEmpty) {
       Fluttertoast.showToast(msg: "Veuillez remplir tous les champs et ajouter au moins un modèle.");
       return;
     }
 
     setState(() => isLoading = true);
+    final commandeProvider = Provider.of<CommandeProvider>(context, listen: false);
+
+    List<CommandeModele> modelesWithId = [];
+
+    for (var modele in modeles) {
+      String? modeleId = await commandeProvider.getModeleId(modele.nomModele);
+      if (modeleId != null) {
+        modelesWithId.add(CommandeModele(
+          modele: modeleId,
+          nomModele: modele.nomModele,
+          taille: modele.taille,
+          couleur: modele.couleur,
+          quantite: modele.quantite,
+        ));
+      } else {
+        Fluttertoast.showToast(msg: "Erreur : Modèle '${modele.nomModele}' non trouvé.");
+        setState(() => isLoading = false);
+        return;
+      }
+    }
 
     Commande newCommande = Commande(
       client: clientController.text,
-      modeles: modeles,
+      modeles: modelesWithId,
       conditionnement: conditionnementController.text,
       delais: selectedDate ?? DateTime.now(),
       etat: "en attente",
     );
 
-    // **Debug Log**: Check if models are properly added before sending the request
-    print("Modeles envoyés: ${newCommande.modeles.map((m) => m.toJson()).toList()}");
-
-    bool success = await Provider.of<CommandeProvider>(context, listen: false).addCommande(newCommande);
+    bool success = await commandeProvider.addCommande(newCommande);
     setState(() => isLoading = false);
 
     if (success) {
@@ -112,16 +127,15 @@ class _AddCommandePageState extends State<AddCommandePage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        backgroundColor: Color(0xFFECEFFF1),
+        backgroundColor: Colors.teal.shade50,
         appBar: AppBar(
-          title: Text("Ajouter une Commande", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-          backgroundColor: Color(0xFF4DB6AC),
+          title: const Text("Ajouter une Commande", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
+          backgroundColor: Colors.teal,
           centerTitle: true,
           elevation: 0,
         ),
@@ -139,54 +153,50 @@ class _AddCommandePageState extends State<AddCommandePage> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      _buildTextField(clientController, "Client"),
-                      _buildTextField(conditionnementController, "Conditionnement"),
-                      SizedBox(height: 10),
+                      _buildTextField(clientController, "Client", Icons.person),
+                      _buildTextField(conditionnementController, "Conditionnement", Icons.inventory, isOptional: true),
+                      const SizedBox(height: 10),
                       ListTile(
-                        title: Text(selectedDate == null
-                            ? "Sélectionner une date de livraison"
-                            : "Date: ${DateFormat('dd/MM/yyyy', 'fr_FR').format(selectedDate!)}"),
-                        trailing: Icon(Icons.calendar_today, color: Color(0xFF009688)),
+                        tileColor: Colors.grey.shade200,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                        title: Text(
+                          selectedDate == null
+                              ? "Sélectionner une date de livraison"
+                              : "Date: ${DateFormat('dd/MM/yyyy', 'fr_FR').format(selectedDate!)}",
+                        ),
+                        trailing: const Icon(Icons.calendar_today, color: Colors.teal),
                         onTap: () => _selectDate(context),
                       ),
-                      SizedBox(height: 20),
-                      Text("Ajouter un modèle", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 20),
+                      const Text("Associer un modèle", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                       _buildModeleForm(),
-                      SizedBox(height: 20),
-                      ...modeles.map((modele) => ListTile(
-                        title: Text("${modele.modele} - taille : ${modele.taille} - couleur : ${modele.couleur} - ${modele.quantite} unités"),
-                        trailing: IconButton(
-                          icon: Icon(Icons.delete, color: Colors.red),
-                          onPressed: () {
-                            setState(() {
-                              modeles.remove(modele);
-                            });
-                          },
+                      const SizedBox(height: 20),
+                      ...modeles.map((modele) => Card(
+                        margin: const EdgeInsets.symmetric(vertical: 5),
+                        child: ListTile(
+                          title: Text("${modele.nomModele} - Taille : ${modele.taille} - Quantité : ${modele.quantite}"),
+                          subtitle: Text("Couleur : ${modele.couleur}"),
+                          trailing: IconButton(
+                            icon: const Icon(Icons.delete, color: Colors.red),
+                            onPressed: () => setState(() => modeles.remove(modele)),
+                          ),
                         ),
-                      )).toList(),
-                      SizedBox(height: 20),
+                      )),
+                      const SizedBox(height: 20),
                       isLoading
-                          ? CircularProgressIndicator(color: Color(0xFF4DB6AC))
+                          ? const CircularProgressIndicator(color: Colors.teal)
                           : Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           ElevatedButton(
                             onPressed: () => Navigator.pop(context),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.redAccent,
-                              padding: EdgeInsets.symmetric(vertical: 15, horizontal: 30),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            child: Text("Annuler", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+                            child: const Text("Annuler"),
                           ),
                           ElevatedButton(
                             onPressed: _submitCommande,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(0xFF26A69A),
-                              padding: EdgeInsets.symmetric(vertical: 15, horizontal: 30),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                            ),
-                            child: Text("Ajouter", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+                            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal.shade300),
+                            child: const Text("Ajouter"),
                           ),
                         ],
                       ),
@@ -204,15 +214,16 @@ class _AddCommandePageState extends State<AddCommandePage> {
   Widget _buildModeleForm() {
     return Column(
       children: [
-        _buildTextField(modeleController, "Nom du Modèle"),
-        SizedBox(height: 10),
-        _buildTextField(couleurController, "Couleur"),
-        _buildTextField(tailleController, "Taille"),
-        _buildTextField(quantiteController, "Quantité", isNumber: true),
-        SizedBox(height: 10),
-        ElevatedButton(
+        _buildTextField(modeleController, "Nom du Modèle", Icons.drive_file_rename_outline_outlined),
+        _buildTextField(tailleController, "Taille", Icons.straighten),
+        _buildTextField(quantiteController, "Quantité", Icons.numbers, isNumber: true),
+        _buildTextField(couleurController, "Couleur", Icons.colorize),
+
+        const SizedBox(height: 10),
+        ElevatedButton.icon(
           onPressed: _addModele,
-          child: Text("Ajouter Modèle"),
+          icon: const Icon(Icons.add),
+          label: const Text("Ajouter Modèle"),
         ),
       ],
     );

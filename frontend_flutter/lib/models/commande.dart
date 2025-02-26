@@ -1,11 +1,13 @@
 class CommandeModele {
-  String? modele; // Référence à un Modele
+  String? modele; // Référence à un Modele (ID)
+  String nomModele; // Ajout du nom du modèle
   String taille;
   String couleur;
   int quantite;
 
   CommandeModele({
     this.modele,
+    required this.nomModele,
     required this.taille,
     required this.couleur,
     required this.quantite,
@@ -14,6 +16,7 @@ class CommandeModele {
   factory CommandeModele.fromJson(Map<String, dynamic> json) {
     return CommandeModele(
       modele: json['modele'],
+      nomModele: json['nomModele'] ?? '',
       taille: json['taille'],
       couleur: json['couleur'],
       quantite: json['quantite'],
@@ -23,6 +26,7 @@ class CommandeModele {
   Map<String, dynamic> toJson() {
     return {
       'modele': modele,
+      'nomModele': nomModele, // Inclusion du nom du modèle dans la requête
       'taille': taille,
       'couleur': couleur,
       'quantite': quantite,
@@ -35,7 +39,7 @@ class Commande {
   String? id;
   String client;
   List<CommandeModele> modeles;
-  String conditionnement;
+  String? conditionnement;
   DateTime? delais;
   String etat;
   DateTime? createdAt;
@@ -47,7 +51,7 @@ class Commande {
     this.id,
     required this.client,
     required this.modeles,
-    required this.conditionnement,
+    this.conditionnement,
     this.delais,
     required this.etat,
     this.createdAt,

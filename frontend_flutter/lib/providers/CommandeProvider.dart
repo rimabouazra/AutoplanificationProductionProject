@@ -12,7 +12,6 @@ class CommandeProvider with ChangeNotifier {
 
   Future<bool> updateCommande(String commandeId, List<CommandeModele> updatedModeles) async {
     try {
-      // Récupérer la commande existante dans la liste locale
       Commande? commandeExistante;
       try {
         commandeExistante = _commandes.firstWhere((cmd) => cmd.id == commandeId);
@@ -25,17 +24,32 @@ class CommandeProvider with ChangeNotifier {
         return false;
       }
 
-      // Mise à jour des modèles localement
+      for (int i = 0; i < updatedModeles.length; i++) {
+        if (updatedModeles[i].modele == null || updatedModeles[i].modele!.isEmpty) {
+          print("Récupération de l'ID pour le modèle: ${updatedModeles[i].nomModele}");
+          String? modeleId = await getModeleId(updatedModeles[i].nomModele);
+          if (modeleId != null) {
+            updatedModeles[i].modele = modeleId;
+          } else {
+            print("Impossible de récupérer l'ID du modèle: ${updatedModeles[i].nomModele}");
+            return false;
+          }
+        }
+      }
+
       commandeExistante.modeles = updatedModeles;
 
-      // Envoi de la mise à jour au backend
+      // Envoi au backend
+      print("Envoi des données au backend : ${jsonEncode(updatedModeles)}");
       final response = await http.put(
         Uri.parse("$_baseUrl/$commandeId"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "client": commandeExistante.client,
-          "modeles": commandeExistante.modeles.map((modele) => {
-            "modele": modele.modele, // Ensure the modele ID is passed
+          "modeles": updatedModeles.map((modele) => {
+            // Assure-toi que l'objet envoyé est conforme au format attendu par l'API
+            "modele": modele.modele,
+            "nomModele": modele.nomModele,
             "taille": modele.taille,
             "couleur": modele.couleur,
             "quantite": modele.quantite,
@@ -48,14 +62,13 @@ class CommandeProvider with ChangeNotifier {
         }),
       );
 
-
       if (response.statusCode == 200) {
-        // La commande a été mise à jour avec succès, on met à jour localement sans recharger
         _commandes = _commandes.map((commande) {
           return commande.id == commandeId ? commandeExistante! : commande;
         }).toList();
 
-        notifyListeners(); // Notifier les widgets écoutant pour qu'ils se mettent à jour
+        notifyListeners();
+        print("Commande mise à jour avec succès !");
         return true;
       } else {
         print("Erreur HTTP ${response.statusCode}: ${response.body}");
@@ -85,6 +98,48 @@ class CommandeProvider with ChangeNotifier {
       return false;
     }
   }
+
+
+  Future<String?> getModeleId(String nomModele) async {
+    print("Recherche du modèle pour nomModele: $nomModele");
+    try {
+      var response = await http.get(Uri.parse("http://localhost:5000/api/modeles/findByName/$nomModele"));
+
+      // Vérifiez si la réponse est bien reçue
+      print("Réponse HTTP: ${response.statusCode}");
+      if (response.statusCode == 200) {
+        var data = json.decode(response.body);
+        String? modeleId = data["id"];
+        print("ID du modèle trouvé: $modeleId");
+        return modeleId;
+      } else {
+        print("Erreur lors de la récupération du modèle: ${response.statusCode}");
+        return null;
+      }
+    } catch (e) {
+      print("Erreur dans getModeleId: $e");
+      return null;
+    }
+  }
+
+  Future<String?> getModeleNom(String modeleId) async {
+    try {
+      final response = await http.get(Uri.parse("http://localhost:5000/api/modeles/$modeleId"));
+
+      if (response.statusCode == 200) {
+        var data = json.decode(response.body);
+        return data["nom"];
+      } else {
+        print("Erreur récupération nom modèle: ${response.statusCode}");
+        return null;
+      }
+    } catch (e) {
+      print("Erreur getModeleNom: $e");
+      return null;
+    }
+  }
+
+
 
 
   Future<bool> addCommande(Commande commande) async {
