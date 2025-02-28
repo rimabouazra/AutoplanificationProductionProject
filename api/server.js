@@ -9,6 +9,7 @@ const modeleRoutes = require("./routes/modeleRoutes");
 const machineRoutes = require("./routes/machineRoutes");
 const matiereRoutes = require("./routes/matiereRoutes");
 
+
 dotenv.config();
 
 const app = express();
@@ -23,12 +24,15 @@ app.use("/api/modeles", modeleRoutes);
 app.use("/api/machines", machineRoutes);
 app.use("/api/matieres", matiereRoutes);
 
-// Connexion à MongoDB
-mongoose.connect(process.env.MONGO_URI, {
-    useNewUrlParser: true,
-    useUnifiedTopology: true
-}).then(() => console.log("MongoDB Connected...:)"))
-.catch(err => console.log(err));
+
+const uri = "mongodb+srv://mayarabouazra:O3DXC206BrDTWUr0@clustercoque.vhlic.mongodb.net/?retryWrites=true&w=majority&appName=clusterCoque";
+
+ mongoose.connect(uri, {
+   useNewUrlParser: true,
+   useUnifiedTopology: true,
+ })
+ .then(() => console.log("Connected to MongoDB successfully!"))
+ .catch((err) => console.error("MongoDB connection error:", err));
 
 // Routes
 app.get("/", (req, res) => {

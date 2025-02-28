@@ -16,6 +16,7 @@ class _AddCommandePageState extends State<AddCommandePage> {
   final TextEditingController conditionnementController = TextEditingController();
   DateTime? selectedDate;
   bool isLoading = false;
+  //TO DO : make the client auto complete and the modele should be dropdown
 
   List<CommandeModele> modeles = [];
   final TextEditingController modeleController = TextEditingController();
