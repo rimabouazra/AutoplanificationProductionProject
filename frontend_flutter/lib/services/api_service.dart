@@ -288,12 +288,11 @@ class ApiService {
       return null;
     }
   }
-  static Future<List<Historique>> getHistoriqueMatiere(String matiereId) async {
+  static Future<List<dynamic>> getHistoriqueMatiere(String matiereId) async {
   final response = await http.get(Uri.parse('$baseUrl/matieres/$matiereId/historique'));
 
   if (response.statusCode == 200) {
-    List<dynamic> jsonData = json.decode(response.body);
-    return jsonData.map((json) => Historique.fromJson(json)).toList();
+    return json.decode(response.body);
   } else {
     throw Exception("Erreur lors de la récupération de l'historique");
   }

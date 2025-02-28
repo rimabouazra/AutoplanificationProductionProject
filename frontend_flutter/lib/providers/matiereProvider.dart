@@ -20,15 +20,13 @@ class MatiereProvider with ChangeNotifier {
 
   // Ajouter une matière
   Future<void> addMatiere(Matiere matiere) async {
-  try {
-    await ApiService.addMatiere(matiere);
-    await fetchMatieres();
-  } catch (e) {
-    print("Erreur lors de l'ajout de la matière : $e");
+    try {
+      await ApiService.addMatiere(matiere);
+      await fetchMatieres();
+    } catch (e) {
+      print("Erreur lors de l'ajout de la matière : $e");
+    }
   }
-}
-
-
 
   // Supprimer une matière
   Future<void> deleteMatiere(String id) async {
@@ -40,41 +38,51 @@ class MatiereProvider with ChangeNotifier {
       print("Erreur lors de la suppression de la matière : $e");
     }
   }
+
   Future<void> updateMatiere(String id, int newQuantite) async {
-  try {
-    print("Début de updateMatiere pour l'ID : $id avec quantité : $newQuantite");//DEBUG
-    final updatedMatiere = await ApiService.updateMatiere(id, newQuantite);
-    print("Réponse de l'API (updateMatiere) : $updatedMatiere");//DEBUG
-    if (updatedMatiere != null) {
-      int index = _matieres.indexWhere((m) => m.id == id);
-      print("Index trouvé dans _matieres : $index");//DEBUG
-      if (index != -1) {
-        _matieres[index] = updatedMatiere; // Met à jour la matière
-        notifyListeners(); // Rafraîchit la liste
-        print("Matière mise à jour avec succès !");//DEBUG
-      }else {
-        print("Matière non trouvée dans la liste !");//DEBUG
+    try {
+      print(
+          "Début de updateMatiere pour l'ID : $id avec quantité : $newQuantite"); //DEBUG
+      final updatedMatiere = await ApiService.updateMatiere(id, newQuantite);
+      print("Réponse de l'API (updateMatiere) : $updatedMatiere"); //DEBUG
+      if (updatedMatiere != null) {
+        int index = _matieres.indexWhere((m) => m.id == id);
+        print("Index trouvé dans _matieres : $index"); //DEBUG
+        if (index != -1) {
+          _matieres[index] = updatedMatiere; // Met à jour la matière
+          notifyListeners(); // Rafraîchit la liste
+          print("Matière mise à jour avec succès !"); //DEBUG
+        } else {
+          print("Matière non trouvée dans la liste !"); //DEBUG
+        }
+      } else {
+        print(
+            "Erreur : L'API n'a pas retourné la matière mise à jour !"); //DEBUG
       }
-    }else {
-      print("Erreur : L'API n'a pas retourné la matière mise à jour !");//DEBUG
+    } catch (e) {
+      print("Erreur de mise à jour : $e");
     }
-  } catch (e) {
-    print("Erreur de mise à jour : $e");
   }
-}
-Future<List<Historique>> fetchHistorique(String id) async {
-  try {
-    final response = await ApiService.getHistoriqueMatiere(id);
-    if (response is List) {
-      return response.map((json) => Historique.fromJson(json as Map<String, dynamic>)).toList();
-    } else {
-      print("Erreur : La réponse de l'API n'est pas une liste.");
+
+  Future<List<Historique>> fetchHistorique(String matiereId) async {
+    try {
+      final response = await ApiService.getHistoriqueMatiere(matiereId);
+      print("Réponse reçue : $response");
+      print("Type de la réponse : ${response.runtimeType}");
+      if (response is List) {
+        return response.map<Historique>((json) {
+          if (json is Map<String, dynamic>) {
+            return Historique.fromJson(json);
+          } else {
+            throw Exception("Format inattendu des données de l'historique !");
+          }
+        }).toList();
+      } else {
+        throw Exception("Format inattendu de la réponse API !");
+      }
+    } catch (e) {
+      print("Erreur lors du chargement de l'historique : $e");
       return [];
     }
-  } catch (e) {
-    print("Erreur lors du chargement de l'historique : $e");
-    return [];
   }
-}
-
 }

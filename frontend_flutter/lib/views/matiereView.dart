@@ -35,17 +35,14 @@ class _MatiereViewState extends State<MatiereView> {
     }
 
     try {
-      await provider.addMatiere(
-        Matiere(
-  id: '',
-  reference: reference,
-  couleur: couleur,
-  quantite: quantite,
-  dateAjout: DateTime.now(),
-  historique: [],
-)
-
-      );
+      await provider.addMatiere(Matiere(
+        id: '',
+        reference: reference,
+        couleur: couleur,
+        quantite: quantite,
+        dateAjout: DateTime.now(),
+        historique: [],
+      ));
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -102,17 +99,60 @@ class _MatiereViewState extends State<MatiereView> {
                 );
                 return;
               }
-
-              int nouvelleQuantite = ajouter
-                  ? matiere.quantite + valeur
-                  : (matiere.quantite - valeur)
-                      .clamp(0, double.infinity)
-                      .toInt();
-
+              int nouvelleQuantite = ajouter ? valeur : -valeur;
               await provider.updateMatiere(matiere.id, nouvelleQuantite);
               Navigator.pop(context);
             },
             child: Text("Confirmer"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _afficherHistorique(BuildContext context, Matiere matiere) async {
+    final provider = Provider.of<MatiereProvider>(context, listen: false);
+    List<Historique> historique = await provider.fetchHistorique(matiere.id);
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          "Historique de ${matiere.reference}",
+          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+        ),
+        content: Container(
+          width: double.maxFinite,
+          child: ListView.builder(
+            shrinkWrap: true,
+            itemCount: historique.length,
+            itemBuilder: (context, index) {
+              final entry = historique[index];
+              return Card(
+                elevation: 2,
+                margin: EdgeInsets.symmetric(vertical: 4),
+                child: ListTile(
+                  leading: Icon(
+                    entry.action == 'Ajout' ? Icons.add : Icons.remove,
+                    color: entry.action == 'Ajout' ? Colors.green : Colors.red,
+                  ),
+                  title: Text(
+                    "${entry.date}",
+                    style: TextStyle(fontWeight: FontWeight.bold),
+                  ),
+                  subtitle: Text(
+                    "${entry.action}: ${entry.quantite}",
+                    style: TextStyle(fontSize: 14),
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Fermer", style: TextStyle(color: Colors.blue)),
           ),
         ],
       ),
@@ -201,30 +241,7 @@ class _MatiereViewState extends State<MatiereView> {
                         onPressed: () => _supprimerMatiere(context, matiere.id),
                       ),
                       ElevatedButton(
-                        onPressed: () async {
-                          final provider = Provider.of<MatiereProvider>(context,
-                              listen: false);
-                          List<Historique> historique =
-                              await provider.fetchHistorique(matiere.id);
-                          showDialog(
-                            context: context,
-                            builder: (context) => AlertDialog(
-                              title: Text("Historique de ${matiere.reference}"),
-                              content: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                children: historique
-                                    .map((h) => Text(
-                                        "${h.date} - ${h.action}: ${h.quantite}"))
-                                    .toList(),
-                              ),
-                              actions: [
-                                TextButton(
-                                    onPressed: () => Navigator.pop(context),
-                                    child: Text("Fermer"))
-                              ],
-                            ),
-                          );
-                        },
+                        onPressed: () => _afficherHistorique(context, matiere),
                         child: Text("Voir Historique"),
                       ),
                     ],
