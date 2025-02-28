@@ -6,7 +6,6 @@ class SalleProvider with ChangeNotifier {
 
   List<dynamic> get salles => _salles;
 
-  // Charger les salles
   Future<void> fetchSalles() async {
     try {
       _salles = await ApiService.getSalles();
@@ -40,7 +39,7 @@ class SalleProvider with ChangeNotifier {
   Future<void> supprimerSalle(String id) async {
     try {
       await ApiService.supprimerSalle(id);
-      await fetchSalles(); // Rafraîchir après suppression
+      await fetchSalles();
     } catch (e) {
       print("Erreur lors de la suppression de la salle : $e");
     }

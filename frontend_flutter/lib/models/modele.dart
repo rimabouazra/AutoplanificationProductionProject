@@ -14,8 +14,8 @@ class Modele {
   factory Modele.fromJson(Map<String, dynamic> json) {
     return Modele(
       id: json['_id'] ?? '',
-      nom: json['nom'] ?? '',  // nom est toujours présent
-      tailles: List<String>.from(json['tailles'] ?? []), //  tailles est une liste valide
+      nom: json['nom'] ?? '',
+      tailles: List<String>.from(json['tailles'] ?? []),
       derives: json['derives'] != null
           ? List<Modele>.from(json['derives'].map((m) => Modele.fromJson(m)))
           : [],
