@@ -35,5 +35,8 @@ class MachineProvider with ChangeNotifier {
     throw Exception("Erreur de connexion");
   }
 }
+List<Machine> getMachinesBySalle(String salleId) {
+  return _machines.where((machine) => machine.salle.id == salleId).toList();
+}
 
 }
