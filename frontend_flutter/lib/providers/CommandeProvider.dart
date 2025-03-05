@@ -108,7 +108,7 @@ class CommandeProvider with ChangeNotifier {
       print("Réponse HTTP: ${response.statusCode}");
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
-        String? modeleId = data["id"];
+        String? modeleId = data["_id"]?.toString(); // Vérifie aussi si ton backend utilise "_id" au lieu de "id"
         print("ID du modèle trouvé: $modeleId");
         return modeleId;
       } else {
@@ -120,6 +120,8 @@ class CommandeProvider with ChangeNotifier {
       return null;
     }
   }
+
+
 
   Future<String?> getModeleNom(String modeleId) async {
     try {
@@ -187,5 +189,18 @@ class CommandeProvider with ChangeNotifier {
       print("Erreur lors de la récupération des commandes: $error");
     }
   }
+  Future<List<Map<String, dynamic>>> fetchModeles() async {
+    try {
+      final response = await http.get(Uri.parse("http://localhost:5000/api/modeles"));
+      if (response.statusCode == 200) {
+        List<dynamic> data = json.decode(response.body);
+        return data.map((e) => {"id": e["_id"], "nom": e["nom"], "tailles": e["tailles"]}).toList();
+      }
+    } catch (e) {
+      print("Erreur fetchModeles: $e");
+    }
+    return [];
+  }
+
 
 }

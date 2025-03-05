@@ -3,6 +3,7 @@ import 'package:frontend/models/matiere.dart';
 import 'package:http/http.dart' as http;
 import '../models/machine.dart';
 import '../models/modele.dart';
+import '../models/produits.dart';
 import '../models/salle.dart';
 import '../models/user.dart';
 import '../models/planification.dart';
@@ -11,7 +12,6 @@ import '../models/commande.dart';
 class ApiService {
   static const String baseUrl = "http://localhost:5000/api";
 
-  // Récupérer toutes les Machines
   static Future<List<Machine>> getMachines() async {
     final response = await http.get(Uri.parse('$baseUrl/machines'));
     if (response.statusCode == 200) {
@@ -22,7 +22,6 @@ class ApiService {
     }
   }
 
-  // Ajouter une nouvelle Machine
   static Future<void> addMachine(
       {required String nom,
       required String salleId,
@@ -168,7 +167,6 @@ class ApiService {
     }
   }
 
-  // Ajouter une nouvelle Planification
   static Future<bool> addPlanification(Planification planification) async {
     final response = await http.post(
       Uri.parse('$baseUrl/planifications'),
@@ -178,7 +176,6 @@ class ApiService {
     return response.statusCode == 201;
   }
 
-  // Récupérer toutes les Commandes
   static Future<List<Commande>> getCommandes() async {
     final response = await http.get(Uri.parse('$baseUrl/commandes'));
     if (response.statusCode == 200) {
@@ -189,7 +186,6 @@ class ApiService {
     }
   }
 
-  // Ajouter une nouvelle Commande
   static Future<bool> addCommande(Commande commande) async {
     final response = await http.post(
       Uri.parse('$baseUrl/commandes/add'),
@@ -297,6 +293,56 @@ class ApiService {
   } else {
     throw Exception("Erreur lors de la récupération de l'historique");
   }
-}
+  }
+  static Future<List<Produit>> getProduits() async {
+    final response = await http.get(Uri.parse('$baseUrl/produits'));
+    if (response.statusCode == 200) {
+      List<dynamic> jsonData = json.decode(response.body);
+      print("Produits récupérés : $jsonData"); // Ajouter un print pour vérifier la réponse
+
+      return jsonData.map((json) => Produit.fromJson(json)).toList();
+    } else {
+      throw Exception("Erreur lors de la récupération des produits");
+    }
+  }
+
+  static Future<void> addProduit(Produit produit) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/produits/add'),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(produit.toJson()),
+    );
+    if (response.statusCode != 201) {
+      throw Exception("Erreur lors de l'ajout du produit : ${response.body}");
+    }
+  }
+
+  static Future<void> updateProduit(String id, String taille, String couleur, int quantite, String etat,) async {
+    final body = jsonEncode({
+      'taille': taille,
+      'couleur': couleur,
+      'quantite': quantite,
+      'etat': etat,
+    });
+
+    // Effectuer la requête PUT pour mettre à jour le produit
+    final response = await http.put(
+      Uri.parse('$baseUrl/produits/$id'),
+      headers: {"Content-Type": "application/json"},
+      body: body,
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception("Erreur lors de la mise à jour du produit : ${response.body}");
+    }
+  }
+
+
+  static Future<void> deleteProduit(String id) async {
+    final response = await http.delete(Uri.parse('$baseUrl/produits/$id'));
+    if (response.statusCode != 200) {
+      throw Exception("Erreur lors de la suppression du produit : ${response.body}");
+    }
+  }
 
 }

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../providers/matiereProvider.dart';
 import '../models/matiere.dart';
+import '../widgets/topNavbar.dart';
+
 
 class MatiereView extends StatefulWidget {
   @override
@@ -156,7 +158,7 @@ class _MatiereViewState extends State<MatiereView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text("Gestion des Matières")),
+      appBar: TopNavbar(), // Utilisation du TopNavbar ici
       body: Consumer<MatiereProvider>(
         builder: (context, provider, child) {
           if (provider.matieres.isEmpty) {

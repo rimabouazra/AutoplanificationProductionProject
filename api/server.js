@@ -8,6 +8,8 @@ const salleRoutes = require("./routes/salleRoutes");
 const modeleRoutes = require("./routes/modeleRoutes");
 const machineRoutes = require("./routes/machineRoutes");
 const matiereRoutes = require("./routes/matiereRoutes");
+const produitsRoutes = require("./routes/produitsRoutes");
+
 
 
 dotenv.config();
@@ -23,6 +25,8 @@ app.use("/api/salles", salleRoutes);
 app.use("/api/modeles", modeleRoutes);
 app.use("/api/machines", machineRoutes);
 app.use("/api/matieres", matiereRoutes);
+app.use("/api/produits", produitsRoutes);
+
 
 
 const uri = "mongodb+srv://mayarabouazra:O3DXC206BrDTWUr0@clustercoque.vhlic.mongodb.net/?retryWrites=true&w=majority&appName=clusterCoque";

@@ -17,6 +17,7 @@ class ModeleProvider with ChangeNotifier {
     }
   }
 
+
   Map<String, Modele> get modeleMap {
     return {for (var m in _modeles) m.id: m};
   }

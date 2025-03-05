@@ -2,11 +2,14 @@ const mongoose = require("mongoose");
 
 const ModeleSchema = new mongoose.Schema({
     nom: { type: String, required: true, unique: true },
+    matiere: { type: mongoose.Schema.Types.ObjectId, ref: "Matiere", required: true },
     tailles: [{ type: String, required: true }],
-    derives: [{ type: mongoose.Schema.Types.ObjectId, ref: "Modele" }]
+    bases: [{ type: mongoose.Schema.Types.ObjectId, ref: "Modele" }],
+    taillesBases: [{
+        baseId: { type: mongoose.Schema.Types.ObjectId, ref: "Modele" },
+        tailles: [{ type: String }]
+    }]
 });
 
-// Vérifie si le modèle existe déjà avant de le définir
 const Modele = mongoose.models.Modele || mongoose.model("Modele", ModeleSchema);
-
 module.exports = Modele;
