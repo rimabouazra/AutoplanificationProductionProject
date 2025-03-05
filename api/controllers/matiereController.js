@@ -85,5 +85,30 @@ exports.updateMatiere = async (req, res) => {
         res.status(500).json({ message: "Erreur lors de la mise à jour de la matière", error });
     }
 };
+// Renommer une matière
+exports.renameMatiere = async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { reference } = req.body;
+  
+      if (!reference) {
+        return res.status(400).json({ message: "La référence est requise" });
+      }
+  
+      const matiere = await Matiere.findByIdAndUpdate(
+        id,
+        { reference },
+        { new: true }
+      );
+  
+      if (!matiere) {
+        return res.status(404).json({ message: "Matière non trouvée" });
+      }
+  
+      res.status(200).json({ message: "Matière renommée avec succès", matiere });
+    } catch (error) {
+      res.status(500).json({ message: "Erreur lors du renommage de la matière", error });
+    }
+  };
 
   

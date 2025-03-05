@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/models/commande.dart';
 import '../models/matiere.dart';
 import '../services/api_service.dart';
 
@@ -85,4 +86,45 @@ class MatiereProvider with ChangeNotifier {
       return [];
     }
   }
+  Future<List<Map<String, dynamic>>> fetchCommandes() async {
+  try {
+    final List<Commande> commandes = await ApiService.getCommandes();
+    return commandes.map((commande) {
+      return commande.modeles.map((modele) {
+        return {
+          'id': commande.id,
+          'modele': modele.nomModele,
+          'taille': modele.taille, 
+        };
+      }).toList();
+    }).expand((x) => x).toList();
+  } catch (e) {
+    print("Erreur lors du chargement des commandes : $e");
+    return [];
+  }
+}
+// Renommer une matière
+Future<void> renameMatiere(String id, String newReference) async {
+  try {
+    final response = await ApiService.renameMatiere(id, newReference);
+    if (response != null) {
+      int index = _matieres.indexWhere((m) => m.id == id);
+      if (index != -1) {
+        _matieres[index] = Matiere(
+          id: _matieres[index].id,
+          reference: newReference,
+          couleur: _matieres[index].couleur,
+          quantite: _matieres[index].quantite,
+          dateAjout: _matieres[index].dateAjout,
+          historique: _matieres[index].historique,
+        );
+        notifyListeners(); // Rafraîchit la liste
+      }
+    }
+  } catch (e) {
+    print("Erreur lors du renommage de la matière : $e");
+  }
+}
+
+
 }

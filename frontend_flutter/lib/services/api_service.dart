@@ -297,5 +297,21 @@ class ApiService {
     throw Exception("Erreur lors de la récupération de l'historique");
   }
 }
+static Future<Matiere?> renameMatiere(String id, String newReference) async {
+  try {
+    final response = await http.patch(
+      Uri.parse('$baseUrl/matieres/$id/rename'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'reference': newReference}),
+    );
 
+    if (response.statusCode == 200) {
+      return Matiere.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception("Erreur lors du renommage de la matière");
+    }
+  } catch (e) {
+    throw Exception("Erreur de connexion : $e");
+  }
+}
 }
