@@ -22,7 +22,7 @@ class _ModeleViewState extends State<ModeleView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TopNavbar(),
+      appBar:AppBar(),
       body: Column(
         children: [
           Padding(
