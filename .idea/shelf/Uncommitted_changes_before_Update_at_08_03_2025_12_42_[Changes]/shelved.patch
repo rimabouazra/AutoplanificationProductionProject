@@ -1,0 +1,1224 @@
+Index: api/controllers/matiereController.js
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>const Matiere = require(\"../models/matiere\");\r\n\r\n// Ajouter une matière\r\nexports.addMatiere = async (req, res) => {\r\n  try {\r\n    const { reference, couleur, quantite } = req.body;\r\n    const newMatiere = new Matiere({\r\n        reference,\r\n        couleur,\r\n        quantite,\r\n        historique: [{ action: \"ajout\", quantite, date: new Date() }]\r\n      });\r\n    await newMatiere.save();\r\n    res.status(201).json({ message: \"Matière ajoutée avec succès\", matiere: newMatiere });\r\n  } catch (error) {\r\n    res.status(500).json({ message: \"Erreur lors de l'ajout de la matière\", error });\r\n  }\r\n};\r\n\r\nexports.getHistoriqueMatiere = async (req, res) => {\r\n    try {\r\n      const { id } = req.params;\r\n      const matiere = await Matiere.findById(id).select(\"historique\");\r\n      if (!matiere) {\r\n        return res.status(404).json({ message: \"Matière non trouvée\" });\r\n      }\r\n      res.status(200).json(matiere.historique);\r\n    } catch (error) {\r\n      res.status(500).json({ message: \"Erreur lors de la récupération de l'historique\", error });\r\n    }\r\n  };\r\n// Obtenir toutes les matières\r\nexports.getMatieres = async (req, res) => {\r\n  try {\r\n    const matieres = await Matiere.find();\r\n    res.status(200).json(matieres);\r\n  } catch (error) {\r\n    res.status(500).json({ message: \"Erreur lors de la récupération des matières\", error });\r\n  }\r\n};\r\n\r\n// Supprimer une matière par ID\r\nexports.deleteMatiere = async (req, res) => {\r\n  try {\r\n    const { id } = req.params;\r\n    await Matiere.findByIdAndDelete(id);\r\n    res.status(200).json({ message: \"Matière supprimée avec succès\" });\r\n  } catch (error) {\r\n    res.status(500).json({ message: \"Erreur lors de la suppression de la matière\", error });\r\n  }\r\n};\r\n\r\nexports.updateMatiere = async (req, res) => {\r\n    try {\r\n      const { id } = req.params;\r\n      const { quantite, action } = req.body; // action = \"ajout\" ou \"consommation\"\r\n      \r\n      const matiere = await Matiere.findById(id);\r\n      if (!matiere) {\r\n        return res.status(404).json({ message: \"Matière introuvable\" });\r\n      }\r\n  \r\n      // Enregistrement de l'historique\r\n      matiere.historique.push({ action, quantite, date: new Date() });\r\n  \r\n      // Mise à jour de la quantité\r\n      if (action === \"ajout\") {\r\n        matiere.quantite += quantite;\r\n      } else if (action === \"consommation\") {\r\n        if (matiere.quantite < quantite) {\r\n          return res.status(400).json({ message: \"Quantité insuffisante\" });\r\n        }\r\n        matiere.quantite -= quantite;\r\n      }\r\n  \r\n      await matiere.save();\r\n      res.status(200).json(matiere);\r\n    } catch (error) {\r\n      res.status(500).json({ message: \"Erreur lors de la mise à jour de la matière\", error });\r\n    }\r\n  };\r\n  \r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/api/controllers/matiereController.js b/api/controllers/matiereController.js
+--- a/api/controllers/matiereController.js	(revision 008e941d9e42520ba37e1dddf08746923d6dc780)
++++ b/api/controllers/matiereController.js	(date 1741171540673)
+@@ -8,7 +8,7 @@
+         reference,
+         couleur,
+         quantite,
+-        historique: [{ action: "ajout", quantite, date: new Date() }]
++        historique: [{ action: "Ajout", quantite, date: new Date() }]
+       });
+     await newMatiere.save();
+     res.status(201).json({ message: "Matière ajoutée avec succès", matiere: newMatiere });
+@@ -52,31 +52,63 @@
+ 
+ exports.updateMatiere = async (req, res) => {
+     try {
+-      const { id } = req.params;
+-      const { quantite, action } = req.body; // action = "ajout" ou "consommation"
+-      
+-      const matiere = await Matiere.findById(id);
+-      if (!matiere) {
+-        return res.status(404).json({ message: "Matière introuvable" });
+-      }
+-  
+-      // Enregistrement de l'historique
+-      matiere.historique.push({ action, quantite, date: new Date() });
+-  
+-      // Mise à jour de la quantité
+-      if (action === "ajout") {
+-        matiere.quantite += quantite;
+-      } else if (action === "consommation") {
+-        if (matiere.quantite < quantite) {
+-          return res.status(400).json({ message: "Quantité insuffisante" });
+-        }
+-        matiere.quantite -= quantite;
+-      }
+-  
+-      await matiere.save();
+-      res.status(200).json(matiere);
++        const { id } = req.params;
++        const { quantite } = req.body;  
++        const matiere = await Matiere.findById(id);  
++
++        if (!matiere) {
++            return res.status(404).json({ message: "Matière introuvable" });
++        }
++
++        // Calcul de la différence (quantité réellement ajoutée ou consommée)
++        let difference = quantite; // Par défaut, on suppose que l'utilisateur envoie la quantité à ajouter ou consommer
++        let action;
++
++        if (quantite > 0) {  
++            action = "Ajout";
++            matiere.quantite += quantite;  // Ajout de la quantité
++        } else {  
++            action = "Consommation";
++            difference = Math.abs(quantite);  // Convertir en positif
++            if (matiere.quantite < difference) {
++                return res.status(400).json({ message: "Quantité insuffisante" });
++            }
++            matiere.quantite -= difference;  // Soustraction de la quantité
++        }
++
++        // Ajout dans l'historique avec la vraie quantité ajoutée/consommée
++        matiere.historique.push({ action, quantite: difference, date: new Date() });
++
++        await matiere.save();
++        res.status(200).json(matiere);
+     } catch (error) {
+-      res.status(500).json({ message: "Erreur lors de la mise à jour de la matière", error });
++        res.status(500).json({ message: "Erreur lors de la mise à jour de la matière", error });
+     }
++};
++// Renommer une matière
++exports.renameMatiere = async (req, res) => {
++    try {
++      const { id } = req.params;
++      const { reference } = req.body;
++  
++      if (!reference) {
++        return res.status(400).json({ message: "La référence est requise" });
++      }
++  
++      const matiere = await Matiere.findByIdAndUpdate(
++        id,
++        { reference },
++        { new: true }
++      );
++  
++      if (!matiere) {
++        return res.status(404).json({ message: "Matière non trouvée" });
++      }
++  
++      res.status(200).json({ message: "Matière renommée avec succès", matiere });
++    } catch (error) {
++      res.status(500).json({ message: "Erreur lors du renommage de la matière", error });
++    }
+   };
++
+   
+Index: .idea/shelf/Uncommitted_changes_before_Update_at_28_02_2025_10_43_[Changes]/shelved.patch
+===================================================================
+diff --git a/.idea/shelf/Uncommitted_changes_before_Update_at_28_02_2025_10_43_[Changes]/shelved.patch b/.idea/shelf/Uncommitted_changes_before_Update_at_28_02_2025_10_43_[Changes]/shelved.patch
+deleted file mode 100644
+--- a/.idea/shelf/Uncommitted_changes_before_Update_at_28_02_2025_10_43_[Changes]/shelved.patch	(revision 008e941d9e42520ba37e1dddf08746923d6dc780)
++++ /dev/null	(revision 008e941d9e42520ba37e1dddf08746923d6dc780)
+@@ -1,159 +0,0 @@
+-Index: api/server.js
+-IDEA additional info:
+-Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+-<+>const express = require(\"express\");\r\nconst mongoose = require(\"mongoose\");\r\nconst dotenv = require(\"dotenv\");\r\nconst cors = require(\"cors\");\r\n\r\nconst commandeRoutes = require(\"./routes/commandeRoutes\");\r\nconst salleRoutes = require(\"./routes/salleRoutes\");\r\nconst modeleRoutes = require(\"./routes/modeleRoutes\");\r\nconst machineRoutes = require(\"./routes/machineRoutes\");\r\nconst matiereRoutes = require(\"./routes/matiereRoutes\");\r\n\r\ndotenv.config();\r\n\r\nconst app = express();\r\n\r\n// Middleware\r\napp.use(express.json());\r\napp.use(cors());\r\n\r\napp.use(\"/api/commandes\", commandeRoutes);\r\napp.use(\"/api/salles\", salleRoutes);\r\napp.use(\"/api/modeles\", modeleRoutes);\r\napp.use(\"/api/machines\", machineRoutes);\r\napp.use(\"/api/matieres\", matiereRoutes);\r\n\r\n// Connexion à MongoDB\r\nmongoose.connect(process.env.MONGO_URI, {\r\n    useNewUrlParser: true,\r\n    useUnifiedTopology: true\r\n}).then(() => console.log(\"MongoDB Connected...:)\"))\r\n.catch(err => console.log(err));\r\n\r\n// Routes\r\napp.get(\"/\", (req, res) => {\r\n    res.send(\"API Running...\");\r\n});\r\n\r\nconst PORT = process.env.PORT || 5000;\r\napp.listen(PORT, () => console.log(`Server running on port ${PORT}`));\r\n
+-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+-<+>UTF-8
+-===================================================================
+-diff --git a/api/server.js b/api/server.js
+---- a/api/server.js	(revision 22da0c82842416d326be33e8cd8fadb8ac2d60e3)
+-+++ b/api/server.js	(date 1740735181762)
+-@@ -9,6 +9,7 @@
+- const machineRoutes = require("./routes/machineRoutes");
+- const matiereRoutes = require("./routes/matiereRoutes");
+- 
+-+
+- dotenv.config();
+- 
+- const app = express();
+-@@ -23,12 +24,15 @@
+- app.use("/api/machines", machineRoutes);
+- app.use("/api/matieres", matiereRoutes);
+- 
+--// Connexion à MongoDB
+--mongoose.connect(process.env.MONGO_URI, {
+--    useNewUrlParser: true,
+--    useUnifiedTopology: true
+--}).then(() => console.log("MongoDB Connected...:)"))
+--.catch(err => console.log(err));
+-+
+-+const uri = "mongodb+srv://mayarabouazra:O3DXC206BrDTWUr0@clustercoque.vhlic.mongodb.net/?retryWrites=true&w=majority&appName=clusterCoque";
+-+
+-+ mongoose.connect(uri, {
+-+   useNewUrlParser: true,
+-+   useUnifiedTopology: true,
+-+ })
+-+ .then(() => console.log("Connected to MongoDB successfully!"))
+-+ .catch((err) => console.error("MongoDB connection error:", err));
+- 
+- // Routes
+- app.get("/", (req, res) => {
+-Index: frontend_flutter/lib/models/modele.dart
+-IDEA additional info:
+-Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+-<+>class Modele {\r\n  String id;\r\n  String nom;\r\n  List<String> tailles;\r\n  List<Modele>? derives;\r\n\r\n  Modele({\r\n    required this.id,\r\n    required this.nom,\r\n    required this.tailles,\r\n    this.derives,\r\n  });\r\n\r\n  factory Modele.fromJson(Map<String, dynamic> json) {\r\n    return Modele(\r\n      id: json['_id'] ?? '',\r\n      nom: json['nom'] ?? '',  // nom est toujours présent\r\n      tailles: List<String>.from(json['tailles'] ?? []), //  tailles est une liste valide\r\n      derives: json['derives'] != null\r\n          ? List<Modele>.from(json['derives'].map((m) => Modele.fromJson(m)))\r\n          : [],\r\n    );\r\n  }\r\n\r\n\r\n  Map<String, dynamic> toJson() {\r\n    return {\r\n      '_id': id,\r\n      'nom': nom,\r\n      'tailles': tailles,\r\n      'derives': derives?.map((m) => m.toJson()).toList(),\r\n    };\r\n  }\r\n}\r\n
+-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+-<+>UTF-8
+-===================================================================
+-diff --git a/frontend_flutter/lib/models/modele.dart b/frontend_flutter/lib/models/modele.dart
+---- a/frontend_flutter/lib/models/modele.dart	(revision 22da0c82842416d326be33e8cd8fadb8ac2d60e3)
+-+++ b/frontend_flutter/lib/models/modele.dart	(date 1740734553561)
+-@@ -14,8 +14,8 @@
+-   factory Modele.fromJson(Map<String, dynamic> json) {
+-     return Modele(
+-       id: json['_id'] ?? '',
+--      nom: json['nom'] ?? '',  // nom est toujours présent
+--      tailles: List<String>.from(json['tailles'] ?? []), //  tailles est une liste valide
+-+      nom: json['nom'] ?? '',
+-+      tailles: List<String>.from(json['tailles'] ?? []),
+-       derives: json['derives'] != null
+-           ? List<Modele>.from(json['derives'].map((m) => Modele.fromJson(m)))
+-           : [],
+-Index: frontend_flutter/lib/views/AddCommandePage.dart
+-IDEA additional info:
+-Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+-<+>import 'package:flutter/material.dart';\nimport 'package:fluttertoast/fluttertoast.dart';\nimport 'package:provider/provider.dart';\nimport 'package:intl/intl.dart';\nimport '../models/commande.dart';\nimport '../providers/CommandeProvider.dart';\n\nclass AddCommandePage extends StatefulWidget {\n  @override\n  _AddCommandePageState createState() => _AddCommandePageState();\n}\n\nclass _AddCommandePageState extends State<AddCommandePage> {\n  final _formKey = GlobalKey<FormState>();\n  final TextEditingController clientController = TextEditingController();\n  final TextEditingController conditionnementController = TextEditingController();\n  DateTime? selectedDate;\n  bool isLoading = false;\n\n  List<CommandeModele> modeles = [];\n  final TextEditingController modeleController = TextEditingController();\n  final TextEditingController couleurController = TextEditingController();\n  final TextEditingController tailleController = TextEditingController();\n  final TextEditingController quantiteController = TextEditingController();\n\n  Future<void> _selectDate(BuildContext context) async {\n    final DateTime? picked = await showDatePicker(\n      context: context,\n      initialDate: DateTime.now(),\n      firstDate: DateTime.now(),\n      lastDate: DateTime(2101),\n      locale: const Locale('fr', 'FR'),\n    );\n    if (picked != null) {\n      setState(() => selectedDate = picked);\n    }\n  }\n\n  Widget _buildTextField(TextEditingController controller, String label, IconData icon, {bool isNumber = false, bool isOptional = false}) {\n    return Padding(\n      padding: const EdgeInsets.symmetric(vertical: 8.0),\n      child: TextFormField(\n        controller: controller,\n        keyboardType: isNumber ? TextInputType.number : TextInputType.text,\n        decoration: InputDecoration(\n          prefixIcon: Icon(icon, color: Colors.teal),\n          labelText: label,\n          labelStyle: const TextStyle(color: Colors.teal),\n          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),\n          filled: true,\n          fillColor: Colors.white,\n        ),\n        validator: (value) {\n          if (!isOptional && value!.isEmpty) return \"Champ requis\";\n          if (isNumber && int.tryParse(value!) == null) {\n            return \"Entrer un nombre valide\";\n          }\n          if (isNumber && int.parse(value!) <= 0) {\n            return \"La quantité doit être positive\";\n          }\n          return null;\n        },\n      ),\n    );\n  }\n\n  void _addModele() {\n    if (modeleController.text.isEmpty || couleurController.text.isEmpty || tailleController.text.isEmpty || quantiteController.text.isEmpty) {\n      Fluttertoast.showToast(msg: \"Veuillez remplir tous les champs pour le modèle.\");\n      return;\n    }\n\n    setState(() {\n      modeles.add(CommandeModele(\n        nomModele: modeleController.text,\n        taille: tailleController.text,\n        couleur: couleurController.text,\n        quantite: int.parse(quantiteController.text),\n      ));\n    });\n  }\n\n  Future<void> _submitCommande() async {\n    if (!_formKey.currentState!.validate() || selectedDate == null || modeles.isEmpty) {\n      Fluttertoast.showToast(msg: \"Veuillez remplir tous les champs et ajouter au moins un modèle.\");\n      return;\n    }\n\n    setState(() => isLoading = true);\n    final commandeProvider = Provider.of<CommandeProvider>(context, listen: false);\n\n    List<CommandeModele> modelesWithId = [];\n\n    for (var modele in modeles) {\n      String? modeleId = await commandeProvider.getModeleId(modele.nomModele);\n      if (modeleId != null) {\n        modelesWithId.add(CommandeModele(\n          modele: modeleId,\n          nomModele: modele.nomModele,\n          taille: modele.taille,\n          couleur: modele.couleur,\n          quantite: modele.quantite,\n        ));\n      } else {\n        Fluttertoast.showToast(msg: \"Erreur : Modèle '${modele.nomModele}' non trouvé.\");\n        setState(() => isLoading = false);\n        return;\n      }\n    }\n\n    Commande newCommande = Commande(\n      client: clientController.text,\n      modeles: modelesWithId,\n      conditionnement: conditionnementController.text,\n      delais: selectedDate ?? DateTime.now(),\n      etat: \"en attente\",\n    );\n\n    bool success = await commandeProvider.addCommande(newCommande);\n    setState(() => isLoading = false);\n\n    if (success) {\n      Fluttertoast.showToast(msg: \"Commande ajoutée avec succès !\");\n      Navigator.pop(context);\n    } else {\n      Fluttertoast.showToast(msg: \"Erreur lors de l'ajout de la commande.\");\n    }\n  }\n\n  @override\n  Widget build(BuildContext context) {\n    return GestureDetector(\n      onTap: () => FocusScope.of(context).unfocus(),\n      child: Scaffold(\n        backgroundColor: Colors.teal.shade50,\n        appBar: AppBar(\n          title: const Text(\"Ajouter une Commande\", style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),\n          backgroundColor: Colors.teal,\n          centerTitle: true,\n          elevation: 0,\n        ),\n        body: SingleChildScrollView(\n          child: Padding(\n            padding: const EdgeInsets.all(20.0),\n            child: Card(\n              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(25)),\n              elevation: 5,\n              color: Colors.white,\n              child: Padding(\n                padding: const EdgeInsets.all(20.0),\n                child: Form(\n                  key: _formKey,\n                  child: Column(\n                    mainAxisSize: MainAxisSize.min,\n                    children: [\n                      _buildTextField(clientController, \"Client\", Icons.person),\n                      _buildTextField(conditionnementController, \"Conditionnement\", Icons.inventory, isOptional: true),\n                      const SizedBox(height: 10),\n                      ListTile(\n                        tileColor: Colors.grey.shade200,\n                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),\n                        title: Text(\n                          selectedDate == null\n                              ? \"Sélectionner une date de livraison\"\n                              : \"Date: ${DateFormat('dd/MM/yyyy', 'fr_FR').format(selectedDate!)}\",\n                        ),\n                        trailing: const Icon(Icons.calendar_today, color: Colors.teal),\n                        onTap: () => _selectDate(context),\n                      ),\n                      const SizedBox(height: 20),\n                      const Text(\"Associer un modèle\", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),\n                      _buildModeleForm(),\n                      const SizedBox(height: 20),\n                      ...modeles.map((modele) => Card(\n                        margin: const EdgeInsets.symmetric(vertical: 5),\n                        child: ListTile(\n                          title: Text(\"${modele.nomModele} - Taille : ${modele.taille} - Quantité : ${modele.quantite}\"),\n                          subtitle: Text(\"Couleur : ${modele.couleur}\"),\n                          trailing: IconButton(\n                            icon: const Icon(Icons.delete, color: Colors.red),\n                            onPressed: () => setState(() => modeles.remove(modele)),\n                          ),\n                        ),\n                      )),\n                      const SizedBox(height: 20),\n                      isLoading\n                          ? const CircularProgressIndicator(color: Colors.teal)\n                          : Row(\n                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,\n                        children: [\n                          ElevatedButton(\n                            onPressed: () => Navigator.pop(context),\n                            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),\n                            child: const Text(\"Annuler\"),\n                          ),\n                          ElevatedButton(\n                            onPressed: _submitCommande,\n                            style: ElevatedButton.styleFrom(backgroundColor: Colors.teal.shade300),\n                            child: const Text(\"Ajouter\"),\n                          ),\n                        ],\n                      ),\n                    ],\n                  ),\n                ),\n              ),\n            ),\n          ),\n        ),\n      ),\n    );\n  }\n\n  Widget _buildModeleForm() {\n    return Column(\n      children: [\n        _buildTextField(modeleController, \"Nom du Modèle\", Icons.drive_file_rename_outline_outlined),\n        _buildTextField(tailleController, \"Taille\", Icons.straighten),\n        _buildTextField(quantiteController, \"Quantité\", Icons.numbers, isNumber: true),\n        _buildTextField(couleurController, \"Couleur\", Icons.colorize),\n\n        const SizedBox(height: 10),\n        ElevatedButton.icon(\n          onPressed: _addModele,\n          icon: const Icon(Icons.add),\n          label: const Text(\"Ajouter Modèle\"),\n        ),\n      ],\n    );\n  }\n}\n
+-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+-<+>UTF-8
+-===================================================================
+-diff --git a/frontend_flutter/lib/views/AddCommandePage.dart b/frontend_flutter/lib/views/AddCommandePage.dart
+---- a/frontend_flutter/lib/views/AddCommandePage.dart	(revision 22da0c82842416d326be33e8cd8fadb8ac2d60e3)
+-+++ b/frontend_flutter/lib/views/AddCommandePage.dart	(date 1740645188197)
+-@@ -16,6 +16,7 @@
+-   final TextEditingController conditionnementController = TextEditingController();
+-   DateTime? selectedDate;
+-   bool isLoading = false;
+-+  //TO DO : make the client auto complete and the modele should be dropdown
+- 
+-   List<CommandeModele> modeles = [];
+-   final TextEditingController modeleController = TextEditingController();
+-Index: .idea/workspace.xml
+-IDEA additional info:
+-Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+-<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project version=\"4\">\n  <component name=\"AutoImportSettings\">\n    <option name=\"autoReloadType\" value=\"SELECTIVE\" />\n  </component>\n  <component name=\"ChangeListManager\">\n    <list default=\"true\" id=\"f1b1f5c6-b780-4356-ad10-8b85adb9bdf5\" name=\"Changes\" comment=\"add print feature to commande\">\n      <change beforePath=\"$PROJECT_DIR$/.idea/workspace.xml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/workspace.xml\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/api/controllers/matiereController.js\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/api/controllers/matiereController.js\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/api/models/matiere.js\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/api/models/matiere.js\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/api/routes/matiereRoutes.js\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/api/routes/matiereRoutes.js\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/frontend_flutter/lib/models/matiere.dart\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/frontend_flutter/lib/models/matiere.dart\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/frontend_flutter/lib/providers/matiereProvider.dart\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/frontend_flutter/lib/providers/matiereProvider.dart\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/frontend_flutter/lib/providers/salleProvider.dart\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/frontend_flutter/lib/providers/salleProvider.dart\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/frontend_flutter/lib/services/api_service.dart\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/frontend_flutter/lib/services/api_service.dart\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/frontend_flutter/lib/views/matiereView.dart\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/frontend_flutter/lib/views/matiereView.dart\" afterDir=\"false\" />\n      <change beforePath=\"$PROJECT_DIR$/frontend_flutter/pubspec.lock\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/frontend_flutter/pubspec.lock\" afterDir=\"false\" />\n    </list>\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\n  </component>\n  <component name=\"FileTemplateManagerImpl\">\n    <option name=\"RECENT_TEMPLATES\">\n      <list>\n        <option value=\"Dart File\" />\n      </list>\n    </option>\n  </component>\n  <component name=\"Git.Settings\">\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\n  </component>\n  <component name=\"GitHubPullRequestSearchHistory\">{\n  &quot;lastFilter&quot;: {\n    &quot;state&quot;: &quot;OPEN&quot;,\n    &quot;assignee&quot;: &quot;mayarabouwazra&quot;\n  }\n}</component>\n  <component name=\"GithubPullRequestsUISettings\">{\n  &quot;selectedUrlAndAccountId&quot;: {\n    &quot;url&quot;: &quot;https://github.com/rimabouazra/AutoplanificationProductionProject&quot;,\n    &quot;accountId&quot;: &quot;b289365e-b2bf-44cb-b3d7-a5c48bcb55ba&quot;\n  }\n}</component>\n  <component name=\"ProjectColorInfo\">{\n  &quot;associatedIndex&quot;: 0\n}</component>\n  <component name=\"ProjectId\" id=\"2svujNCfvxvvhAUi4Cn4O1veBz4\" />\n  <component name=\"ProjectLevelVcsManager\">\n    <ConfirmationsSetting value=\"2\" id=\"Add\" />\n  </component>\n  <component name=\"ProjectViewState\">\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\n    <option name=\"showLibraryContents\" value=\"true\" />\n  </component>\n  <component name=\"PropertiesComponent\"><![CDATA[{\n  \"keyToString\": {\n    \"Flutter.main.dart.executor\": \"Run\",\n    \"RunOnceActivity.ShowReadmeOnStart\": \"true\",\n    \"SHARE_PROJECT_CONFIGURATION_FILES\": \"true\",\n    \"dart.analysis.tool.window.visible\": \"false\",\n    \"git-widget-placeholder\": \"Merging main\",\n    \"io.flutter.reload.alreadyRun\": \"true\",\n    \"kotlin-language-version-configured\": \"true\",\n    \"last_opened_file_path\": \"C:/Users/mayar/Desktop/PFE/AutoplanificationProductionProject/frontend_flutter\",\n    \"settings.editor.selected.configurable\": \"preferences.pluginManager\",\n    \"show.migrate.to.gradle.popup\": \"false\"\n  }\n}]]></component>\n  <component name=\"RunManager\">\n    <configuration name=\"main.dart\" type=\"FlutterRunConfigurationType\" factoryName=\"Flutter\" temporary=\"true\" nameIsGenerated=\"true\">\n      <option name=\"filePath\" value=\"$PROJECT_DIR$/frontend_flutter/lib/main.dart\" />\n      <method v=\"2\" />\n    </configuration>\n    <recent_temporary>\n      <list>\n        <item itemvalue=\"Flutter.main.dart\" />\n      </list>\n    </recent_temporary>\n  </component>\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\n  <component name=\"TaskManager\">\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\n      <changelist id=\"f1b1f5c6-b780-4356-ad10-8b85adb9bdf5\" name=\"Changes\" comment=\"\" />\n      <created>1739348505178</created>\n      <option name=\"number\" value=\"Default\" />\n      <option name=\"presentableId\" value=\"Default\" />\n      <updated>1739348505178</updated>\n    </task>\n    <task id=\"LOCAL-00001\" summary=\"link commande page to the api\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1739439590269</created>\n      <option name=\"number\" value=\"00001\" />\n      <option name=\"presentableId\" value=\"LOCAL-00001\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1739439590269</updated>\n    </task>\n    <task id=\"LOCAL-00002\" summary=\"Alignement du modèle Commande avec le backend\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1739790115218</created>\n      <option name=\"number\" value=\"00002\" />\n      <option name=\"presentableId\" value=\"LOCAL-00002\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1739790115218</updated>\n    </task>\n    <task id=\"LOCAL-00003\" summary=\"Alignement du modèle Commande avec le backend\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1739798494043</created>\n      <option name=\"number\" value=\"00003\" />\n      <option name=\"presentableId\" value=\"LOCAL-00003\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1739798494043</updated>\n    </task>\n    <task id=\"LOCAL-00004\" summary=\"Alignement du modèle Commande avec le backend\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1739866483172</created>\n      <option name=\"number\" value=\"00004\" />\n      <option name=\"presentableId\" value=\"LOCAL-00004\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1739866483172</updated>\n    </task>\n    <task id=\"LOCAL-00005\" summary=\"change commande api\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1739867564231</created>\n      <option name=\"number\" value=\"00005\" />\n      <option name=\"presentableId\" value=\"LOCAL-00005\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1739867564231</updated>\n    </task>\n    <task id=\"LOCAL-00006\" summary=\"add quantity to database\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1739950328798</created>\n      <option name=\"number\" value=\"00006\" />\n      <option name=\"presentableId\" value=\"LOCAL-00006\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1739950328798</updated>\n    </task>\n    <task id=\"LOCAL-00007\" summary=\"afficher les details de commande\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740043704935</created>\n      <option name=\"number\" value=\"00007\" />\n      <option name=\"presentableId\" value=\"LOCAL-00007\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740043704935</updated>\n    </task>\n    <task id=\"LOCAL-00008\" summary=\"afficher les details de commande\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740043711413</created>\n      <option name=\"number\" value=\"00008\" />\n      <option name=\"presentableId\" value=\"LOCAL-00008\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740043711413</updated>\n    </task>\n    <task id=\"LOCAL-00009\" summary=\"update order in the backend\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740045484800</created>\n      <option name=\"number\" value=\"00009\" />\n      <option name=\"presentableId\" value=\"LOCAL-00009\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740045484801</updated>\n    </task>\n    <task id=\"LOCAL-00010\" summary=\"update order in the backend\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740045506594</created>\n      <option name=\"number\" value=\"00010\" />\n      <option name=\"presentableId\" value=\"LOCAL-00010\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740045506594</updated>\n    </task>\n    <task id=\"LOCAL-00011\" summary=\"update order in the backend\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740047420683</created>\n      <option name=\"number\" value=\"00011\" />\n      <option name=\"presentableId\" value=\"LOCAL-00011\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740047420683</updated>\n    </task>\n    <task id=\"LOCAL-00012\" summary=\"update order in the backend\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740048159443</created>\n      <option name=\"number\" value=\"00012\" />\n      <option name=\"presentableId\" value=\"LOCAL-00012\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740048159443</updated>\n    </task>\n    <task id=\"LOCAL-00013\" summary=\"update order in the backend\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740393125198</created>\n      <option name=\"number\" value=\"00013\" />\n      <option name=\"presentableId\" value=\"LOCAL-00013\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740393125198</updated>\n    </task>\n    <task id=\"LOCAL-00014\" summary=\"fix connexion error\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740401984852</created>\n      <option name=\"number\" value=\"00014\" />\n      <option name=\"presentableId\" value=\"LOCAL-00014\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740401984852</updated>\n    </task>\n    <task id=\"LOCAL-00015\" summary=\"fix connexion error\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740470776793</created>\n      <option name=\"number\" value=\"00015\" />\n      <option name=\"presentableId\" value=\"LOCAL-00015\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740470776793</updated>\n    </task>\n    <task id=\"LOCAL-00016\" summary=\"fix update methode error\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740478104101</created>\n      <option name=\"number\" value=\"00016\" />\n      <option name=\"presentableId\" value=\"LOCAL-00016\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740478104101</updated>\n    </task>\n    <task id=\"LOCAL-00017\" summary=\"add print feature to commande\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740506936042</created>\n      <option name=\"number\" value=\"00017\" />\n      <option name=\"presentableId\" value=\"LOCAL-00017\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740506936042</updated>\n    </task>\n    <task id=\"LOCAL-00018\" summary=\"add print feature to commande\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740562576188</created>\n      <option name=\"number\" value=\"00018\" />\n      <option name=\"presentableId\" value=\"LOCAL-00018\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740562576188</updated>\n    </task>\n    <option name=\"localTasksCounter\" value=\"19\" />\n    <servers />\n  </component>\n  <component name=\"Vcs.Log.Tabs.Properties\">\n    <option name=\"RECENT_FILTERS\">\n      <map>\n        <entry key=\"User\">\n          <value>\n            <list>\n              <RecentGroup>\n                <option name=\"FILTER_VALUES\">\n                  <option value=\"*\" />\n                </option>\n              </RecentGroup>\n            </list>\n          </value>\n        </entry>\n      </map>\n    </option>\n    <option name=\"TAB_STATES\">\n      <map>\n        <entry key=\"MAIN\">\n          <value>\n            <State />\n          </value>\n        </entry>\n      </map>\n    </option>\n  </component>\n  <component name=\"VcsManagerConfiguration\">\n    <MESSAGE value=\"link commande page to the api\" />\n    <MESSAGE value=\"Alignement du modèle Commande avec le backend\" />\n    <MESSAGE value=\"change commande api\" />\n    <MESSAGE value=\"add quantity to database\" />\n    <MESSAGE value=\"afficher les details de commande\" />\n    <MESSAGE value=\"update order in the backend\" />\n    <MESSAGE value=\"fix connexion error\" />\n    <MESSAGE value=\"fix update methode error\" />\n    <MESSAGE value=\"add print feature to commande\" />\n    <option name=\"LAST_COMMIT_MESSAGE\" value=\"add print feature to commande\" />\n  </component>\n</project>
+-Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+-<+>UTF-8
+-===================================================================
+-diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+---- a/.idea/workspace.xml	(revision 22da0c82842416d326be33e8cd8fadb8ac2d60e3)
+-+++ b/.idea/workspace.xml	(date 1740673316334)
+-@@ -6,15 +6,9 @@
+-   <component name="ChangeListManager">
+-     <list default="true" id="f1b1f5c6-b780-4356-ad10-8b85adb9bdf5" name="Changes" comment="add print feature to commande">
+-       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/api/controllers/matiereController.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/controllers/matiereController.js" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/api/models/matiere.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/models/matiere.js" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/api/routes/matiereRoutes.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/routes/matiereRoutes.js" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/models/matiere.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/models/matiere.dart" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/providers/matiereProvider.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/providers/matiereProvider.dart" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/providers/salleProvider.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/providers/salleProvider.dart" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/services/api_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/services/api_service.dart" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/matiereView.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/matiereView.dart" afterDir="false" />
+--      <change beforePath="$PROJECT_DIR$/frontend_flutter/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/pubspec.lock" afterDir="false" />
+-+      <change beforePath="$PROJECT_DIR$/api/server.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/server.js" afterDir="false" />
+-+      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/models/modele.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/models/modele.dart" afterDir="false" />
+-+      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/AddCommandePage.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/AddCommandePage.dart" afterDir="false" />
+-     </list>
+-     <option name="SHOW_DIALOG" value="false" />
+-     <option name="HIGHLIGHT_CONFLICTS" value="true" />
+-@@ -54,20 +48,20 @@
+-     <option name="hideEmptyMiddlePackages" value="true" />
+-     <option name="showLibraryContents" value="true" />
+-   </component>
+--  <component name="PropertiesComponent"><![CDATA[{
+--  "keyToString": {
+--    "Flutter.main.dart.executor": "Run",
+--    "RunOnceActivity.ShowReadmeOnStart": "true",
+--    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
+--    "dart.analysis.tool.window.visible": "false",
+--    "git-widget-placeholder": "Merging main",
+--    "io.flutter.reload.alreadyRun": "true",
+--    "kotlin-language-version-configured": "true",
+--    "last_opened_file_path": "C:/Users/mayar/Desktop/PFE/AutoplanificationProductionProject/frontend_flutter",
+--    "settings.editor.selected.configurable": "preferences.pluginManager",
+--    "show.migrate.to.gradle.popup": "false"
+-+  <component name="PropertiesComponent">{
+-+  &quot;keyToString&quot;: {
+-+    &quot;Flutter.main.dart.executor&quot;: &quot;Run&quot;,
+-+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+-+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+-+    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
+-+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+-+    &quot;io.flutter.reload.alreadyRun&quot;: &quot;true&quot;,
+-+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+-+    &quot;last_opened_file_path&quot;: &quot;C:/Users/mayar/Desktop/PFE/AutoplanificationProductionProject/frontend_flutter&quot;,
+-+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+-+    &quot;show.migrate.to.gradle.popup&quot;: &quot;false&quot;
+-   }
+--}]]></component>
+-+}</component>
+-   <component name="RunManager">
+-     <configuration name="main.dart" type="FlutterRunConfigurationType" factoryName="Flutter" temporary="true" nameIsGenerated="true">
+-       <option name="filePath" value="$PROJECT_DIR$/frontend_flutter/lib/main.dart" />
+-@@ -232,7 +226,15 @@
+-       <option name="project" value="LOCAL" />
+-       <updated>1740562576188</updated>
+-     </task>
+--    <option name="localTasksCounter" value="19" />
+-+    <task id="LOCAL-00019" summary="add print feature to commande">
+-+      <option name="closed" value="true" />
+-+      <created>1740566545237</created>
+-+      <option name="number" value="00019" />
+-+      <option name="presentableId" value="LOCAL-00019" />
+-+      <option name="project" value="LOCAL" />
+-+      <updated>1740566545237</updated>
+-+    </task>
+-+    <option name="localTasksCounter" value="20" />
+-     <servers />
+-   </component>
+-   <component name="Vcs.Log.Tabs.Properties">
+Index: .idea/shelf/Uncommitted_changes_before_Update_at_28_02_2025_10_43__Changes_.xml
+===================================================================
+diff --git a/.idea/shelf/Uncommitted_changes_before_Update_at_28_02_2025_10_43__Changes_.xml b/.idea/shelf/Uncommitted_changes_before_Update_at_28_02_2025_10_43__Changes_.xml
+deleted file mode 100644
+--- a/.idea/shelf/Uncommitted_changes_before_Update_at_28_02_2025_10_43__Changes_.xml	(revision 008e941d9e42520ba37e1dddf08746923d6dc780)
++++ /dev/null	(revision 008e941d9e42520ba37e1dddf08746923d6dc780)
+@@ -1,4 +0,0 @@
+-<changelist name="Uncommitted_changes_before_Update_at_28_02_2025_10_43_[Changes]" date="1740735818056" recycled="true" deleted="true">
+-  <option name="PATH" value="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_28_02_2025_10_43_[Changes]/shelved.patch" />
+-  <option name="DESCRIPTION" value="Uncommitted changes before Update at 28/02/2025 10:43 [Changes]" />
+-</changelist>
+\ No newline at end of file
+Index: frontend_flutter/lib/views/matiereView.dart
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import 'package:flutter/material.dart';\r\nimport 'package:provider/provider.dart';\r\nimport '../providers/matiereProvider.dart';\r\nimport '../models/matiere.dart';\r\nimport '../widgets/topNavbar.dart';\r\n\r\n\r\nclass MatiereView extends StatefulWidget {\r\n  @override\r\n  _MatiereViewState createState() => _MatiereViewState();\r\n}\r\n\r\nclass _MatiereViewState extends State<MatiereView> {\r\n  final TextEditingController referenceController = TextEditingController();\r\n  final TextEditingController couleurController = TextEditingController();\r\n  final TextEditingController quantiteController = TextEditingController();\r\n\r\n  @override\r\n  void initState() {\r\n    super.initState();\r\n    Provider.of<MatiereProvider>(context, listen: false).fetchMatieres();\r\n  }\r\n\r\n  void _ajouterMatiere(BuildContext context) async {\r\n    final provider = Provider.of<MatiereProvider>(context, listen: false);\r\n    final reference = referenceController.text.trim();\r\n    final couleur = couleurController.text.trim();\r\n    final quantite = int.tryParse(quantiteController.text) ?? 0;\r\n\r\n    if (reference.isEmpty || couleur.isEmpty) {\r\n      ScaffoldMessenger.of(context).showSnackBar(\r\n        SnackBar(\r\n            content: Text(\"Veuillez remplir tous les champs !\"),\r\n            backgroundColor: Colors.red),\r\n      );\r\n      return;\r\n    }\r\n\r\n    try {\r\n      await provider.addMatiere(\r\n        Matiere(\r\n  id: '',\r\n  reference: reference,\r\n  couleur: couleur,\r\n  quantite: quantite,\r\n  dateAjout: DateTime.now(),\r\n  historique: [],\r\n)\r\n\r\n      );\r\n\r\n      ScaffoldMessenger.of(context).showSnackBar(\r\n        SnackBar(\r\n            content: Text(\"Matière ajoutée avec succès !\"),\r\n            backgroundColor: Colors.green),\r\n      );\r\n\r\n      referenceController.clear();\r\n      couleurController.clear();\r\n      quantiteController.clear();\r\n      Navigator.pop(context);\r\n    } catch (e) {\r\n      ScaffoldMessenger.of(context).showSnackBar(\r\n        SnackBar(content: Text(\"Erreur : $e\"), backgroundColor: Colors.red),\r\n      );\r\n    }\r\n  }\r\n\r\n  void _supprimerMatiere(BuildContext context, String id) async {\r\n    final provider = Provider.of<MatiereProvider>(context, listen: false);\r\n    await provider.deleteMatiere(id);\r\n    ScaffoldMessenger.of(context).showSnackBar(\r\n      SnackBar(\r\n          content: Text(\"Matière supprimée\"), backgroundColor: Colors.blue),\r\n    );\r\n  }\r\n\r\n  void _modifierQuantite(BuildContext context, Matiere matiere, bool ajouter) {\r\n    TextEditingController quantiteController = TextEditingController();\r\n\r\n    showDialog(\r\n      context: context,\r\n      builder: (context) => AlertDialog(\r\n        title: Text(ajouter ? \"Ajouter Quantité\" : \"Consommer Quantité\"),\r\n        content: TextField(\r\n          controller: quantiteController,\r\n          decoration: InputDecoration(labelText: \"Quantité\"),\r\n          keyboardType: TextInputType.number,\r\n        ),\r\n        actions: [\r\n          TextButton(\r\n              onPressed: () => Navigator.pop(context), child: Text(\"Annuler\")),\r\n          ElevatedButton(\r\n            onPressed: () async {\r\n              final provider =\r\n                  Provider.of<MatiereProvider>(context, listen: false);\r\n              int valeur = int.tryParse(quantiteController.text) ?? 0;\r\n\r\n              if (valeur <= 0) {\r\n                ScaffoldMessenger.of(context).showSnackBar(\r\n                  SnackBar(\r\n                      content: Text(\"Veuillez entrer une quantité valide\"),\r\n                      backgroundColor: Colors.red),\r\n                );\r\n                return;\r\n              }\r\n\r\n              int nouvelleQuantite = ajouter\r\n                  ? matiere.quantite + valeur\r\n                  : (matiere.quantite - valeur)\r\n                      .clamp(0, double.infinity)\r\n                      .toInt();\r\n\r\n              await provider.updateMatiere(matiere.id, nouvelleQuantite);\r\n              Navigator.pop(context);\r\n            },\r\n            child: Text(\"Confirmer\"),\r\n          ),\r\n        ],\r\n      ),\r\n    );\r\n  }\r\n\r\n  void _afficherFormulaireAjout(BuildContext context) {\r\n    showDialog(\r\n      context: context,\r\n      builder: (context) => AlertDialog(\r\n        title: Text(\"Ajouter une Matière\"),\r\n        content: Column(\r\n          mainAxisSize: MainAxisSize.min,\r\n          children: [\r\n            TextField(\r\n              controller: referenceController,\r\n              decoration: InputDecoration(labelText: \"Référence\"),\r\n            ),\r\n            TextField(\r\n              controller: couleurController,\r\n              decoration: InputDecoration(labelText: \"Couleur\"),\r\n            ),\r\n            TextField(\r\n              controller: quantiteController,\r\n              decoration: InputDecoration(labelText: \"Quantité\"),\r\n              keyboardType: TextInputType.number,\r\n            ),\r\n          ],\r\n        ),\r\n        actions: [\r\n          TextButton(\r\n              onPressed: () => Navigator.pop(context), child: Text(\"Annuler\")),\r\n          ElevatedButton(\r\n              onPressed: () => _ajouterMatiere(context),\r\n              child: Text(\"Ajouter\")),\r\n        ],\r\n      ),\r\n    );\r\n  }\r\n\r\n  @override\r\n  Widget build(BuildContext context) {\r\n    return Scaffold(\r\n      appBar: TopNavbar(), // Utilisation du TopNavbar ici\r\n      body: Consumer<MatiereProvider>(\r\n        builder: (context, provider, child) {\r\n          if (provider.matieres.isEmpty) {\r\n            return Center(child: Text(\"Aucune matière disponible\"));\r\n          }\r\n          return ListView.builder(\r\n            padding: EdgeInsets.all(8),\r\n            itemCount: provider.matieres.length,\r\n            itemBuilder: (context, index) {\r\n              final matiere = provider.matieres[index];\r\n              return Card(\r\n                shape: RoundedRectangleBorder(\r\n                    borderRadius: BorderRadius.circular(10)),\r\n                elevation: 3,\r\n                margin: EdgeInsets.symmetric(vertical: 8),\r\n                child: ListTile(\r\n                  leading: CircleAvatar(\r\n                    backgroundColor: Colors.blueAccent,\r\n                    child: Text(matiere.reference[0].toUpperCase(),\r\n                        style: TextStyle(\r\n                            color: Colors.white, fontWeight: FontWeight.bold)),\r\n                  ),\r\n                  title: Text(matiere.reference,\r\n                      style: TextStyle(fontWeight: FontWeight.bold)),\r\n                  subtitle: Text(\r\n                      \"Couleur: ${matiere.couleur} - Quantité: ${matiere.quantite}\"),\r\n                  trailing: Row(\r\n                    mainAxisSize: MainAxisSize.min,\r\n                    children: [\r\n                      IconButton(\r\n                        icon: Icon(Icons.add, color: Colors.green),\r\n                        onPressed: () =>\r\n                            _modifierQuantite(context, matiere, true),\r\n                      ),\r\n                      IconButton(\r\n                        icon: Icon(Icons.remove, color: Colors.orange),\r\n                        onPressed: () =>\r\n                            _modifierQuantite(context, matiere, false),\r\n                      ),\r\n                      IconButton(\r\n                        icon: Icon(Icons.delete, color: Colors.red),\r\n                        onPressed: () => _supprimerMatiere(context, matiere.id),\r\n                      ),\r\n                      ElevatedButton(\r\n                        onPressed: () async {\r\n                          final provider = Provider.of<MatiereProvider>(context,\r\n                              listen: false);\r\n                          List<Historique> historique =\r\n                              await provider.fetchHistorique(matiere.id);\r\n                          showDialog(\r\n                            context: context,\r\n                            builder: (context) => AlertDialog(\r\n                              title: Text(\"Historique de ${matiere.reference}\"),\r\n                              content: Column(\r\n                                mainAxisSize: MainAxisSize.min,\r\n                                children: historique\r\n                                    .map((h) => Text(\r\n                                        \"${h.date} - ${h.action}: ${h.quantite}\"))\r\n                                    .toList(),\r\n                              ),\r\n                              actions: [\r\n                                TextButton(\r\n                                    onPressed: () => Navigator.pop(context),\r\n                                    child: Text(\"Fermer\"))\r\n                              ],\r\n                            ),\r\n                          );\r\n                        },\r\n                        child: Text(\"Voir Historique\"),\r\n                      ),\r\n                    ],\r\n                  ),\r\n                ),\r\n              );\r\n            },\r\n          );\r\n        },\r\n      ),\r\n      floatingActionButton: FloatingActionButton(\r\n        onPressed: () => _afficherFormulaireAjout(context),\r\n        child: Icon(Icons.add),\r\n        backgroundColor: Colors.green,\r\n      ),\r\n    );\r\n  }\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/frontend_flutter/lib/views/matiereView.dart b/frontend_flutter/lib/views/matiereView.dart
+--- a/frontend_flutter/lib/views/matiereView.dart	(revision 008e941d9e42520ba37e1dddf08746923d6dc780)
++++ b/frontend_flutter/lib/views/matiereView.dart	(date 1741172193358)
+@@ -2,8 +2,7 @@
+ import 'package:provider/provider.dart';
+ import '../providers/matiereProvider.dart';
+ import '../models/matiere.dart';
+-import '../widgets/topNavbar.dart';
+-
++import 'package:intl/intl.dart';
+ 
+ class MatiereView extends StatefulWidget {
+   @override
+@@ -14,6 +13,8 @@
+   final TextEditingController referenceController = TextEditingController();
+   final TextEditingController couleurController = TextEditingController();
+   final TextEditingController quantiteController = TextEditingController();
++  final TextEditingController searchController = TextEditingController();
++  DateTime? selectedDate;
+ 
+   @override
+   void initState() {
+@@ -37,17 +38,14 @@
+     }
+ 
+     try {
+-      await provider.addMatiere(
+-        Matiere(
+-  id: '',
+-  reference: reference,
+-  couleur: couleur,
+-  quantite: quantite,
+-  dateAjout: DateTime.now(),
+-  historique: [],
+-)
+-
+-      );
++      await provider.addMatiere(Matiere(
++        id: '',
++        reference: reference,
++        couleur: couleur,
++        quantite: quantite,
++        dateAjout: DateTime.now(),
++        historique: [],
++      ));
+ 
+       ScaffoldMessenger.of(context).showSnackBar(
+         SnackBar(
+@@ -75,46 +73,177 @@
+     );
+   }
+ 
+-  void _modifierQuantite(BuildContext context, Matiere matiere, bool ajouter) {
++  void _modifierQuantite(
++      BuildContext context, Matiere matiere, bool ajouter) async {
+     TextEditingController quantiteController = TextEditingController();
++    List<Map<String, dynamic>> commandes = [];
+ 
++    String? selectedCommandeId;
++    String? selectedModele;
++    String? selectedTaille;
++    if (!ajouter) {
++      commandes = await Provider.of<MatiereProvider>(context, listen: false)
++          .fetchCommandes();
++    }
+     showDialog(
+       context: context,
+-      builder: (context) => AlertDialog(
+-        title: Text(ajouter ? "Ajouter Quantité" : "Consommer Quantité"),
+-        content: TextField(
+-          controller: quantiteController,
+-          decoration: InputDecoration(labelText: "Quantité"),
+-          keyboardType: TextInputType.number,
+-        ),
+-        actions: [
+-          TextButton(
+-              onPressed: () => Navigator.pop(context), child: Text("Annuler")),
+-          ElevatedButton(
+-            onPressed: () async {
+-              final provider =
+-                  Provider.of<MatiereProvider>(context, listen: false);
+-              int valeur = int.tryParse(quantiteController.text) ?? 0;
+-
+-              if (valeur <= 0) {
+-                ScaffoldMessenger.of(context).showSnackBar(
+-                  SnackBar(
+-                      content: Text("Veuillez entrer une quantité valide"),
+-                      backgroundColor: Colors.red),
+-                );
+-                return;
+-              }
++      builder: (context) => StatefulBuilder(
++        builder: (context, setState) {
++          return AlertDialog(
++            title: Text(ajouter ? "Ajouter Quantité" : "Consommer Quantité"),
++            content: Column(
++              mainAxisSize: MainAxisSize.min,
++              children: [
++                TextField(
++                  controller: quantiteController,
++                  decoration: InputDecoration(labelText: "Quantité"),
++                  keyboardType: TextInputType.number,
++                ),
++                SizedBox(height: 10),
++                if (!ajouter)
++                  DropdownButton<String>(
++                    hint: Text("Sélectionner une commande"),
++                    value: selectedCommandeId,
++                    onChanged: (newValue) {
++                      setState(() {
++                        selectedCommandeId = newValue;
++                        final commande = commandes
++                            .firstWhere((cmd) => cmd['id'] == newValue);
++                        selectedModele = commande['modele'];
++                        selectedTaille = commande['taille'];
++                      });
++                    },
++                    items: commandes.map((commande) {
++                      return DropdownMenuItem<String>(
++                        value: commande['id'],
++                        child: Text(
++                            "Modèle: ${commande['modele']} | Taille: ${commande['taille']}"),
++                      );
++                    }).toList(),
++                  ),
++                if (!ajouter &&
++                    selectedModele != null &&
++                    selectedTaille != null)
++                  Padding(
++                    padding: const EdgeInsets.only(top: 10),
++                    child: Text(
++                      "Modèle: $selectedModele | Taille: $selectedTaille",
++                      style: TextStyle(fontWeight: FontWeight.bold),
++                    ),
++                  ),
++              ],
++            ),
++            actions: [
++              TextButton(
++                onPressed: () => Navigator.pop(context),
++                child: Text("Annuler"),
++              ),
++              ElevatedButton(
++                onPressed: () async {
++                  if (!ajouter && selectedCommandeId == null) {
++                    ScaffoldMessenger.of(context).showSnackBar(
++                      SnackBar(
++                        content: Text("Veuillez sélectionner une commande"),
++                        backgroundColor: Colors.red,
++                      ),
++                    );
++                    return;
++                  }
++
++                  final provider =
++                      Provider.of<MatiereProvider>(context, listen: false);
++                  int valeur = int.tryParse(quantiteController.text) ?? 0;
++                  if (valeur <= 0) {
++                    ScaffoldMessenger.of(context).showSnackBar(
++                      SnackBar(
++                        content: Text("Veuillez entrer une quantité valide"),
++                        backgroundColor: Colors.red,
++                      ),
++                    );
++                    return;
++                  }
+ 
+-              int nouvelleQuantite = ajouter
+-                  ? matiere.quantite + valeur
+-                  : (matiere.quantite - valeur)
+-                      .clamp(0, double.infinity)
+-                      .toInt();
+-
+-              await provider.updateMatiere(matiere.id, nouvelleQuantite);
+-              Navigator.pop(context);
+-            },
+-            child: Text("Confirmer"),
++                  int nouvelleQuantite = ajouter ? valeur : -valeur;
++                  await provider.updateMatiere(matiere.id, nouvelleQuantite);
++
++                  Navigator.pop(context);
++                },
++                child: Text("Confirmer"),
++              ),
++            ],
++          );
++        },
++      ),
++    );
++  }
++
++  List<Matiere> _filtrerMatieres(List<Matiere> matieres) {
++    String searchText = searchController.text.toLowerCase();
++    return matieres.where((matiere) {
++      bool matchesSearch = matiere.reference.toLowerCase().contains(searchText);
++      bool matchesDate = selectedDate == null ||
++          DateFormat('yyyy-MM-dd').format(matiere.dateAjout) ==
++              DateFormat('yyyy-MM-dd').format(selectedDate!);
++      return matchesSearch && matchesDate;
++    }).toList();
++  }
++
++  String _formatDate(dynamic date) {
++    DateTime dateTime;
++    if (date is String) {
++      dateTime = DateTime.parse(date);
++    } else if (date is DateTime) {
++      dateTime = date;
++    } else {
++      throw ArgumentError("Format de date invalide : $date");
++    }
++
++    return DateFormat('yyyy-MM-dd HH:mm').format(dateTime);
++  }
++
++  void _afficherHistorique(BuildContext context, Matiere matiere) async {
++    final provider = Provider.of<MatiereProvider>(context, listen: false);
++    List<Historique> historique = await provider.fetchHistorique(matiere.id);
++
++    showDialog(
++      context: context,
++      builder: (context) => AlertDialog(
++        title: Text(
++          "Historique de ${matiere.reference}",
++          style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
++        ),
++        content: Container(
++          width: double.maxFinite,
++          child: ListView.builder(
++            shrinkWrap: true,
++            itemCount: historique.length,
++            itemBuilder: (context, index) {
++              final entry = historique[index];
++              return Card(
++                elevation: 2,
++                margin: EdgeInsets.symmetric(vertical: 4),
++                child: ListTile(
++                  leading: Icon(
++                    entry.action == 'Ajout' ? Icons.add : Icons.remove,
++                    color: entry.action == 'Ajout' ? Colors.green : Colors.red,
++                  ),
++                  title: Text(
++                    _formatDate(entry.date),
++                    style: TextStyle(fontWeight: FontWeight.bold),
++                  ),
++                  subtitle: Text(
++                    "${entry.action}: ${entry.quantite}",
++                    style: TextStyle(fontSize: 14),
++                  ),
++                ),
++              );
++            },
++          ),
++        ),
++        actions: [
++          TextButton(
++            onPressed: () => Navigator.pop(context),
++            child: Text("Fermer", style: TextStyle(color: Colors.blue)),
+           ),
+         ],
+       ),
+@@ -155,92 +284,233 @@
+     );
+   }
+ 
++  void _afficherFormulaireRenommage(BuildContext context, Matiere matiere) {
++    final TextEditingController referenceController =
++        TextEditingController(text: matiere.reference);
++
++    showDialog(
++      context: context,
++      builder: (context) => AlertDialog(
++        title: Text("Renommer la matière"),
++        content: TextField(
++          controller: referenceController,
++          decoration: InputDecoration(labelText: "Nouvelle référence"),
++        ),
++        actions: [
++          TextButton(
++            onPressed: () => Navigator.pop(context),
++            child: Text("Annuler"),
++          ),
++          ElevatedButton(
++            onPressed: () async {
++              final newReference = referenceController.text.trim();
++              if (newReference.isNotEmpty) {
++                await Provider.of<MatiereProvider>(context, listen: false)
++                    .renameMatiere(matiere.id, newReference);
++                Navigator.pop(context);
++              } else {
++                ScaffoldMessenger.of(context).showSnackBar(
++                  SnackBar(
++                    content: Text("Veuillez entrer une référence valide"),
++                    backgroundColor: Colors.red,
++                  ),
++                );
++              }
++            },
++            child: Text("Renommer"),
++          ),
++        ],
++      ),
++    );
++  }
++
+   @override
+   Widget build(BuildContext context) {
+     return Scaffold(
+-      appBar: TopNavbar(), // Utilisation du TopNavbar ici
++      appBar: AppBar(
++        title: Text("Gestion des Matières",
++            style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
++        backgroundColor: Colors.blueAccent,
++        elevation: 0,
++      ),
+       body: Consumer<MatiereProvider>(
+         builder: (context, provider, child) {
+           if (provider.matieres.isEmpty) {
+             return Center(child: Text("Aucune matière disponible"));
+           }
+-          return ListView.builder(
+-            padding: EdgeInsets.all(8),
+-            itemCount: provider.matieres.length,
+-            itemBuilder: (context, index) {
+-              final matiere = provider.matieres[index];
+-              return Card(
+-                shape: RoundedRectangleBorder(
+-                    borderRadius: BorderRadius.circular(10)),
+-                elevation: 3,
+-                margin: EdgeInsets.symmetric(vertical: 8),
+-                child: ListTile(
+-                  leading: CircleAvatar(
+-                    backgroundColor: Colors.blueAccent,
+-                    child: Text(matiere.reference[0].toUpperCase(),
+-                        style: TextStyle(
+-                            color: Colors.white, fontWeight: FontWeight.bold)),
+-                  ),
+-                  title: Text(matiere.reference,
+-                      style: TextStyle(fontWeight: FontWeight.bold)),
+-                  subtitle: Text(
+-                      "Couleur: ${matiere.couleur} - Quantité: ${matiere.quantite}"),
+-                  trailing: Row(
+-                    mainAxisSize: MainAxisSize.min,
+-                    children: [
+-                      IconButton(
+-                        icon: Icon(Icons.add, color: Colors.green),
+-                        onPressed: () =>
+-                            _modifierQuantite(context, matiere, true),
+-                      ),
+-                      IconButton(
+-                        icon: Icon(Icons.remove, color: Colors.orange),
+-                        onPressed: () =>
+-                            _modifierQuantite(context, matiere, false),
+-                      ),
+-                      IconButton(
+-                        icon: Icon(Icons.delete, color: Colors.red),
+-                        onPressed: () => _supprimerMatiere(context, matiere.id),
+-                      ),
+-                      ElevatedButton(
+-                        onPressed: () async {
+-                          final provider = Provider.of<MatiereProvider>(context,
+-                              listen: false);
+-                          List<Historique> historique =
+-                              await provider.fetchHistorique(matiere.id);
+-                          showDialog(
+-                            context: context,
+-                            builder: (context) => AlertDialog(
+-                              title: Text("Historique de ${matiere.reference}"),
+-                              content: Column(
+-                                mainAxisSize: MainAxisSize.min,
+-                                children: historique
+-                                    .map((h) => Text(
+-                                        "${h.date} - ${h.action}: ${h.quantite}"))
+-                                    .toList(),
+-                              ),
+-                              actions: [
+-                                TextButton(
+-                                    onPressed: () => Navigator.pop(context),
+-                                    child: Text("Fermer"))
++          return Column(
++            children: [
++              // Champ de recherche
++              Padding(
++                padding: const EdgeInsets.all(16.0),
++                child: Container(
++                  decoration: BoxDecoration(
++                    color: Colors.white,
++                    borderRadius: BorderRadius.circular(10),
++                    boxShadow: [
++                      BoxShadow(
++                        color: Colors.black12,
++                        blurRadius: 4,
++                        offset: Offset(0, 2),
++                      ),
++                    ],
++                  ),
++                  child: TextField(
++                    controller: searchController,
++                    decoration: InputDecoration(
++                      hintText: "Rechercher une matière...",
++                      prefixIcon: Icon(Icons.search, color: Colors.blueAccent),
++                      border: InputBorder.none,
++                      contentPadding: EdgeInsets.symmetric(horizontal: 16),
++                    ),
++                    onChanged: (value) {
++                      setState(() {});
++                    },
++                  ),
++                ),
++              ),
++
++              // Filtre par date
++              Padding(
++                padding: const EdgeInsets.symmetric(horizontal: 16.0),
++                child: Row(
++                  children: [
++                    Expanded(
++                      child: ElevatedButton.icon(
++                        icon: Icon(Icons.calendar_today, color: Colors.white),
++                        label: Text(
++                            selectedDate == null
++                                ? "Filtrer par date"
++                                : DateFormat('yyyy-MM-dd')
++                                    .format(selectedDate!),
++                            style: TextStyle(color: Colors.white)),
++                        style: ElevatedButton.styleFrom(
++                          backgroundColor:
++                              const Color.fromARGB(255, 121, 166, 244),
++                          padding: EdgeInsets.symmetric(vertical: 12),
++                          shape: RoundedRectangleBorder(
++                            borderRadius: BorderRadius.circular(10),
++                          ),
++                        ),
++                        onPressed: () async {
++                          DateTime? pickedDate = await showDatePicker(
++                            context: context,
++                            initialDate: DateTime.now(),
++                            firstDate: DateTime(2020),
++                            lastDate: DateTime.now(),
++                          );
++
++                          if (pickedDate != null) {
++                            setState(() {
++                              selectedDate = pickedDate;
++                            });
++                          }
++                        },
++                      ),
++                    ),
++                    if (selectedDate != null)
++                      IconButton(
++                        icon: Icon(Icons.clear, color: Colors.red),
++                        onPressed: () {
++                          setState(() {
++                            selectedDate = null;
++                          });
++                        },
++                      ),
++                  ],
++                ),
++              ),
++
++              // Liste des matières
++              Expanded(
++                child: Consumer<MatiereProvider>(
++                  builder: (context, provider, child) {
++                    List<Matiere> filteredMatieres =
++                        _filtrerMatieres(provider.matieres);
++
++                    if (filteredMatieres.isEmpty) {
++                      return Center(
++                          child: Text("Aucune matière trouvée",
++                              style:
++                                  TextStyle(fontSize: 18, color: Colors.grey)));
++                    }
++
++                    return ListView.builder(
++                      padding: EdgeInsets.all(16),
++                      itemCount: filteredMatieres.length,
++                      itemBuilder: (context, index) {
++                        final matiere = filteredMatieres[index];
++                        return Card(
++                          shape: RoundedRectangleBorder(
++                              borderRadius: BorderRadius.circular(10)),
++                          elevation: 4,
++                          margin: EdgeInsets.only(bottom: 16),
++                          child: ListTile(
++                            contentPadding: EdgeInsets.all(16),
++                            leading: CircleAvatar(
++                              backgroundColor: Colors.blueAccent,
++                              child: Text(matiere.reference[0].toUpperCase(),
++                                  style: TextStyle(
++                                      color: Colors.white,
++                                      fontWeight: FontWeight.bold)),
++                            ),
++                            title: Text(matiere.reference,
++                                style: TextStyle(
++                                    fontWeight: FontWeight.bold, fontSize: 16)),
++                            subtitle: Column(
++                              crossAxisAlignment: CrossAxisAlignment.start,
++                              children: [
++                                Text("Couleur: ${matiere.couleur}",
++                                    style: TextStyle(fontSize: 14)),
++                                Text("Quantité: ${matiere.quantite}",
++                                    style: TextStyle(fontSize: 14)),
++                                Text(
++                                    "Date: ${DateFormat('yyyy-MM-dd').format(matiere.dateAjout)}",
++                                    style: TextStyle(fontSize: 14)),
++                              ],
++                            ),
++                            trailing: Row(
++                              mainAxisSize: MainAxisSize.min,
++                              children: [
++                                IconButton(
++                                  icon: Icon(Icons.edit, color: Colors.blue),
++                                  onPressed: () => _afficherFormulaireRenommage(
++                                      context, matiere),
++                                ),
++                                IconButton(
++                                  icon: Icon(Icons.add, color: Colors.green),
++                                  onPressed: () =>
++                                      _modifierQuantite(context, matiere, true),
++                                ),
++                                IconButton(
++                                  icon:
++                                      Icon(Icons.remove, color: Colors.orange),
++                                  onPressed: () => _modifierQuantite(
++                                      context, matiere, false),
++                                ),
++                                IconButton(
++                                  icon: Icon(Icons.delete, color: Colors.red),
++                                  onPressed: () =>
++                                      _supprimerMatiere(context, matiere.id),
++                                ),
+                               ],
+                             ),
+-                          );
+-                        },
+-                        child: Text("Voir Historique"),
+-                      ),
+-                    ],
+-                  ),
+-                ),
+-              );
+-            },
++                          ),
++                        );
++                      },
++                    );
++                  },
++                ),
++              ),
++            ],
+           );
+         },
+       ),
+       floatingActionButton: FloatingActionButton(
+         onPressed: () => _afficherFormulaireAjout(context),
+-        child: Icon(Icons.add),
+-        backgroundColor: Colors.green,
++        child: Icon(Icons.add, color: Colors.white),
++        backgroundColor: Colors.blueAccent,
++        elevation: 4,
+       ),
+     );
+   }
+Index: frontend_flutter/lib/widgets/topNavbar.dart
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import 'package:flutter/material.dart';\nimport '../views/ListeProduitsPage.dart'; // Assure-toi d'importer ta page de produits.\n\nclass TopNavbar extends StatelessWidget implements PreferredSizeWidget {\n  @override\n  final Size preferredSize;\n\n  TopNavbar({Key? key})\n      : preferredSize = Size.fromHeight(kToolbarHeight),\n        super(key: key);\n\n  @override\n  Widget build(BuildContext context) {\n    return AppBar(\n      title: Text('Gestion des Ressources', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),\n      centerTitle: true,\n      backgroundColor: Colors.transparent,  // Pour faire apparaître le fond de dégradé.\n      flexibleSpace: Container(\n        decoration: BoxDecoration(\n          gradient: LinearGradient(\n            begin: Alignment.topLeft,\n            end: Alignment.bottomRight,\n            colors: [Colors.blue.shade700, Colors.blue.shade300],\n          ),\n        ),\n      ),\n      actions: [\n        IconButton(\n          icon: Icon(Icons.list_alt, color: Colors.white),\n          onPressed: () {\n            Navigator.push(\n              context,\n              MaterialPageRoute(builder: (context) => ProduitsPage()),  // Redirige vers ListProduitsPage.\n            );\n          },\n        ),\n      ],\n    );\n  }\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/frontend_flutter/lib/widgets/topNavbar.dart b/frontend_flutter/lib/widgets/topNavbar.dart
+--- a/frontend_flutter/lib/widgets/topNavbar.dart	(revision 008e941d9e42520ba37e1dddf08746923d6dc780)
++++ b/frontend_flutter/lib/widgets/topNavbar.dart	(date 1741172111867)
+@@ -2,19 +2,27 @@
+ import '../views/ListeProduitsPage.dart'; // Assure-toi d'importer ta page de produits.
+ 
+ class TopNavbar extends StatelessWidget implements PreferredSizeWidget {
++  final Widget title;           // Paramètre pour le titre
++  final Color backgroundColor;  // Paramètre pour la couleur de fond
++  final double elevation;       // Paramètre pour l'élévation
++
+   @override
+   final Size preferredSize;
+ 
+-  TopNavbar({Key? key})
+-      : preferredSize = Size.fromHeight(kToolbarHeight),
+-        super(key: key);
++  TopNavbar({
++    Key? key,
++    required this.title,
++    required this.backgroundColor,
++    required this.elevation,
++  }) : preferredSize = Size.fromHeight(kToolbarHeight), super(key: key);
+ 
+   @override
+   Widget build(BuildContext context) {
+     return AppBar(
+-      title: Text('Gestion des Ressources', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
++      title: title,
+       centerTitle: true,
+-      backgroundColor: Colors.transparent,  // Pour faire apparaître le fond de dégradé.
++      backgroundColor: backgroundColor,
++      elevation: elevation,
+       flexibleSpace: Container(
+         decoration: BoxDecoration(
+           gradient: LinearGradient(
+@@ -30,7 +38,7 @@
+           onPressed: () {
+             Navigator.push(
+               context,
+-              MaterialPageRoute(builder: (context) => ProduitsPage()),  // Redirige vers ListProduitsPage.
++              MaterialPageRoute(builder: (context) => ProduitsPage()),  // Redirige vers ListeProduitsPage.
+             );
+           },
+         ),
+Index: .idea/workspace.xml
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+><?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<project version=\"4\">\n  <component name=\"AutoImportSettings\">\n    <option name=\"autoReloadType\" value=\"SELECTIVE\" />\n  </component>\n  <component name=\"ChangeListManager\">\n    <list default=\"true\" id=\"f1b1f5c6-b780-4356-ad10-8b85adb9bdf5\" name=\"Changes\" comment=\"hébérger la base de données dans le cloud\">\n      <change beforePath=\"$PROJECT_DIR$/.idea/workspace.xml\" beforeDir=\"false\" afterPath=\"$PROJECT_DIR$/.idea/workspace.xml\" afterDir=\"false\" />\n    </list>\n    <option name=\"SHOW_DIALOG\" value=\"false\" />\n    <option name=\"HIGHLIGHT_CONFLICTS\" value=\"true\" />\n    <option name=\"HIGHLIGHT_NON_ACTIVE_CHANGELIST\" value=\"false\" />\n    <option name=\"LAST_RESOLUTION\" value=\"IGNORE\" />\n  </component>\n  <component name=\"FileTemplateManagerImpl\">\n    <option name=\"RECENT_TEMPLATES\">\n      <list>\n        <option value=\"Dart File\" />\n      </list>\n    </option>\n  </component>\n  <component name=\"Git.Settings\">\n    <option name=\"RECENT_GIT_ROOT_PATH\" value=\"$PROJECT_DIR$\" />\n  </component>\n  <component name=\"GitHubPullRequestSearchHistory\">{\n  &quot;lastFilter&quot;: {\n    &quot;state&quot;: &quot;OPEN&quot;,\n    &quot;assignee&quot;: &quot;mayarabouwazra&quot;\n  }\n}</component>\n  <component name=\"GithubPullRequestsUISettings\">{\n  &quot;selectedUrlAndAccountId&quot;: {\n    &quot;url&quot;: &quot;https://github.com/rimabouazra/AutoplanificationProductionProject&quot;,\n    &quot;accountId&quot;: &quot;b289365e-b2bf-44cb-b3d7-a5c48bcb55ba&quot;\n  }\n}</component>\n  <component name=\"ProjectColorInfo\">{\n  &quot;associatedIndex&quot;: 0\n}</component>\n  <component name=\"ProjectId\" id=\"2svujNCfvxvvhAUi4Cn4O1veBz4\" />\n  <component name=\"ProjectLevelVcsManager\">\n    <ConfirmationsSetting value=\"2\" id=\"Add\" />\n  </component>\n  <component name=\"ProjectViewState\">\n    <option name=\"hideEmptyMiddlePackages\" value=\"true\" />\n    <option name=\"showLibraryContents\" value=\"true\" />\n  </component>\n  <component name=\"PropertiesComponent\">{\n  &quot;keyToString&quot;: {\n    &quot;Flutter.main.dart.executor&quot;: &quot;Run&quot;,\n    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,\n    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,\n    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,\n    &quot;git-widget-placeholder&quot;: &quot;main&quot;,\n    &quot;io.flutter.reload.alreadyRun&quot;: &quot;true&quot;,\n    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,\n    &quot;last_opened_file_path&quot;: &quot;C:/Users/mayar/Desktop/PFE/AutoplanificationProductionProject/frontend_flutter&quot;,\n    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,\n    &quot;show.migrate.to.gradle.popup&quot;: &quot;false&quot;\n  }\n}</component>\n  <component name=\"RunManager\">\n    <configuration name=\"main.dart\" type=\"FlutterRunConfigurationType\" factoryName=\"Flutter\" temporary=\"true\" nameIsGenerated=\"true\">\n      <option name=\"filePath\" value=\"$PROJECT_DIR$/frontend_flutter/lib/main.dart\" />\n      <method v=\"2\" />\n    </configuration>\n    <recent_temporary>\n      <list>\n        <item itemvalue=\"Flutter.main.dart\" />\n      </list>\n    </recent_temporary>\n  </component>\n  <component name=\"SpellCheckerSettings\" RuntimeDictionaries=\"0\" Folders=\"0\" CustomDictionaries=\"0\" DefaultDictionary=\"application-level\" UseSingleDictionary=\"true\" transferred=\"true\" />\n  <component name=\"TaskManager\">\n    <task active=\"true\" id=\"Default\" summary=\"Default task\">\n      <changelist id=\"f1b1f5c6-b780-4356-ad10-8b85adb9bdf5\" name=\"Changes\" comment=\"\" />\n      <created>1739348505178</created>\n      <option name=\"number\" value=\"Default\" />\n      <option name=\"presentableId\" value=\"Default\" />\n      <updated>1739348505178</updated>\n    </task>\n    <task id=\"LOCAL-00001\" summary=\"link commande page to the api\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1739439590269</created>\n      <option name=\"number\" value=\"00001\" />\n      <option name=\"presentableId\" value=\"LOCAL-00001\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1739439590269</updated>\n    </task>\n    <task id=\"LOCAL-00002\" summary=\"Alignement du modèle Commande avec le backend\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1739790115218</created>\n      <option name=\"number\" value=\"00002\" />\n      <option name=\"presentableId\" value=\"LOCAL-00002\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1739790115218</updated>\n    </task>\n    <task id=\"LOCAL-00003\" summary=\"Alignement du modèle Commande avec le backend\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1739798494043</created>\n      <option name=\"number\" value=\"00003\" />\n      <option name=\"presentableId\" value=\"LOCAL-00003\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1739798494043</updated>\n    </task>\n    <task id=\"LOCAL-00004\" summary=\"Alignement du modèle Commande avec le backend\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1739866483172</created>\n      <option name=\"number\" value=\"00004\" />\n      <option name=\"presentableId\" value=\"LOCAL-00004\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1739866483172</updated>\n    </task>\n    <task id=\"LOCAL-00005\" summary=\"change commande api\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1739867564231</created>\n      <option name=\"number\" value=\"00005\" />\n      <option name=\"presentableId\" value=\"LOCAL-00005\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1739867564231</updated>\n    </task>\n    <task id=\"LOCAL-00006\" summary=\"add quantity to database\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1739950328798</created>\n      <option name=\"number\" value=\"00006\" />\n      <option name=\"presentableId\" value=\"LOCAL-00006\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1739950328798</updated>\n    </task>\n    <task id=\"LOCAL-00007\" summary=\"afficher les details de commande\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740043704935</created>\n      <option name=\"number\" value=\"00007\" />\n      <option name=\"presentableId\" value=\"LOCAL-00007\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740043704935</updated>\n    </task>\n    <task id=\"LOCAL-00008\" summary=\"afficher les details de commande\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740043711413</created>\n      <option name=\"number\" value=\"00008\" />\n      <option name=\"presentableId\" value=\"LOCAL-00008\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740043711413</updated>\n    </task>\n    <task id=\"LOCAL-00009\" summary=\"update order in the backend\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740045484800</created>\n      <option name=\"number\" value=\"00009\" />\n      <option name=\"presentableId\" value=\"LOCAL-00009\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740045484801</updated>\n    </task>\n    <task id=\"LOCAL-00010\" summary=\"update order in the backend\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740045506594</created>\n      <option name=\"number\" value=\"00010\" />\n      <option name=\"presentableId\" value=\"LOCAL-00010\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740045506594</updated>\n    </task>\n    <task id=\"LOCAL-00011\" summary=\"update order in the backend\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740047420683</created>\n      <option name=\"number\" value=\"00011\" />\n      <option name=\"presentableId\" value=\"LOCAL-00011\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740047420683</updated>\n    </task>\n    <task id=\"LOCAL-00012\" summary=\"update order in the backend\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740048159443</created>\n      <option name=\"number\" value=\"00012\" />\n      <option name=\"presentableId\" value=\"LOCAL-00012\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740048159443</updated>\n    </task>\n    <task id=\"LOCAL-00013\" summary=\"update order in the backend\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740393125198</created>\n      <option name=\"number\" value=\"00013\" />\n      <option name=\"presentableId\" value=\"LOCAL-00013\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740393125198</updated>\n    </task>\n    <task id=\"LOCAL-00014\" summary=\"fix connexion error\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740401984852</created>\n      <option name=\"number\" value=\"00014\" />\n      <option name=\"presentableId\" value=\"LOCAL-00014\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740401984852</updated>\n    </task>\n    <task id=\"LOCAL-00015\" summary=\"fix connexion error\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740470776793</created>\n      <option name=\"number\" value=\"00015\" />\n      <option name=\"presentableId\" value=\"LOCAL-00015\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740470776793</updated>\n    </task>\n    <task id=\"LOCAL-00016\" summary=\"fix update methode error\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740478104101</created>\n      <option name=\"number\" value=\"00016\" />\n      <option name=\"presentableId\" value=\"LOCAL-00016\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740478104101</updated>\n    </task>\n    <task id=\"LOCAL-00017\" summary=\"add print feature to commande\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740506936042</created>\n      <option name=\"number\" value=\"00017\" />\n      <option name=\"presentableId\" value=\"LOCAL-00017\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740506936042</updated>\n    </task>\n    <task id=\"LOCAL-00018\" summary=\"add print feature to commande\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740562576188</created>\n      <option name=\"number\" value=\"00018\" />\n      <option name=\"presentableId\" value=\"LOCAL-00018\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740562576188</updated>\n    </task>\n    <task id=\"LOCAL-00019\" summary=\"add print feature to commande\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740566545237</created>\n      <option name=\"number\" value=\"00019\" />\n      <option name=\"presentableId\" value=\"LOCAL-00019\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740566545237</updated>\n    </task>\n    <task id=\"LOCAL-00020\" summary=\"hébérger la base de données dans le cloud\">\n      <option name=\"closed\" value=\"true\" />\n      <created>1740736039968</created>\n      <option name=\"number\" value=\"00020\" />\n      <option name=\"presentableId\" value=\"LOCAL-00020\" />\n      <option name=\"project\" value=\"LOCAL\" />\n      <updated>1740736039968</updated>\n    </task>\n    <option name=\"localTasksCounter\" value=\"21\" />\n    <servers />\n  </component>\n  <component name=\"Vcs.Log.Tabs.Properties\">\n    <option name=\"RECENT_FILTERS\">\n      <map>\n        <entry key=\"User\">\n          <value>\n            <list>\n              <RecentGroup>\n                <option name=\"FILTER_VALUES\">\n                  <option value=\"*\" />\n                </option>\n              </RecentGroup>\n            </list>\n          </value>\n        </entry>\n      </map>\n    </option>\n    <option name=\"TAB_STATES\">\n      <map>\n        <entry key=\"MAIN\">\n          <value>\n            <State />\n          </value>\n        </entry>\n      </map>\n    </option>\n  </component>\n  <component name=\"VcsManagerConfiguration\">\n    <MESSAGE value=\"link commande page to the api\" />\n    <MESSAGE value=\"Alignement du modèle Commande avec le backend\" />\n    <MESSAGE value=\"change commande api\" />\n    <MESSAGE value=\"add quantity to database\" />\n    <MESSAGE value=\"afficher les details de commande\" />\n    <MESSAGE value=\"update order in the backend\" />\n    <MESSAGE value=\"fix connexion error\" />\n    <MESSAGE value=\"fix update methode error\" />\n    <MESSAGE value=\"add print feature to commande\" />\n    <MESSAGE value=\"hébérger la base de données dans le cloud\" />\n    <option name=\"LAST_COMMIT_MESSAGE\" value=\"hébérger la base de données dans le cloud\" />\n  </component>\n</project>
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/.idea/workspace.xml b/.idea/workspace.xml
+--- a/.idea/workspace.xml	(revision 008e941d9e42520ba37e1dddf08746923d6dc780)
++++ b/.idea/workspace.xml	(date 1741433957246)
+@@ -5,7 +5,14 @@
+   </component>
+   <component name="ChangeListManager">
+     <list default="true" id="f1b1f5c6-b780-4356-ad10-8b85adb9bdf5" name="Changes" comment="hébérger la base de données dans le cloud">
+-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/.idea/shelf/Uncommitted_changes_before_Update_at_28_02_2025_10_43_[Changes]/shelved.patch" beforeDir="false" />
++      <change beforePath="$PROJECT_DIR$/api/controllers/matiereController.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/controllers/matiereController.js" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/api/routes/matiereRoutes.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/routes/matiereRoutes.js" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/providers/matiereProvider.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/providers/matiereProvider.dart" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/services/api_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/services/api_service.dart" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/ModeleView.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/ModeleView.dart" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/matiereView.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/matiereView.dart" afterDir="false" />
++      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/widgets/topNavbar.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/widgets/topNavbar.dart" afterDir="false" />
+     </list>
+     <option name="SHOW_DIALOG" value="false" />
+     <option name="HIGHLIGHT_CONFLICTS" value="true" />
+@@ -45,20 +52,20 @@
+     <option name="hideEmptyMiddlePackages" value="true" />
+     <option name="showLibraryContents" value="true" />
+   </component>
+-  <component name="PropertiesComponent">{
+-  &quot;keyToString&quot;: {
+-    &quot;Flutter.main.dart.executor&quot;: &quot;Run&quot;,
+-    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+-    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+-    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
+-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+-    &quot;io.flutter.reload.alreadyRun&quot;: &quot;true&quot;,
+-    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+-    &quot;last_opened_file_path&quot;: &quot;C:/Users/mayar/Desktop/PFE/AutoplanificationProductionProject/frontend_flutter&quot;,
+-    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+-    &quot;show.migrate.to.gradle.popup&quot;: &quot;false&quot;
++  <component name="PropertiesComponent"><![CDATA[{
++  "keyToString": {
++    "Flutter.main.dart.executor": "Run",
++    "RunOnceActivity.ShowReadmeOnStart": "true",
++    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
++    "dart.analysis.tool.window.visible": "false",
++    "git-widget-placeholder": "Merging main",
++    "io.flutter.reload.alreadyRun": "true",
++    "kotlin-language-version-configured": "true",
++    "last_opened_file_path": "C:/Users/mayar/Desktop/PFE/AutoplanificationProductionProject/frontend_flutter",
++    "settings.editor.selected.configurable": "preferences.pluginManager",
++    "show.migrate.to.gradle.popup": "false"
+   }
+-}</component>
++}]]></component>
+   <component name="RunManager">
+     <configuration name="main.dart" type="FlutterRunConfigurationType" factoryName="Flutter" temporary="true" nameIsGenerated="true">
+       <option name="filePath" value="$PROJECT_DIR$/frontend_flutter/lib/main.dart" />
+Index: frontend_flutter/lib/views/ModeleView.dart
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import 'package:flutter/material.dart';\nimport 'package:provider/provider.dart';\nimport '../models/modele.dart';\nimport '../providers/modeleProvider.dart';\nimport '../widgets/topNavbar.dart';\n\nclass ModeleView extends StatefulWidget {\n  @override\n  _ModeleViewState createState() => _ModeleViewState();\n}\n\nclass _ModeleViewState extends State<ModeleView> {\n  String _searchQuery = \"\";\n  bool _isAscending = true;\n\n  @override\n  void initState() {\n    super.initState();\n    Provider.of<ModeleProvider>(context, listen: false).fetchModeles();\n  }\n\n  @override\n  Widget build(BuildContext context) {\n    return Scaffold(\n      appBar: TopNavbar(),\n      body: Column(\n        children: [\n          Padding(\n            padding: const EdgeInsets.all(12.0),\n            child: Row(\n              children: [\n                Expanded(\n                  child: TextField(\n                    decoration: InputDecoration(\n                      labelText: 'Rechercher un modèle',\n                      border: OutlineInputBorder(\n                        borderRadius: BorderRadius.circular(15),\n                        borderSide: BorderSide(color: Colors.blueAccent),\n                      ),\n                      prefixIcon: Icon(Icons.search, color: Colors.blueAccent),\n                      filled: true,\n                      fillColor: Colors.grey[200],\n                    ),\n                    onChanged: (value) {\n                      setState(() {\n                        _searchQuery = value.toLowerCase();\n                      });\n                    },\n                  ),\n                ),\n                SizedBox(width: 10),\n                IconButton(\n                  icon: Icon(\n                    _isAscending ? Icons.arrow_upward : Icons.arrow_downward,\n                    color: Colors.blueAccent,\n                  ),\n                  onPressed: () {\n                    setState(() {\n                      _isAscending = !_isAscending;\n                    });\n                  },\n                ),\n              ],\n            ),\n          ),\n          Expanded(\n            child: Consumer<ModeleProvider>(\n              builder: (context, modeleProvider, child) {\n                List<Modele> filteredModeles = modeleProvider.modeles\n                    .where((modele) => modele.nom.toLowerCase().contains(_searchQuery))\n                    .toList();\n\n                filteredModeles.sort((a, b) => _isAscending\n                    ? a.nom.compareTo(b.nom)\n                    : b.nom.compareTo(a.nom));\n\n                if (filteredModeles.isEmpty) {\n                  return Center(\n                    child: Text(\n                      'Aucun modèle trouvé',\n                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.w500, color: Colors.grey),\n                    ),\n                  );\n                }\n\n                return ListView.builder(\n                  padding: EdgeInsets.all(10),\n                  itemCount: filteredModeles.length,\n                  itemBuilder: (context, index) {\n                    final modele = filteredModeles[index];\n                    return Card(\n                      elevation: 6,\n                      shadowColor: Colors.blueAccent.withOpacity(0.3),\n                      shape: RoundedRectangleBorder(\n                        borderRadius: BorderRadius.circular(15),\n                      ),\n                      child: ListTile(\n                        contentPadding: EdgeInsets.symmetric(vertical: 12, horizontal: 16),\n                        title: Text(\n                          modele.nom,\n                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black),\n                        ),\n                        subtitle: Text(\n                          'Tailles: ${modele.tailles.join(', ')}',\n                          style: TextStyle(color: Colors.black54),\n                        ),\n                        trailing: Icon(Icons.arrow_forward_ios, color: Colors.blueAccent),\n                        onTap: () {\n\n                        },\n                      ),\n                    );\n                  },\n                );\n              },\n            ),\n          ),\n        ],\n      ),\n    );\n  }\n}\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/frontend_flutter/lib/views/ModeleView.dart b/frontend_flutter/lib/views/ModeleView.dart
+--- a/frontend_flutter/lib/views/ModeleView.dart	(revision 008e941d9e42520ba37e1dddf08746923d6dc780)
++++ b/frontend_flutter/lib/views/ModeleView.dart	(date 1741172111994)
+@@ -22,7 +22,7 @@
+   @override
+   Widget build(BuildContext context) {
+     return Scaffold(
+-      appBar: TopNavbar(),
++      appBar: AppBar(),
+       body: Column(
+         children: [
+           Padding(
+Index: frontend_flutter/lib/providers/matiereProvider.dart
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import 'package:flutter/material.dart';\r\nimport '../models/matiere.dart';\r\nimport '../services/api_service.dart';\r\n\r\nclass MatiereProvider with ChangeNotifier {\r\n  List<Matiere> _matieres = [];\r\n\r\n  List<Matiere> get matieres => _matieres;\r\n\r\n  // Charger les matières depuis l'API\r\n  Future<void> fetchMatieres() async {\r\n    try {\r\n      final response = await ApiService.getMatieres();\r\n      _matieres = response.map((json) => Matiere.fromJson(json)).toList();\r\n      notifyListeners();\r\n    } catch (e) {\r\n      print(\"Erreur lors du chargement des matières : $e\");\r\n    }\r\n  }\r\n\r\n  // Ajouter une matière\r\n  Future<void> addMatiere(Matiere matiere) async {\r\n  try {\r\n    await ApiService.addMatiere(matiere);\r\n    await fetchMatieres();\r\n  } catch (e) {\r\n    print(\"Erreur lors de l'ajout de la matière : $e\");\r\n  }\r\n}\r\n\r\n\r\n\r\n  // Supprimer une matière\r\n  Future<void> deleteMatiere(String id) async {\r\n    try {\r\n      await ApiService.deleteMatiere(id);\r\n      _matieres.removeWhere((matiere) => matiere.id == id);\r\n      notifyListeners();\r\n    } catch (e) {\r\n      print(\"Erreur lors de la suppression de la matière : $e\");\r\n    }\r\n  }\r\n  Future<void> updateMatiere(String id, int newQuantite) async {\r\n  try {\r\n    print(\"Début de updateMatiere pour l'ID : $id avec quantité : $newQuantite\");//DEBUG\r\n    final updatedMatiere = await ApiService.updateMatiere(id, newQuantite);\r\n    print(\"Réponse de l'API (updateMatiere) : $updatedMatiere\");//DEBUG\r\n    if (updatedMatiere != null) {\r\n      int index = _matieres.indexWhere((m) => m.id == id);\r\n      print(\"Index trouvé dans _matieres : $index\");//DEBUG\r\n      if (index != -1) {\r\n        _matieres[index] = updatedMatiere; // Met à jour la matière\r\n        notifyListeners(); // Rafraîchit la liste\r\n        print(\"Matière mise à jour avec succès !\");//DEBUG\r\n      }else {\r\n        print(\"Matière non trouvée dans la liste !\");//DEBUG\r\n      }\r\n    }else {\r\n      print(\"Erreur : L'API n'a pas retourné la matière mise à jour !\");//DEBUG\r\n    }\r\n  } catch (e) {\r\n    print(\"Erreur de mise à jour : $e\");\r\n  }\r\n}\r\nFuture<List<Historique>> fetchHistorique(String id) async {\r\n  try {\r\n    final response = await ApiService.getHistoriqueMatiere(id);\r\n    if (response is List) {\r\n      return response.map((json) => Historique.fromJson(json as Map<String, dynamic>)).toList();\r\n    } else {\r\n      print(\"Erreur : La réponse de l'API n'est pas une liste.\");\r\n      return [];\r\n    }\r\n  } catch (e) {\r\n    print(\"Erreur lors du chargement de l'historique : $e\");\r\n    return [];\r\n  }\r\n}\r\n\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/frontend_flutter/lib/providers/matiereProvider.dart b/frontend_flutter/lib/providers/matiereProvider.dart
+--- a/frontend_flutter/lib/providers/matiereProvider.dart	(revision 008e941d9e42520ba37e1dddf08746923d6dc780)
++++ b/frontend_flutter/lib/providers/matiereProvider.dart	(date 1741171540929)
+@@ -1,4 +1,5 @@
+ import 'package:flutter/material.dart';
++import 'package:frontend/models/commande.dart';
+ import '../models/matiere.dart';
+ import '../services/api_service.dart';
+ 
+@@ -20,16 +21,14 @@
+ 
+   // Ajouter une matière
+   Future<void> addMatiere(Matiere matiere) async {
+-  try {
+-    await ApiService.addMatiere(matiere);
+-    await fetchMatieres();
+-  } catch (e) {
+-    print("Erreur lors de l'ajout de la matière : $e");
+-  }
+-}
++    try {
++      await ApiService.addMatiere(matiere);
++      await fetchMatieres();
++    } catch (e) {
++      print("Erreur lors de l'ajout de la matière : $e");
++    }
++  }
+ 
+-
+-
+   // Supprimer une matière
+   Future<void> deleteMatiere(String id) async {
+     try {
+@@ -40,41 +39,92 @@
+       print("Erreur lors de la suppression de la matière : $e");
+     }
+   }
++
+   Future<void> updateMatiere(String id, int newQuantite) async {
+-  try {
+-    print("Début de updateMatiere pour l'ID : $id avec quantité : $newQuantite");//DEBUG
+-    final updatedMatiere = await ApiService.updateMatiere(id, newQuantite);
+-    print("Réponse de l'API (updateMatiere) : $updatedMatiere");//DEBUG
+-    if (updatedMatiere != null) {
+-      int index = _matieres.indexWhere((m) => m.id == id);
+-      print("Index trouvé dans _matieres : $index");//DEBUG
+-      if (index != -1) {
+-        _matieres[index] = updatedMatiere; // Met à jour la matière
+-        notifyListeners(); // Rafraîchit la liste
+-        print("Matière mise à jour avec succès !");//DEBUG
+-      }else {
+-        print("Matière non trouvée dans la liste !");//DEBUG
+-      }
+-    }else {
+-      print("Erreur : L'API n'a pas retourné la matière mise à jour !");//DEBUG
+-    }
+-  } catch (e) {
+-    print("Erreur de mise à jour : $e");
+-  }
+-}
+-Future<List<Historique>> fetchHistorique(String id) async {
+-  try {
+-    final response = await ApiService.getHistoriqueMatiere(id);
+-    if (response is List) {
+-      return response.map((json) => Historique.fromJson(json as Map<String, dynamic>)).toList();
+-    } else {
+-      print("Erreur : La réponse de l'API n'est pas une liste.");
++    try {
++      print(
++          "Début de updateMatiere pour l'ID : $id avec quantité : $newQuantite"); //DEBUG
++      final updatedMatiere = await ApiService.updateMatiere(id, newQuantite);
++      print("Réponse de l'API (updateMatiere) : $updatedMatiere"); //DEBUG
++      if (updatedMatiere != null) {
++        int index = _matieres.indexWhere((m) => m.id == id);
++        print("Index trouvé dans _matieres : $index"); //DEBUG
++        if (index != -1) {
++          _matieres[index] = updatedMatiere; // Met à jour la matière
++          notifyListeners(); // Rafraîchit la liste
++          print("Matière mise à jour avec succès !"); //DEBUG
++        } else {
++          print("Matière non trouvée dans la liste !"); //DEBUG
++        }
++      } else {
++        print(
++            "Erreur : L'API n'a pas retourné la matière mise à jour !"); //DEBUG
++      }
++    } catch (e) {
++      print("Erreur de mise à jour : $e");
++    }
++  }
++
++  Future<List<Historique>> fetchHistorique(String matiereId) async {
++    try {
++      final response = await ApiService.getHistoriqueMatiere(matiereId);
++      print("Réponse reçue : $response");
++      print("Type de la réponse : ${response.runtimeType}");
++      if (response is List) {
++        return response.map<Historique>((json) {
++          if (json is Map<String, dynamic>) {
++            return Historique.fromJson(json);
++          } else {
++            throw Exception("Format inattendu des données de l'historique !");
++          }
++        }).toList();
++      } else {
++        throw Exception("Format inattendu de la réponse API !");
++      }
++    } catch (e) {
++      print("Erreur lors du chargement de l'historique : $e");
+       return [];
+     }
++  }
++  Future<List<Map<String, dynamic>>> fetchCommandes() async {
++  try {
++    final List<Commande> commandes = await ApiService.getCommandes();
++    return commandes.map((commande) {
++      return commande.modeles.map((modele) {
++        return {
++          'id': commande.id,
++          'modele': modele.nomModele,
++          'taille': modele.taille, 
++        };
++      }).toList();
++    }).expand((x) => x).toList();
+   } catch (e) {
+-    print("Erreur lors du chargement de l'historique : $e");
++    print("Erreur lors du chargement des commandes : $e");
+     return [];
+   }
+ }
++// Renommer une matière
++Future<void> renameMatiere(String id, String newReference) async {
++  try {
++    final response = await ApiService.renameMatiere(id, newReference);
++    if (response != null) {
++      int index = _matieres.indexWhere((m) => m.id == id);
++      if (index != -1) {
++        _matieres[index] = Matiere(
++          id: _matieres[index].id,
++          reference: newReference,
++          couleur: _matieres[index].couleur,
++          quantite: _matieres[index].quantite,
++          dateAjout: _matieres[index].dateAjout,
++          historique: _matieres[index].historique,
++        );
++        notifyListeners(); // Rafraîchit la liste
++      }
++    }
++  } catch (e) {
++    print("Erreur lors du renommage de la matière : $e");
++  }
++}
++
+ 
+ }
+Index: frontend_flutter/lib/services/api_service.dart
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>import 'dart:convert';\r\nimport 'package:frontend/models/matiere.dart';\r\nimport 'package:http/http.dart' as http;\r\nimport '../models/machine.dart';\r\nimport '../models/modele.dart';\r\nimport '../models/produits.dart';\r\nimport '../models/salle.dart';\r\nimport '../models/user.dart';\r\nimport '../models/planification.dart';\r\nimport '../models/commande.dart';\r\n\r\nclass ApiService {\r\n  static const String baseUrl = \"http://localhost:5000/api\";\r\n\r\n  static Future<List<Machine>> getMachines() async {\r\n    final response = await http.get(Uri.parse('$baseUrl/machines'));\r\n    if (response.statusCode == 200) {\r\n      List<dynamic> jsonData = json.decode(response.body);\r\n      return jsonData.map((json) => Machine.fromJson(json)).toList();\r\n    } else {\r\n      throw Exception(\"Erreur lors de la récupération des machines\");\r\n    }\r\n  }\r\n\r\n  static Future<void> addMachine(\r\n      {required String nom,\r\n      required String salleId,\r\n      String? modele,\r\n      String? taille}) async {\r\n    final response = await http.post(\r\n      Uri.parse('$baseUrl/machines/add'),\r\n      headers: {\"Content-Type\": \"application/json\"},\r\n      body: jsonEncode({\r\n        \"nom\": nom,\r\n        \"salle\": salleId,\r\n        \"modele\": modele, // Peut être null\r\n        \"taille\": taille // Peut être null\r\n      }),\r\n    );\r\n    if (response.statusCode != 201) {\r\n      throw Exception(\r\n          \"Erreur lors de l'ajout de la machine : ${response.body}\");\r\n    }\r\n  }\r\n\r\n  //Mettre à jour une machine\r\n  static Future<void> updateMachine(String id, String nom, String etat) async {\r\n    await http.put(\r\n      Uri.parse(\"$baseUrl/machines/$id\"),\r\n      headers: {\"Content-Type\": \"application/json\"},\r\n      body: jsonEncode({\"nom\": nom, \"etat\": etat}),\r\n    );\r\n  }\r\n\r\n  // Supprimer une machine\r\n  static Future<void> deleteMachine(String id) async {\r\n    final response = await http.delete(Uri.parse('$baseUrl/machines/$id'));\r\n\r\n    if (response.statusCode != 200) {\r\n      throw Exception(\r\n          \"Erreur lors de la suppression de la machine : ${response.body}\");\r\n    }\r\n  }\r\n\r\n  // Récupérer tous les Modèles\r\n  static Future<List<Modele>> getModeles() async {\r\n    final response = await http.get(Uri.parse('$baseUrl/modeles'));\r\n    if (response.statusCode == 200) {\r\n      List<dynamic> jsonData = json.decode(response.body);\r\n      print(\"Modèles récupérés: $jsonData\"); // Debug des données reçues\r\n      return jsonData.map((json) => Modele.fromJson(json)).toList();\r\n    } else {\r\n      throw Exception(\"Erreur lors de la récupération des modèles\");\r\n    }\r\n  }\r\n\r\n  // Ajouter un nouveau Modèle\r\n  static Future<void> addModele(String nom, List<String> tailles) async {\r\n    final response = await http.post(\r\n      Uri.parse(\"$baseUrl/modeles/add\"),\r\n      headers: {\"Content-Type\": \"application/json\"},\r\n      body: jsonEncode({\"nom\": nom, \"tailles\": tailles}),\r\n    );\r\n    if (response.statusCode != 201) {\r\n      throw Exception(\"Échec de l'ajout du modèle\");\r\n    }\r\n  }\r\n\r\n  static Future<bool> updateMachineModele(\r\n      String machineId, String modeleId, String taille) async {\r\n    final response = await http.put(\r\n      Uri.parse('$baseUrl/machines/$machineId'),\r\n      headers: {\"Content-Type\": \"application/json\"},\r\n      body: jsonEncode({\r\n        \"modele\": modeleId,\r\n        \"taille\": taille,\r\n      }),\r\n    );\r\n\r\n    return response.statusCode == 200;\r\n  }\r\n\r\n  // Récupérer toutes les Salles\r\n  static Future<List<Salle>> getSalles() async {\r\n    final response = await http.get(Uri.parse('$baseUrl/salles'));\r\n    if (response.statusCode == 200) {\r\n      List<dynamic> jsonData = json.decode(response.body);\r\n      return jsonData.map((json) => Salle.fromJson(json)).toList();\r\n    } else {\r\n      throw Exception(\"Erreur lors de la récupération des salles\");\r\n    }\r\n  }\r\n\r\n  // Ajouter une nouvelle Salle\r\n  static Future<bool> ajouterSalle(String nom, String type) async {\r\n    final response = await http.post(\r\n      Uri.parse('$baseUrl/salles'),\r\n      headers: {\"Content-Type\": \"application/json\"},\r\n      body: jsonEncode({\"nom\": nom, \"type\": type}),\r\n    );\r\n    return response.statusCode == 201;\r\n  }\r\n\r\n  static Future<bool> supprimerSalle(String id) async {\r\n    final response = await http.delete(Uri.parse('$baseUrl/salles/$id'));\r\n    return response.statusCode == 200;\r\n  }\r\n\r\n  static Future<bool> modifierSalle(String id, String nom) async {\r\n    final response = await http.put(\r\n      Uri.parse('$baseUrl/salles/$id'),\r\n      headers: {\"Content-Type\": \"application/json\"},\r\n      body: jsonEncode({\"nom\": nom}),\r\n    );\r\n    return response.statusCode == 200;\r\n  }\r\n\r\n  // Récupérer tous les Utilisateurs\r\n  static Future<List<User>> getUsers() async {\r\n    final response = await http.get(Uri.parse('$baseUrl/users'));\r\n    if (response.statusCode == 200) {\r\n      List<dynamic> jsonData = json.decode(response.body);\r\n      return jsonData.map((json) => User.fromJson(json)).toList();\r\n    } else {\r\n      throw Exception(\"Erreur lors de la récupération des utilisateurs\");\r\n    }\r\n  }\r\n\r\n  // Ajouter un nouvel Utilisateur\r\n  static Future<bool> addUser(User user) async {\r\n    final response = await http.post(\r\n      Uri.parse('$baseUrl/users'),\r\n      headers: {\"Content-Type\": \"application/json\"},\r\n      body: jsonEncode(user.toJson()),\r\n    );\r\n    return response.statusCode == 201;\r\n  }\r\n\r\n  // Récupérer toutes les Planifications\r\n  static Future<List<Planification>> getPlanifications() async {\r\n    final response = await http.get(Uri.parse('$baseUrl/planifications'));\r\n    if (response.statusCode == 200) {\r\n      List<dynamic> jsonData = json.decode(response.body);\r\n      return jsonData.map((json) => Planification.fromJson(json)).toList();\r\n    } else {\r\n      throw Exception(\"Erreur lors de la récupération des planifications\");\r\n    }\r\n  }\r\n\r\n  static Future<bool> addPlanification(Planification planification) async {\r\n    final response = await http.post(\r\n      Uri.parse('$baseUrl/planifications'),\r\n      headers: {\"Content-Type\": \"application/json\"},\r\n      body: jsonEncode(planification.toJson()),\r\n    );\r\n    return response.statusCode == 201;\r\n  }\r\n\r\n  static Future<List<Commande>> getCommandes() async {\r\n    final response = await http.get(Uri.parse('$baseUrl/commandes'));\r\n    if (response.statusCode == 200) {\r\n      List<dynamic> jsonData = json.decode(response.body);\r\n      return jsonData.map((json) => Commande.fromJson(json)).toList();\r\n    } else {\r\n      throw Exception(\"Erreur lors de la récupération des commandes\");\r\n    }\r\n  }\r\n\r\n  static Future<bool> addCommande(Commande commande) async {\r\n    final response = await http.post(\r\n      Uri.parse('$baseUrl/commandes/add'),\r\n      headers: {\"Content-Type\": \"application/json\"},\r\n      body: jsonEncode(commande.toJson()),\r\n    );\r\n\r\n    if (response.statusCode == 201) {\r\n      return true;\r\n    } else {\r\n      print(\"Erreur lors de l'ajout de la commande: ${response.body}\");\r\n      return false;\r\n    }\r\n  }\r\n\r\n  static Future<List<dynamic>> fetchMachinesParSalle(String salleId) async {\r\n    final url =\r\n        'http://localhost:5000/api/machines/parSalle/$salleId'; // Ajout de salleId\r\n    print(\"\uD83D\uDD0D Requête envoyée à: $url\"); // Debug URL\r\n\r\n    try {\r\n      final response = await http.get(Uri.parse(url));\r\n\r\n      print(\"Réponse API: ${response.statusCode}\"); // Code de réponse\r\n      print(\"Données brutes: ${response.body}\"); // Debug JSON\r\n\r\n      if (response.statusCode == 200) {\r\n        final data = json.decode(response.body);\r\n        print(\"Données reçues: $data\"); // Vérification de la structure\r\n        return data; // Retourne directement la liste des machines\r\n      } else {\r\n        print(\"Erreur API: ${response.body}\");\r\n        throw Exception(\"Échec du chargement des machines\");\r\n      }\r\n    } catch (e) {\r\n      print(\"Erreur lors de la récupération des machines: $e\");\r\n      throw Exception(\"Erreur de connexion\");\r\n    }\r\n  }\r\n\r\n  static Future<List<Machine>> getMachinesParSalle(String salleId) async {\r\n    final response =\r\n        await http.get(Uri.parse('$baseUrl/salles/$salleId/machines'));\r\n    if (response.statusCode == 200) {\r\n      List<dynamic> jsonData = json.decode(response.body);\r\n      return jsonData.map((json) => Machine.fromJson(json)).toList();\r\n    } else {\r\n      throw Exception(\r\n          \"Erreur lors de la récupération des machines pour la salle $salleId\");\r\n    }\r\n  }\r\n\r\n  // Récupérer les matières\r\n  static Future<List<dynamic>> getMatieres() async {\r\n    final response = await http.get(Uri.parse('$baseUrl/matieres'));\r\n    if (response.statusCode == 200) {\r\n      return json.decode(response.body);\r\n    } else {\r\n      throw Exception(\"Erreur lors du chargement des matières\");\r\n    }\r\n  }\r\n\r\n  // Ajouter une matière\r\n  static Future<Map<String, dynamic>> addMatiere(Matiere matiere) async {\r\n    final response = await http.post(\r\n      Uri.parse('$baseUrl/matieres/add'),\r\n      headers: {'Content-Type': 'application/json'},\r\n      body: json.encode(matiere.toJson()),\r\n    );\r\n    print(\"Réponse API : ${response.statusCode} - ${response.body}\");\r\n    if (response.statusCode == 201) {\r\n      return json.decode(response.body);\r\n    } else {\r\n      throw Exception(\"Erreur lors de l'ajout de la matière\");\r\n    }\r\n  }\r\n\r\n  // Supprimer une matière\r\n  static Future<void> deleteMatiere(String id) async {\r\n    final response = await http.delete(Uri.parse('$baseUrl/matieres/$id'));\r\n    if (response.statusCode != 200) {\r\n      throw Exception(\"Erreur lors de la suppression de la matière\");\r\n    }\r\n  }\r\n\r\n  static Future<Matiere?> updateMatiere(String id, int newQuantite) async {\r\n    final response = await http.put(\r\n      Uri.parse('$baseUrl/matieres/update/$id'),\r\n      headers: {\"Content-Type\": \"application/json\"},\r\n      body: jsonEncode({\"quantite\": newQuantite}),\r\n    );\r\n\r\n    if (response.statusCode == 200) {\r\n      return Matiere.fromJson(jsonDecode(response.body));\r\n    } else {\r\n      return null;\r\n    }\r\n  }\r\n  static Future<List<Historique>> getHistoriqueMatiere(String matiereId) async {\r\n  final response = await http.get(Uri.parse('$baseUrl/matieres/$matiereId/historique'));\r\n\r\n  if (response.statusCode == 200) {\r\n    List<dynamic> jsonData = json.decode(response.body);\r\n    return jsonData.map((json) => Historique.fromJson(json)).toList();\r\n  } else {\r\n    throw Exception(\"Erreur lors de la récupération de l'historique\");\r\n  }\r\n  }\r\n  static Future<List<Produit>> getProduits() async {\r\n    final response = await http.get(Uri.parse('$baseUrl/produits'));\r\n    if (response.statusCode == 200) {\r\n      List<dynamic> jsonData = json.decode(response.body);\r\n      print(\"Produits récupérés : $jsonData\"); // Ajouter un print pour vérifier la réponse\r\n\r\n      return jsonData.map((json) => Produit.fromJson(json)).toList();\r\n    } else {\r\n      throw Exception(\"Erreur lors de la récupération des produits\");\r\n    }\r\n  }\r\n\r\n  static Future<void> addProduit(Produit produit) async {\r\n    final response = await http.post(\r\n      Uri.parse('$baseUrl/produits/add'),\r\n      headers: {\"Content-Type\": \"application/json\"},\r\n      body: jsonEncode(produit.toJson()),\r\n    );\r\n    if (response.statusCode != 201) {\r\n      throw Exception(\"Erreur lors de l'ajout du produit : ${response.body}\");\r\n    }\r\n  }\r\n\r\n  static Future<void> updateProduit(String id, String taille, String couleur, int quantite, String etat,) async {\r\n    final body = jsonEncode({\r\n      'taille': taille,\r\n      'couleur': couleur,\r\n      'quantite': quantite,\r\n      'etat': etat,\r\n    });\r\n\r\n    // Effectuer la requête PUT pour mettre à jour le produit\r\n    final response = await http.put(\r\n      Uri.parse('$baseUrl/produits/$id'),\r\n      headers: {\"Content-Type\": \"application/json\"},\r\n      body: body,\r\n    );\r\n\r\n    if (response.statusCode != 200) {\r\n      throw Exception(\"Erreur lors de la mise à jour du produit : ${response.body}\");\r\n    }\r\n  }\r\n\r\n\r\n  static Future<void> deleteProduit(String id) async {\r\n    final response = await http.delete(Uri.parse('$baseUrl/produits/$id'));\r\n    if (response.statusCode != 200) {\r\n      throw Exception(\"Erreur lors de la suppression du produit : ${response.body}\");\r\n    }\r\n  }\r\n\r\n}\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/frontend_flutter/lib/services/api_service.dart b/frontend_flutter/lib/services/api_service.dart
+--- a/frontend_flutter/lib/services/api_service.dart	(revision 008e941d9e42520ba37e1dddf08746923d6dc780)
++++ b/frontend_flutter/lib/services/api_service.dart	(date 1741172005827)
+@@ -284,12 +284,11 @@
+       return null;
+     }
+   }
+-  static Future<List<Historique>> getHistoriqueMatiere(String matiereId) async {
++  static Future<List<dynamic>> getHistoriqueMatiere(String matiereId) async {
+   final response = await http.get(Uri.parse('$baseUrl/matieres/$matiereId/historique'));
+ 
+   if (response.statusCode == 200) {
+-    List<dynamic> jsonData = json.decode(response.body);
+-    return jsonData.map((json) => Historique.fromJson(json)).toList();
++    return json.decode(response.body);
+   } else {
+     throw Exception("Erreur lors de la récupération de l'historique");
+   }
+@@ -345,4 +344,21 @@
+     }
+   }
+ 
++  static Future<Matiere?> renameMatiere(String id, String newReference) async {
++  try {
++    final response = await http.patch(
++      Uri.parse('$baseUrl/matieres/$id/rename'),
++      headers: {'Content-Type': 'application/json'},
++      body: jsonEncode({'reference': newReference}),
++    );
++
++    if (response.statusCode == 200) {
++      return Matiere.fromJson(jsonDecode(response.body));
++    } else {
++      throw Exception("Erreur lors du renommage de la matière");
++    }
++  } catch (e) {
++    throw Exception("Erreur de connexion : $e");
++  }
++}
+ }
+Index: api/routes/matiereRoutes.js
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.BaseRevisionTextPatchEP
+<+>const express = require(\"express\");\r\nconst router = express.Router();\r\nconst matiereController = require(\"../controllers/matiereController\");\r\n\r\n// Route pour ajouter une matière\r\nrouter.post(\"/add\", matiereController.addMatiere);\r\n// Route pour récupérer toutes les matières\r\nrouter.get(\"/\", matiereController.getMatieres);\r\nrouter.get(\"/historique/:id\", matiereController.getHistoriqueMatiere);\r\nrouter.put('/update/:id', matiereController.updateMatiere);\r\n// Route pour supprimer une matière\r\nrouter.delete(\"/:id\", matiereController.deleteMatiere);\r\n\r\nmodule.exports = router;\r\n
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/api/routes/matiereRoutes.js b/api/routes/matiereRoutes.js
+--- a/api/routes/matiereRoutes.js	(revision 008e941d9e42520ba37e1dddf08746923d6dc780)
++++ b/api/routes/matiereRoutes.js	(date 1741171540801)
+@@ -2,13 +2,11 @@
+ const router = express.Router();
+ const matiereController = require("../controllers/matiereController");
+ 
+-// Route pour ajouter une matière
+ router.post("/add", matiereController.addMatiere);
+-// Route pour récupérer toutes les matières
+ router.get("/", matiereController.getMatieres);
+-router.get("/historique/:id", matiereController.getHistoriqueMatiere);
++router.get("/:id/historique", matiereController.getHistoriqueMatiere);
+ router.put('/update/:id', matiereController.updateMatiere);
+-// Route pour supprimer une matière
++router.patch("/:id/rename", matiereController.renameMatiere);
+ router.delete("/:id", matiereController.deleteMatiere);
+ 
+ module.exports = router;

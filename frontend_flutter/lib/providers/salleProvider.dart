@@ -6,6 +6,7 @@ class SalleProvider with ChangeNotifier {
 
   List<dynamic> get salles => _salles;
 
+
   Future<void> fetchSalles() async {
     try {
       _salles = await ApiService.getSalles();

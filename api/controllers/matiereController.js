@@ -8,7 +8,7 @@ exports.addMatiere = async (req, res) => {
         reference,
         couleur,
         quantite,
-        historique: [{ action: "Ajout", quantite, date: new Date() }]
+        historique: [{ action: "ajout", quantite, date: new Date() }]
       });
     await newMatiere.save();
     res.status(201).json({ message: "Matière ajoutée avec succès", matiere: newMatiere });
@@ -52,63 +52,31 @@ exports.deleteMatiere = async (req, res) => {
 
 exports.updateMatiere = async (req, res) => {
     try {
-        const { id } = req.params;
-        const { quantite } = req.body;  
-        const matiere = await Matiere.findById(id);  
-
-        if (!matiere) {
-            return res.status(404).json({ message: "Matière introuvable" });
-        }
-
-        // Calcul de la différence (quantité réellement ajoutée ou consommée)
-        let difference = quantite; // Par défaut, on suppose que l'utilisateur envoie la quantité à ajouter ou consommer
-        let action;
-
-        if (quantite > 0) {  
-            action = "Ajout";
-            matiere.quantite += quantite;  // Ajout de la quantité
-        } else {  
-            action = "Consommation";
-            difference = Math.abs(quantite);  // Convertir en positif
-            if (matiere.quantite < difference) {
-                return res.status(400).json({ message: "Quantité insuffisante" });
-            }
-            matiere.quantite -= difference;  // Soustraction de la quantité
-        }
-
-        // Ajout dans l'historique avec la vraie quantité ajoutée/consommée
-        matiere.historique.push({ action, quantite: difference, date: new Date() });
-
-        await matiere.save();
-        res.status(200).json(matiere);
-    } catch (error) {
-        res.status(500).json({ message: "Erreur lors de la mise à jour de la matière", error });
-    }
-};
-// Renommer une matière
-exports.renameMatiere = async (req, res) => {
-    try {
       const { id } = req.params;
-      const { reference } = req.body;
-  
-      if (!reference) {
-        return res.status(400).json({ message: "La référence est requise" });
-      }
-  
-      const matiere = await Matiere.findByIdAndUpdate(
-        id,
-        { reference },
-        { new: true }
-      );
-  
+      const { quantite, action } = req.body; // action = "ajout" ou "consommation"
+      
+      const matiere = await Matiere.findById(id);
       if (!matiere) {
-        return res.status(404).json({ message: "Matière non trouvée" });
+        return res.status(404).json({ message: "Matière introuvable" });
       }
   
-      res.status(200).json({ message: "Matière renommée avec succès", matiere });
+      // Enregistrement de l'historique
+      matiere.historique.push({ action, quantite, date: new Date() });
+  
+      // Mise à jour de la quantité
+      if (action === "ajout") {
+        matiere.quantite += quantite;
+      } else if (action === "consommation") {
+        if (matiere.quantite < quantite) {
+          return res.status(400).json({ message: "Quantité insuffisante" });
+        }
+        matiere.quantite -= quantite;
+      }
+  
+      await matiere.save();
+      res.status(200).json(matiere);
     } catch (error) {
-      res.status(500).json({ message: "Erreur lors du renommage de la matière", error });
+      res.status(500).json({ message: "Erreur lors de la mise à jour de la matière", error });
     }
   };
-
   

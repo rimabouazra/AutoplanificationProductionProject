@@ -9,9 +9,14 @@ import '../providers/CommandeProvider.dart';
 class AddCommandePage extends StatefulWidget {
   @override
   _AddCommandePageState createState() => _AddCommandePageState();
+
 }
 
 class _AddCommandePageState extends State<AddCommandePage> {
+  List<Map<String, dynamic>> modelesDisponibles = [];
+  Map<String, dynamic>? selectedModele;
+  String? selectedTaille;
+
   final _formKey = GlobalKey<FormState>();
   final TextEditingController clientController = TextEditingController();
   final TextEditingController conditionnementController =
@@ -128,6 +133,7 @@ Widget _buildTailleField() {
     },
   );
 }
+
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
