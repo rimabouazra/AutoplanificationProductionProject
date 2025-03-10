@@ -473,6 +473,12 @@ class _MatiereViewState extends State<MatiereView> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 IconButton(
+                                  icon:
+                                      Icon(Icons.history, color: Colors.purple),
+                                  onPressed: () =>
+                                      _afficherHistorique(context, matiere),
+                                ),
+                                IconButton(
                                   icon: Icon(Icons.edit, color: Colors.blue),
                                   onPressed: () => _afficherFormulaireRenommage(
                                       context, matiere),

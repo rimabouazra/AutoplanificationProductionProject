@@ -187,5 +187,7 @@ class CommandeProvider with ChangeNotifier {
       print("Erreur lors de la récupération des commandes: $error");
     }
   }
-
+   List<String> getClients() {
+    return _commandes.map((c) => c.client).toSet().toList();
+  }
 }
