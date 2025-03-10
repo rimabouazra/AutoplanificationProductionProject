@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/models/commande.dart';
 import '../models/matiere.dart';
 import '../services/api_service.dart';
 
@@ -40,7 +41,7 @@ class MatiereProvider with ChangeNotifier {
       print("Erreur lors de la suppression de la matière : $e");
     }
   }
-  Future<void> updateMatiere(String id, int newQuantite) async {
+  Future<void> updateMatiere(String id, double newQuantite) async {
   try {
     print("Début de updateMatiere pour l'ID : $id avec quantité : $newQuantite");//DEBUG
     final updatedMatiere = await ApiService.updateMatiere(id, newQuantite);
@@ -65,15 +66,53 @@ class MatiereProvider with ChangeNotifier {
 Future<List<Historique>> fetchHistorique(String id) async {
   try {
     final response = await ApiService.getHistoriqueMatiere(id);
-    if (response is List) {
-      return response.map((json) => Historique.fromJson(json as Map<String, dynamic>)).toList();
+    if (response is List<Historique>) {
+      return response;
     } else {
-      print("Erreur : La réponse de l'API n'est pas une liste.");
+      print("Erreur : La réponse de l'API n'est pas une liste d'Historique.");
       return [];
     }
   } catch (e) {
     print("Erreur lors du chargement de l'historique : $e");
     return [];
+  }
+}
+Future<List<Map<String, dynamic>>> fetchCommandes() async {
+  try {
+    final List<Commande> commandes = await ApiService.getCommandes();
+    return commandes.map((commande) {
+      return commande.modeles.map((modele) {
+        return {
+          'id': commande.id,
+          'modele': modele.nomModele,
+          'taille': modele.taille, 
+        };
+      }).toList();
+    }).expand((x) => x).toList();
+  } catch (e) {
+    print("Erreur lors du chargement des commandes : $e");
+    return [];
+  }
+}
+Future<void> renameMatiere(String id, String newReference) async {
+  try {
+    final response = await ApiService.renameMatiere(id, newReference);
+    if (response != null) {
+      int index = _matieres.indexWhere((m) => m.id == id);
+      if (index != -1) {
+        _matieres[index] = Matiere(
+          id: _matieres[index].id,
+          reference: newReference,
+          couleur: _matieres[index].couleur,
+          quantite: _matieres[index].quantite,
+          dateAjout: _matieres[index].dateAjout,
+          historique: _matieres[index].historique,
+        );
+        notifyListeners(); // Rafraîchit la liste
+      }
+    }
+  } catch (e) {
+    print("Erreur lors du renommage de la matière : $e");
   }
 }
 

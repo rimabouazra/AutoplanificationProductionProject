@@ -14,7 +14,6 @@ class Historique {
   }
   Map<String, dynamic> toJson() {
     return {
-      //'_id': id,
       'action': action,
        'quantite': quantite,
       'date': date.toIso8601String(),
@@ -23,7 +22,7 @@ class Historique {
 }
 class Matiere {
   final String id;
-  final String reference;
+  String reference;
   final String couleur;
   final double quantite;
   final DateTime dateAjout;

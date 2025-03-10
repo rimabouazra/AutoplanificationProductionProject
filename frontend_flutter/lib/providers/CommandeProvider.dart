@@ -189,11 +189,9 @@ class CommandeProvider with ChangeNotifier {
       print("Erreur lors de la récupération des commandes: $error");
     }
   }
-<<<<<<< HEAD
    List<String> getClients() {
     return _commandes.map((c) => c.client).toSet().toList();
   }
-=======
   Future<List<Map<String, dynamic>>> fetchModeles() async {
     try {
       final response = await http.get(Uri.parse("http://localhost:5000/api/modeles"));
@@ -207,6 +205,4 @@ class CommandeProvider with ChangeNotifier {
     return [];
   }
 
-
->>>>>>> 9deaa6a130574ea4b6de70f030c565bc65214b78
 }
