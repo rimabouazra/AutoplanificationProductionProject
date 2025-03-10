@@ -1,6 +1,6 @@
 class Historique {
   final String action;
-  final int quantite;
+  final double quantite;
   final DateTime date;
 
   Historique({required this.action, required this.quantite, required this.date});
@@ -8,7 +8,7 @@ class Historique {
   factory Historique.fromJson(Map<String, dynamic> json) {
     return Historique(
       action: json['action'],
-      quantite: json['quantite'],
+      quantite: (json['quantite'] as num).toDouble(),
       date: DateTime.parse(json['date']),
     );
   }
@@ -16,6 +16,7 @@ class Historique {
     return {
       //'_id': id,
       'action': action,
+       'quantite': quantite,
       'date': date.toIso8601String(),
     };
   }
@@ -24,7 +25,7 @@ class Matiere {
   final String id;
   final String reference;
   final String couleur;
-  final int quantite;
+  final double quantite;
   final DateTime dateAjout;
   final List<Historique> historique;
 
@@ -43,7 +44,7 @@ class Matiere {
       id: json['_id']?.toString() ?? '',
     reference: json['reference'] ?? '', 
     couleur: json['couleur'] ?? '',
-    quantite: json['quantite'] ?? 0,
+    quantite:(json['quantite'] as num).toDouble() ?? 0,
     dateAjout: DateTime.parse(json['dateAjout']),
       historique: (json['historique'] as List).map((item) => Historique.fromJson(item)).toList(),
     );

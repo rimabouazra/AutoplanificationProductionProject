@@ -26,7 +26,7 @@ class _MatiereViewState extends State<MatiereView> {
     final provider = Provider.of<MatiereProvider>(context, listen: false);
     final reference = referenceController.text.trim();
     final couleur = couleurController.text.trim();
-    final quantite = int.tryParse(quantiteController.text) ?? 0;
+    final quantite = double.tryParse(quantiteController.text) ?? 0;
 
     if (reference.isEmpty || couleur.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
