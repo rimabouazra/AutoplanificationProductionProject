@@ -271,7 +271,7 @@ class ApiService {
     }
   }
 
-  static Future<Matiere?> updateMatiere(String id, int newQuantite) async {
+  static Future<Matiere?> updateMatiere(String id, double  newQuantite) async {
     final response = await http.put(
       Uri.parse('$baseUrl/matieres/update/$id'),
       headers: {"Content-Type": "application/json"},
@@ -285,15 +285,37 @@ class ApiService {
     }
   }
   static Future<List<Historique>> getHistoriqueMatiere(String matiereId) async {
-  final response = await http.get(Uri.parse('$baseUrl/matieres/$matiereId/historique'));
-
+  final response = await http.get(Uri.parse('$baseUrl/matieres/historique/$matiereId'));
   if (response.statusCode == 200) {
     List<dynamic> jsonData = json.decode(response.body);
-    return jsonData.map((json) => Historique.fromJson(json)).toList();
+    return jsonData.map((json) {
+      if (json is Map<String, dynamic>) {
+        return Historique.fromJson(json);
+      } else {
+        throw Exception("Format de données invalide : $json");
+      }
+    }).toList();
   } else {
     throw Exception("Erreur lors de la récupération de l'historique");
   }
+}
+  static Future<Matiere?> renameMatiere(String id, String newReference) async {
+  try {
+    final response = await http.patch(
+      Uri.parse('$baseUrl/matieres/$id/rename'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'reference': newReference}),
+    );
+
+    if (response.statusCode == 200) {
+      return Matiere.fromJson(jsonDecode(response.body));
+    } else {
+      throw Exception("Erreur lors du renommage de la matière");
+    }
+  } catch (e) {
+    throw Exception("Erreur de connexion : $e");
   }
+}
   static Future<List<Produit>> getProduits() async {
     final response = await http.get(Uri.parse('$baseUrl/produits'));
     if (response.statusCode == 200) {

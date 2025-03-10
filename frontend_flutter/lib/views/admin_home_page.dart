@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'CommandePage.dart';
 import 'SalleListPage.dart';
 import 'matiereView.dart';
-
+import 'StockView.dart';
 
 class AdminHomePage extends StatefulWidget {
   const AdminHomePage({Key? key}) : super(key: key);
@@ -18,7 +18,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
     Center(child: Text('Statistique en développement')), // Placeholder
     Center(child: Text('Planification en développement')), // Placeholder
     Center(child: Text('Utilisateurs en développement')), // Placeholder
-    MatiereView(), 
+    StockView(),
     CommandePage(),
     SalleListPage(),
   ];
@@ -35,11 +35,9 @@ class _AdminHomePageState extends State<AdminHomePage> {
       appBar: AppBar(
         title: const Text('Admin Dashboard'),
         centerTitle: true,
-        elevation: 0,
       ),
       body: _pages[_selectedIndex],
-      bottomNavigationBar:
-      BottomNavigationBar(
+      bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
             icon: Icon(Icons.stacked_line_chart),
