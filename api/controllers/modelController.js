@@ -5,15 +5,17 @@ exports.addModele = async (req, res) => {
     try {
         const { nom, matiereId, tailles, bases, taillesBases } = req.body;
 
-        // Vérifier si la matière existe
-        const matiere = await Matiere.findById(matiereId);
-        if (!matiere) {
-            return res.status(404).json({ message: "Matière non trouvée" });
+        let matiere = null;
+        if (matiereId) {
+            matiere = await Matiere.findById(matiereId);
+            if (!matiere) {
+                return res.status(404).json({ message: "Matière non trouvée" });
+            }
         }
 
         const newModele = new Modele({
             nom,
-            matiere: matiereId,
+            matiere: matiereId || null,  // Accepte un modèle sans matière
             tailles,
             bases,
             taillesBases

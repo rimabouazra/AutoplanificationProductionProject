@@ -336,5 +336,78 @@ class ApiService {
       throw Exception("Erreur lors de la suppression du produit : ${response.body}");
     }
   }
+  Future<String?> getModeleNom(String modeleId) async {
+    try {
+      final response = await http.get(Uri.parse("http://localhost:5000/api/modeles/$modeleId"));
+
+      if (response.statusCode == 200) {
+        var data = json.decode(response.body);
+        return data["nom"];
+      } else {
+        print("Erreur récupération nom modèle: ${response.statusCode}");
+        return null;
+      }
+    } catch (e) {
+      print("Erreur getModeleNom: $e");
+      return null;
+    }
+  }
+
+  static Future<Modele?> getModeleParNom(String modeleNom) async {
+    try {
+      final response = await http.get(Uri.parse("http://localhost:5000/api/modeles?nom=$modeleNom"));
+
+      if (response.statusCode == 200) {
+        var data = json.decode(response.body);
+        if (data.isNotEmpty) {
+          return Modele.fromJson(data[0]); // On suppose que la réponse contient un tableau et que le modèle est le premier élément
+        } else {
+          print("Modèle non trouvé pour le nom: $modeleNom");
+          return null;
+        }
+      } else {
+        print("Erreur récupération modèle: ${response.statusCode}");
+        return null;
+      }
+    } catch (e) {
+      print("Erreur getModeleParNom: $e");
+      return null;
+    }
+  }
+
+  Future<String?> getModeleId(String nomModele) async {
+    print("Recherche du modèle pour nomModele: $nomModele");
+    try {
+      // Make sure the model name is URL-encoded to handle special characters
+      String encodedNomModele = Uri.encodeComponent(nomModele);
+      var response = await http.get(Uri.parse("http://localhost:5000/api/modeles/findByName/$encodedNomModele"));
+
+      print("Réponse HTTP: ${response.statusCode}");
+
+      if (response.statusCode == 200) {
+        var data = json.decode(response.body);
+        print("Réponse du modèle : $data");
+
+        // Ensure the response structure matches your expectations
+        if (data["_id"] != null) {
+          String? modeleId = data["_id"].toString(); // Check that the '_id' field is present
+          print("ID du modèle trouvé: $modeleId");
+          return modeleId;
+        } else {
+          print("Aucun ID trouvé dans la réponse.");
+          return null;
+        }
+      } else {
+        print("Erreur lors de la récupération du modèle: ${response.statusCode}");
+        return null;
+      }
+    } catch (e) {
+      print("Erreur dans getModeleId: $e");
+      return null;
+    }
+  }
+
+
+
 
 }

@@ -34,7 +34,6 @@ class CommandeModele {
   }
 }
 
-
 class Commande {
   String? id;
   String client;
@@ -65,15 +64,22 @@ class Commande {
       id: json['_id'],
       client: json['client'] ?? '',
       modeles: (json['modeles'] as List<dynamic>?)
-          ?.map((item) => CommandeModele.fromJson(item))
-          .toList() ?? [],
+              ?.map((item) => CommandeModele.fromJson(item))
+              .toList() ??
+          [],
       conditionnement: json['conditionnement'] ?? '',
       delais: json['delais'] != null ? DateTime.tryParse(json['delais']) : null,
       etat: json['etat'] ?? '',
-      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt']) : null,
-      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt']) : null,
+      createdAt: json['createdAt'] != null
+          ? DateTime.tryParse(json['createdAt'])
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.tryParse(json['updatedAt'])
+          : null,
       salleAffectee: json['salleAffectee'],
-      machinesAffectees: (json['machinesAffectees'] as List<dynamic>?)?.map((e) => e.toString()).toList(),
+      machinesAffectees: (json['machinesAffectees'] as List<dynamic>?)
+          ?.map((e) => e.toString())
+          .toList(),
     );
   }
 

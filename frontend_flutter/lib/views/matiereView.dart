@@ -158,7 +158,7 @@ class _MatiereViewState extends State<MatiereView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: TopNavbar(), // Utilisation du TopNavbar ici
+      appBar: TopNavbar(),
       body: Consumer<MatiereProvider>(
         builder: (context, provider, child) {
           if (provider.matieres.isEmpty) {

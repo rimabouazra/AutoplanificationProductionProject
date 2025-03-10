@@ -1,6 +1,10 @@
+import 'dart:convert';
+import 'package:http/http.dart' as http;
+
 import 'package:flutter/material.dart';
 import '../models/produits.dart';
 import '../services/api_service.dart';
+import '../models/modele.dart';
 
 class ProduitsPage extends StatefulWidget {
   @override
@@ -11,11 +15,42 @@ class _ProduitsPageState extends State<ProduitsPage> {
   List<Produit> _produits = [];
   bool _isLoading = true;
 
+  final _modeleController = TextEditingController();
+  final _tailleController = TextEditingController();
+  final _couleurController = TextEditingController();
+  final _quantiteController = TextEditingController();
   @override
   void initState() {
     super.initState();
     _fetchProduits();
   }
+  @override
+  void dispose() {
+    // Nettoyer les contrôleurs pour éviter les fuites de mémoire
+    _modeleController.dispose();
+    _tailleController.dispose();
+    _couleurController.dispose();
+    _quantiteController.dispose();
+    super.dispose();
+  }
+
+  Future<String?> getModeleNom(String modeleId) async {
+    try {
+      final response = await http.get(Uri.parse("http://localhost:5000/api/modeles/$modeleId"));
+
+      if (response.statusCode == 200) {
+        var data = json.decode(response.body);
+        return data["nom"];
+      } else {
+        print("Erreur récupération nom modèle: ${response.statusCode}");
+        return null;
+      }
+    } catch (e) {
+      print("Erreur getModeleNom: $e");
+      return null;
+    }
+  }
+
 
   Future<void> _fetchProduits() async {
     try {
@@ -28,6 +63,176 @@ class _ProduitsPageState extends State<ProduitsPage> {
       print("Erreur: $e");
     }
   }
+
+  void _ajouterProduit() {
+    // Ouvrir un formulaire pour ajouter un nouveau produit
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          backgroundColor: Colors.white,
+          title: Text("Ajouter un Produit", style: TextStyle(color: Colors.blue[900])),
+          content: SizedBox(
+            width: 500,  // Largeur du dialogue
+            height: 400,  // Hauteur du dialogue
+            child: SingleChildScrollView(
+              child: Column(
+                children: [
+                  TextField(
+                    controller: _modeleController,
+                    decoration: InputDecoration(
+                      labelText: "Modèle",
+                      labelStyle: TextStyle(color: Colors.black87),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.teal[50]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white60!),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  TextField(
+                    controller: _tailleController,
+                    decoration: InputDecoration(
+                      labelText: "Taille",
+                      labelStyle: TextStyle(color: Colors.black87),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.teal[50]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white60!),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  TextField(
+                    controller: _couleurController,
+                    decoration: InputDecoration(
+                      labelText: "Couleur",
+                      labelStyle: TextStyle(color: Colors.black87),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.teal[50]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white60!),
+                      ),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+                  TextField(
+                    controller: _quantiteController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: "Quantité",
+                      labelStyle: TextStyle(color: Colors.black87),
+                      enabledBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.teal[50]!),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderSide: BorderSide(color: Colors.white60!),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Annuler", style: TextStyle(color: Colors.red[600])),
+            ),
+            ElevatedButton(
+              onPressed: () async {
+                // Récupérer les valeurs des champs du formulaire
+                final modeleNom = _modeleController.text.trim();  // Nom du modèle
+                final taille = _tailleController.text.trim();
+                final couleur = _couleurController.text.trim();
+                final quantite = int.tryParse(_quantiteController.text.trim()) ?? 0;
+
+                // Validation des champs
+                if (modeleNom.isEmpty || taille.isEmpty || couleur.isEmpty || quantite <= 0) {
+                  // Afficher un message d'erreur si un champ est vide ou invalide
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Veuillez remplir tous les champs correctement."),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                  return;
+                }
+
+                try {
+                  // Récupérer l'objet Modele à partir du nom via l'API
+                  final modele = await ApiService.getModeleParNom(modeleNom);
+
+                  if (modele == null) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Modèle non trouvé."),
+                        backgroundColor: Colors.red,
+                      ),
+                    );
+                    return;
+                  }
+
+                  // Créer un objet Produit avec les données du formulaire
+                  final nouveauProduit = Produit(
+                    id: '',
+                    modele: modele,  // Utiliser l'objet Modele récupéré
+                    tailles: [
+                      {
+                        'taille': taille,
+                        'couleur': couleur,
+                        'etat': 'coupé',  // Par défaut, l'état est "coupé"
+                        'matiere': null, // La matière peut être ajoutée plus tard
+                        'quantite': quantite,
+                      }
+                    ],
+                  );
+
+                  // Appeler l'API pour ajouter le produit
+                  await ApiService.addProduit(nouveauProduit);
+
+                  // Afficher un message de succès
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text("Produit ajouté avec succès !"),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+
+                  // Fermer la boîte de dialogue
+                  Navigator.pop(context);
+
+                  // Rafraîchir la liste des produits
+                  _fetchProduits();
+                } catch (e) {
+                  // En cas d'erreur, afficher un message d'erreur
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Erreur lors de l'ajout du produit : ${e.toString()}"),
+                      backgroundColor: Colors.red,
+                    ),
+                  );
+                }
+              },
+              child: Text("Ajouter", style: TextStyle(color: Colors.green[800])),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueAccent[50],
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+
 
   void _modifierProduit(Produit produit, int indexTaille) {
     var tailleData = produit.tailles[indexTaille];
@@ -274,6 +479,12 @@ class _ProduitsPageState extends State<ProduitsPage> {
             ),
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _ajouterProduit,
+        backgroundColor: Colors.greenAccent,
+        child: Icon(Icons.add, color: Colors.white, size: 30),
+        tooltip: 'Ajouter un produit',
       ),
     );
   }
