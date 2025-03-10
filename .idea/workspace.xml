@@ -4,9 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f1b1f5c6-b780-4356-ad10-8b85adb9bdf5" name="Changes" comment="hébérger la base de données dans le cloud">
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/ModeleView.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/ModeleView.dart" afterDir="false" />
-    </list>
+    <list default="true" id="f1b1f5c6-b780-4356-ad10-8b85adb9bdf5" name="Changes" comment="Add the product api and view" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -51,7 +49,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "Merging main",
+    "git-widget-placeholder": "main",
     "io.flutter.reload.alreadyRun": "true",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/mayar/Desktop/PFE/AutoplanificationProductionProject/frontend_flutter",
@@ -239,7 +237,23 @@
       <option name="project" value="LOCAL" />
       <updated>1740736039968</updated>
     </task>
-    <option name="localTasksCounter" value="21" />
+    <task id="LOCAL-00021" summary="Add the product api and view">
+      <option name="closed" value="true" />
+      <created>1741438283163</created>
+      <option name="number" value="00021" />
+      <option name="presentableId" value="LOCAL-00021" />
+      <option name="project" value="LOCAL" />
+      <updated>1741438283163</updated>
+    </task>
+    <task id="LOCAL-00022" summary="Add the product api and view">
+      <option name="closed" value="true" />
+      <created>1741598526426</created>
+      <option name="number" value="00022" />
+      <option name="presentableId" value="LOCAL-00022" />
+      <option name="project" value="LOCAL" />
+      <updated>1741598526426</updated>
+    </task>
+    <option name="localTasksCounter" value="23" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -279,6 +293,7 @@
     <MESSAGE value="fix update methode error" />
     <MESSAGE value="add print feature to commande" />
     <MESSAGE value="hébérger la base de données dans le cloud" />
-    <option name="LAST_COMMIT_MESSAGE" value="hébérger la base de données dans le cloud" />
+    <MESSAGE value="Add the product api and view" />
+    <option name="LAST_COMMIT_MESSAGE" value="Add the product api and view" />
   </component>
 </project>
