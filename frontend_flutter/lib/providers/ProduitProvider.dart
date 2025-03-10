@@ -25,21 +25,14 @@ class ProduitProvider with ChangeNotifier {
     }
   }
 
-  Future<void> modifierProduit(
-      String id,
-      String taille,
-      String couleur,
-      int quantite,
-      String etat,
-      ) async {
+  Future<void> modifierProduit(Produit produit) async {
     try {
-      await ApiService.updateProduit(id, taille, couleur, quantite, etat);
+      await ApiService.updateProduit(produit.id, produit.toJson()); // ✅ Correction
       await fetchProduits();
     } catch (e) {
       print("Erreur lors de la modification du produit : $e");
     }
   }
-
 
   Future<void> supprimerProduit(String id) async {
     try {
@@ -49,4 +42,5 @@ class ProduitProvider with ChangeNotifier {
       print("Erreur lors de la suppression du produit : $e");
     }
   }
+
 }

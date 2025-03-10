@@ -2,7 +2,7 @@ const mongoose = require("mongoose");
 
 const ModeleSchema = new mongoose.Schema({
     nom: { type: String, required: true, unique: true },
-    matiere: { type: mongoose.Schema.Types.ObjectId, ref: "Matiere", required: true },
+    matiere: { type: mongoose.Schema.Types.ObjectId, ref: "Matiere", required: false },
     tailles: [{ type: String, required: true }],
     bases: [{ type: mongoose.Schema.Types.ObjectId, ref: "Modele" }],
     taillesBases: [{

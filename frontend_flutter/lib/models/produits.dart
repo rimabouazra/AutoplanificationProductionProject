@@ -4,31 +4,27 @@ import 'matiere.dart';
 class Produit {
   String id;
   Modele modele;
-  String taille;
-  String couleur;
-  String etat;
-  Matiere matiere;  // Modifié pour être un objet de type Matiere
-  int quantite;
+  List<Map<String, dynamic>> tailles; // Contient taille, couleur, état, matière et quantité
 
   Produit({
     required this.id,
     required this.modele,
-    required this.taille,
-    required this.couleur,
-    required this.etat,
-    required this.matiere,  // Modifié pour être un objet Matiere
-    required this.quantite,
+    required this.tailles,
   });
 
   factory Produit.fromJson(Map<String, dynamic> json) {
     return Produit(
       id: json['_id'] ?? '',
       modele: Modele.fromJson(json['modele']),
-      taille: json['taille'] ?? '',
-      couleur: json['couleur'] ?? '',
-      etat: json['etat'] ?? '',
-      matiere: Matiere.fromJson(json['matiere']),  // Modification ici pour traiter 'matiere' comme un objet
-      quantite: json['quantite'] ?? 0,
+      tailles: List<Map<String, dynamic>>.from(json['tailles'].map((item) {
+        return {
+          'taille': item['taille'] ?? '',
+          'couleur': item['couleur'] ?? '',
+          'etat': item['etat'] ?? '',
+          'matiere': item['matiere'] != null ? Matiere.fromJson(item['matiere']) : null,
+          'quantite': item['quantite'] ?? 0,
+        };
+      })),
     );
   }
 
@@ -36,11 +32,13 @@ class Produit {
     return {
       '_id': id,
       'modele': modele.toJson(),
-      'taille': taille,
-      'couleur': couleur,
-      'etat': etat,
-      'matiere': matiere.toJson(),
-      'quantite': quantite,
+      'tailles': tailles.map((item) => {
+        'taille': item['taille'],
+        'couleur': item['couleur'],
+        'etat': item['etat'],
+        'matiere': item['matiere']?.toJson(),
+        'quantite': item['quantite'],
+      }).toList(),
     };
   }
 }

@@ -317,19 +317,11 @@ class ApiService {
     }
   }
 
-  static Future<void> updateProduit(String id, String taille, String couleur, int quantite, String etat,) async {
-    final body = jsonEncode({
-      'taille': taille,
-      'couleur': couleur,
-      'quantite': quantite,
-      'etat': etat,
-    });
-
-    // Effectuer la requête PUT pour mettre à jour le produit
+  static Future<void> updateProduit(String id, Map<String, dynamic> produitData) async {
     final response = await http.put(
-      Uri.parse('$baseUrl/produits/$id'),
+      Uri.parse('$baseUrl/produits/update/$id'),
       headers: {"Content-Type": "application/json"},
-      body: body,
+      body: jsonEncode(produitData), // On envoie tout l'objet JSON
     );
 
     if (response.statusCode != 200) {
@@ -339,7 +331,7 @@ class ApiService {
 
 
   static Future<void> deleteProduit(String id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/produits/$id'));
+    final response = await http.delete(Uri.parse('$baseUrl/produits/delete/$id'));
     if (response.statusCode != 200) {
       throw Exception("Erreur lors de la suppression du produit : ${response.body}");
     }

@@ -1,17 +1,21 @@
 const Produits = require("../models/produits");
 const Modele = require("../models/modele");
 
+
 exports.addProduit = async (req, res) => {
     try {
-        const { modeleId, taille, couleur, etat, matiereId, quantite } = req.body;
+        const { modeleId, tailles } = req.body;  // Attends un tableau de tailles
 
+        // Vérifier que le modèle existe
+        const modele = await Modele.findById(modeleId);
+        if (!modele) {
+            return res.status(404).json({ message: "Modèle non trouvé" });
+        }
+
+        // Créer un produit avec plusieurs tailles
         const newProduit = new Produits({
             modele: modeleId,
-            taille,
-            couleur,
-            etat,
-            matiere: matiereId,
-            quantite
+            tailles: tailles  // Attendu comme tableau de tailles
         });
 
         await newProduit.save();
@@ -20,6 +24,20 @@ exports.addProduit = async (req, res) => {
         res.status(500).json({ message: "Erreur serveur", error: error.message });
     }
 };
+
+
+exports.getAllProduits = async (req, res) => {
+    try {
+        const produits = await Produits.find()
+            .populate("modele")
+            .populate("tailles.matiere");  // Ajout pour inclure la matière
+        res.status(200).json(produits);
+    } catch (error) {
+        res.status(500).json({ message: "Erreur serveur", error: error.message });
+    }
+};
+
+
 
 exports.getProduitById = async (req, res) => {
     try {
@@ -33,14 +51,6 @@ exports.getProduitById = async (req, res) => {
     }
 };
 
-exports.getAllProduits = async (req, res) => {
-    try {
-        const produits = await Produits.find().populate("modele").populate("matiere");
-        res.status(200).json(produits);
-    } catch (error) {
-        res.status(500).json({ message: "Erreur serveur", error: error.message });
-    }
-};
 
 exports.updateProduit = async (req, res) => {
     try {
