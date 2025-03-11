@@ -13,7 +13,7 @@ class _StockViewState extends State<StockView> with SingleTickerProviderStateMix
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length:2, vsync: this);
   }
 
   @override
@@ -30,8 +30,8 @@ class _StockViewState extends State<StockView> with SingleTickerProviderStateMix
           controller: _tabController,
           indicatorColor: Colors.white,
           tabs: [
-            Tab(icon: Icon(Icons.widgets), text: "Produits"),
-            Tab(icon: Icon(Icons.category), text: "Matières"),
+            Tab( text: "Produits"),
+            Tab( text: "Matières"),
           ],
         ),
       ),

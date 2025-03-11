@@ -31,7 +31,7 @@ class Produit {
   Map<String, dynamic> toJson() {
     return {
       '_id': id,
-      'modele': modele.toJson(),
+      'modeleId': modele.id,
       'tailles': tailles.map((item) => {
         'taille': item['taille'],
         'couleur': item['couleur'],
