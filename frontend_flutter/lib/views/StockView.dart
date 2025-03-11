@@ -13,7 +13,7 @@ class _StockViewState extends State<StockView> with SingleTickerProviderStateMix
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length:2, vsync: this);
+    _tabController = TabController(length: 2, vsync: this);
   }
 
   @override
@@ -26,21 +26,42 @@ class _StockViewState extends State<StockView> with SingleTickerProviderStateMix
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: const Color.fromARGB(255, 167, 226, 220),
+        centerTitle: true,
+        elevation: 0,
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,
+          labelColor: Colors.white,
+          unselectedLabelColor: Colors.white70,
+          indicatorWeight: 3,
           tabs: [
-            Tab( text: "Produits"),
-            Tab( text: "Matières"),
+            Tab(
+              icon: Icon(Icons.inventory_2_outlined),
+              text: "Produits",
+            ),
+            Tab(
+              icon: Icon(Icons.category_outlined),
+              text: "Matières",
+            ),
           ],
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          ProduitsPage(),
-          MatiereView(),
-        ],
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.teal.shade50, Colors.white],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            ProduitsPage(),
+            MatiereView(),
+          ],
+        ),
       ),
     );
   }

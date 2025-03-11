@@ -1,4 +1,4 @@
-const Modele = require("../models/modele");
+const Modele = require("../models/Modele");
 const Matiere = require("../models/matiere");
 
 exports.addModele = async (req, res) => {
