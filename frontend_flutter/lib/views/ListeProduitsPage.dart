@@ -12,7 +12,6 @@ class ProduitsPage extends StatefulWidget {
 class _ProduitsPageState extends State<ProduitsPage> {
   List<Produit> _produits = [];
   bool _isLoading = true;
-  String? _selectedModele;
 
 
   @override
@@ -219,8 +218,11 @@ class _ProduitsPageState extends State<ProduitsPage> {
     TextEditingController _tailleController = TextEditingController();
     TextEditingController _couleurController = TextEditingController();
     TextEditingController _quantiteController = TextEditingController();
+
     String? etatSelectionne = 'coupé'; // Valeur par défaut
     Matiere? matiereSelectionnee; // Matière sélectionnée
+
+    List<Map<String, dynamic>> taillesList = []; // Liste pour stocker les tailles
 
     showDialog(
       context: context,
@@ -237,6 +239,7 @@ class _ProduitsPageState extends State<ProduitsPage> {
                 children: [
                   _buildTextField(_modeleController, "Modèle"),
                   const SizedBox(height: 16),
+                  // Champ pour ajouter une taille
                   _buildTextField(_tailleController, "Taille"),
                   const SizedBox(height: 16),
                   _buildTextField(_couleurController, "Couleur"),
@@ -248,10 +251,7 @@ class _ProduitsPageState extends State<ProduitsPage> {
                   DropdownButtonFormField<String>(
                     value: etatSelectionne,
                     items: ['coupé', 'moulé'].map((String value) {
-                      return DropdownMenuItem<String>(
-                        value: value,
-                        child: Text(value),
-                      );
+                      return DropdownMenuItem<String>(value: value, child: Text(value));
                     }).toList(),
                     onChanged: (newValue) {
                       etatSelectionne = newValue;
@@ -272,10 +272,7 @@ class _ProduitsPageState extends State<ProduitsPage> {
                       return DropdownButtonFormField<Matiere>(
                         value: matiereSelectionnee,
                         items: matieres.map((Matiere matiere) {
-                          return DropdownMenuItem<Matiere>(
-                            value: matiere,
-                            child: Text(matiere.reference),
-                          );
+                          return DropdownMenuItem<Matiere>(value: matiere, child: Text(matiere.reference));
                         }).toList(),
                         onChanged: (newValue) {
                           matiereSelectionnee = newValue;
@@ -286,6 +283,32 @@ class _ProduitsPageState extends State<ProduitsPage> {
                         ),
                       );
                     },
+                  ),
+
+                  // Bouton pour ajouter la taille à la liste
+                  ElevatedButton(
+                    onPressed: () {
+                      String taille = _tailleController.text.trim();
+                      String couleur = _couleurController.text.trim();
+                      String quantiteStr = _quantiteController.text.trim();
+                      if (taille.isNotEmpty && couleur.isNotEmpty && quantiteStr.isNotEmpty) {
+                        int? quantite = int.tryParse(quantiteStr);
+                        if (quantite != null && quantite > 0) {
+                          taillesList.add({
+                            'taille': taille,
+                            'couleur': couleur,
+                            'etat': etatSelectionne,
+                            'matiere': matiereSelectionnee?.toJson(),
+                            'quantite': quantite,
+                          });
+                          // Clear the input fields for next size
+                          _tailleController.clear();
+                          _couleurController.clear();
+                          _quantiteController.clear();
+                        }
+                      }
+                    },
+                    child: Text("Ajouter Taille"),
                   ),
                 ],
               ),
@@ -300,10 +323,8 @@ class _ProduitsPageState extends State<ProduitsPage> {
               onPressed: () async {
                 await _validerEtAjouterProduit(
                   _modeleController.text.trim(),
-                  _tailleController.text.trim(),
-                  _couleurController.text.trim(),
-                  _quantiteController.text.trim(),
-                  etatSelectionne,
+                  taillesList, // Pass the list of sizes
+                  etatSelectionne ?? '',
                   matiereSelectionnee,
                 );
               },
@@ -320,6 +341,7 @@ class _ProduitsPageState extends State<ProduitsPage> {
       },
     );
   }
+
 
   Widget _buildTextField(TextEditingController controller, String label, {bool isNumeric = false}) {
     return TextField(
@@ -339,16 +361,13 @@ class _ProduitsPageState extends State<ProduitsPage> {
   }
 
   Future<void> _validerEtAjouterProduit(
-      String modeleNom, String taille, String couleur, String quantiteStr,
-      String? etat, Matiere? matiere) async {
-
-    print("Début de _validerEtAjouterProduit avec:");
-    print("Modèle: $modeleNom, Taille: $taille, Couleur: $couleur, Quantité: $quantiteStr, État: $etat");
-
+      String modeleNom,
+      List<Map<String, dynamic>> taillesList,  // Correctly expecting a list of sizes
+      String etat,                            // Correctly expecting a string for the state
+      Matiere? matiere                        // Correctly expecting an optional Matiere object
+      ) async {
     // Validation des champs
-    int? quantite = int.tryParse(quantiteStr);
-    if (modeleNom.isEmpty || taille.isEmpty || couleur.isEmpty || quantite == null || quantite <= 0 || etat == null) {
-      print("Erreur: Un ou plusieurs champs sont invalides.");
+    if (modeleNom.isEmpty || taillesList.isEmpty || etat.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Veuillez remplir tous les champs correctement."),
@@ -361,10 +380,7 @@ class _ProduitsPageState extends State<ProduitsPage> {
     try {
       ApiService apiService = ApiService();
       Modele? modele = await apiService.getModeleParNom(modeleNom);
-      print("Résultat de getModeleParNom: $modele");
-
       if (modele == null) {
-        print("Erreur: Modèle non trouvé.");
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Modèle non trouvé."),
@@ -374,26 +390,15 @@ class _ProduitsPageState extends State<ProduitsPage> {
         return;
       }
 
-      // Création de l'objet Produit
-      print("Création du produit...");
+      // Créer un objet Produit avec plusieurs tailles
       final nouveauProduit = Produit(
-        id: '',
-        modele: modele,
-        tailles: [
-          {
-            'taille': taille,
-            'couleur': couleur,
-            'etat': etat,
-            'matiere': matiere != null ? matiere.toJson() : null,
-            'quantite': quantite,
-          }
-        ],
+        id: '',  // Il peut s'agir d'un ID vide ou être généré côté serveur
+        modele: modele,  // Pass the modele object
+        tailles: taillesList,  // Pass the list of sizes
       );
 
-      print("Envoi du produit à l'API...");
       await ApiService.addProduit(nouveauProduit);
 
-      print("Produit ajouté avec succès !");
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Produit ajouté avec succès !"),
@@ -403,7 +408,6 @@ class _ProduitsPageState extends State<ProduitsPage> {
       Navigator.pop(context);
       _fetchProduits();
     } catch (e) {
-      print("Erreur lors de l'ajout du produit: $e");
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Erreur lors de l'ajout du produit : ${e.toString()}"),
