@@ -72,7 +72,7 @@ class ApiService {
   }
 
   // Ajouter un nouveau Modèle
-  static Future<void> addModele(String nom, List<String> tailles) async {
+  static Future<void> addModele(String nom, List<String> tailles, String? base) async {
     final response = await http.post(
       Uri.parse("$baseUrl/modeles/add"),
       headers: {"Content-Type": "application/json"},

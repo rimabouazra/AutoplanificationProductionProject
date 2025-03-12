@@ -1,19 +1,21 @@
 import 'package:flutter/material.dart';
 import 'matiereView.dart';
 import 'ListeProduitsPage.dart';
+import 'StockModeleView.dart';
 
 class StockView extends StatefulWidget {
   @override
   _StockViewState createState() => _StockViewState();
 }
 
-class _StockViewState extends State<StockView> with SingleTickerProviderStateMixin {
+class _StockViewState extends State<StockView>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -26,23 +28,21 @@ class _StockViewState extends State<StockView> with SingleTickerProviderStateMix
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color.fromARGB(255, 167, 226, 220),
-        centerTitle: true,
-        elevation: 0,
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,
-          labelColor: Colors.white,
-          unselectedLabelColor: Colors.white70,
+          labelColor: const Color.fromARGB(255, 6, 6, 6),
+          unselectedLabelColor: const Color.fromARGB(227, 5, 5, 5),
           indicatorWeight: 3,
           tabs: [
             Tab(
-              icon: Icon(Icons.inventory_2_outlined),
               text: "Produits",
             ),
             Tab(
-              icon: Icon(Icons.category_outlined),
               text: "Matières",
+            ),
+            Tab(
+              text: "Modèles",
             ),
           ],
         ),
@@ -60,6 +60,7 @@ class _StockViewState extends State<StockView> with SingleTickerProviderStateMix
           children: [
             ProduitsPage(),
             MatiereView(),
+            StockModeleView(),
           ],
         ),
       ),
