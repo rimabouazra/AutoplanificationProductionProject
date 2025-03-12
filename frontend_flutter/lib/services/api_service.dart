@@ -43,7 +43,6 @@ class ApiService {
     }
   }
 
-  //Mettre à jour une machine
   static Future<void> updateMachine(String id, String nom, String etat) async {
     await http.put(
       Uri.parse("$baseUrl/machines/$id"),
@@ -52,7 +51,6 @@ class ApiService {
     );
   }
 
-  // Supprimer une machine
   static Future<void> deleteMachine(String id) async {
     final response = await http.delete(Uri.parse('$baseUrl/machines/$id'));
 
@@ -62,7 +60,6 @@ class ApiService {
     }
   }
 
-  // Récupérer tous les Modèles
   static Future<List<Modele>> getModeles() async {
     final response = await http.get(Uri.parse('$baseUrl/modeles'));
     if (response.statusCode == 200) {
@@ -100,7 +97,6 @@ class ApiService {
     return response.statusCode == 200;
   }
 
-  // Récupérer toutes les Salles
   static Future<List<Salle>> getSalles() async {
     final response = await http.get(Uri.parse('$baseUrl/salles'));
     if (response.statusCode == 200) {
@@ -111,7 +107,6 @@ class ApiService {
     }
   }
 
-  // Ajouter une nouvelle Salle
   static Future<bool> ajouterSalle(String nom, String type) async {
     final response = await http.post(
       Uri.parse('$baseUrl/salles'),
@@ -135,7 +130,6 @@ class ApiService {
     return response.statusCode == 200;
   }
 
-  // Récupérer tous les Utilisateurs
   static Future<List<User>> getUsers() async {
     final response = await http.get(Uri.parse('$baseUrl/users'));
     if (response.statusCode == 200) {
@@ -146,7 +140,6 @@ class ApiService {
     }
   }
 
-  // Ajouter un nouvel Utilisateur
   static Future<bool> addUser(User user) async {
     final response = await http.post(
       Uri.parse('$baseUrl/users'),
@@ -248,7 +241,6 @@ class ApiService {
     }
   }
 
-  // Ajouter une matière
   static Future<Map<String, dynamic>> addMatiere(Matiere matiere) async {
     final response = await http.post(
       Uri.parse('$baseUrl/matieres/add'),
@@ -262,8 +254,6 @@ class ApiService {
       throw Exception("Erreur lors de l'ajout de la matière");
     }
   }
-
-  // Supprimer une matière
   static Future<void> deleteMatiere(String id) async {
     final response = await http.delete(Uri.parse('$baseUrl/matieres/$id'));
     if (response.statusCode != 200) {
@@ -316,6 +306,7 @@ class ApiService {
     throw Exception("Erreur de connexion : $e");
   }
 }
+
   static Future<List<Produit>> getProduits() async {
     final response = await http.get(Uri.parse('$baseUrl/produits'));
     if (response.statusCode == 200) {
@@ -374,28 +365,33 @@ class ApiService {
       return null;
     }
   }
-
-  static Future<Modele?> getModeleParNom(String modeleNom) async {
+  Future<Modele?> getModeleParNom(String nomModele) async {
     try {
-      final response = await http.get(Uri.parse("http://localhost:5000/api/modeles?nom=$modeleNom"));
+      print("Début de getModeleParNom avec nomModele: $nomModele");
 
-      if (response.statusCode == 200) {
-        var data = json.decode(response.body);
-        if (data.isNotEmpty) {
-          return Modele.fromJson(data[0]); // On suppose que la réponse contient un tableau et que le modèle est le premier élément
-        } else {
-          print("Modèle non trouvé pour le nom: $modeleNom");
-          return null;
-        }
-      } else {
-        print("Erreur récupération modèle: ${response.statusCode}");
+      String? modeleId = await getModeleId(nomModele);
+      print("Résultat de getModeleId: $modeleId");
+      if (modeleId == null) {
+        print("Erreur: Aucun ID trouvé pour le modèle '$nomModele'");
         return null;
       }
+      String? modeleNom = await getModeleNom(modeleId);
+      print("Résultat de getModeleNom: $modeleNom");
+      if (modeleNom == null) {
+        print("Erreur: Aucun nom trouvé pour le modèle ID '$modeleId'");
+        return null;
+      }
+
+      Modele modele = Modele(id: modeleId, nom: modeleNom, tailles: []);
+      print("Modele construit avec succès: ${modele.id}, ${modele.nom}");
+      return modele;
     } catch (e) {
-      print("Erreur getModeleParNom: $e");
+      print("Erreur dans getModeleParNom: $e");
       return null;
     }
   }
+
+
 
   Future<String?> getModeleId(String nomModele) async {
     print("Recherche du modèle pour nomModele: $nomModele");
@@ -412,7 +408,7 @@ class ApiService {
 
         // Ensure the response structure matches your expectations
         if (data["_id"] != null) {
-          String? modeleId = data["_id"].toString(); // Check that the '_id' field is present
+          String? modeleId = data["_id"].toString();
           print("ID du modèle trouvé: $modeleId");
           return modeleId;
         } else {
