@@ -35,77 +35,6 @@ class _AjouterModeleAdminState extends State<AjouterModeleAdmin> {
     }
   }
 
-  Future<void> _ajouterModeleDialog() async {
-    final TextEditingController nomController = TextEditingController();
-    final TextEditingController taillesController = TextEditingController();
-    bool isSaving = false;
-
-    return showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12.0)),
-              title: Text("Ajouter un Modèle", style: TextStyle(fontWeight: FontWeight.bold)),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: nomController,
-                    decoration: InputDecoration(
-                      labelText: "Nom du Modèle",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                  SizedBox(height: 10),
-                  TextField(
-                    controller: taillesController,
-                    decoration: InputDecoration(
-                      labelText: "Tailles (séparées par des virgules)",
-                      border: OutlineInputBorder(),
-                    ),
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text("Annuler", style: TextStyle(color: Colors.red)),
-                ),
-                ElevatedButton(
-                  onPressed: isSaving
-                      ? null
-                      : () async {
-                          setState(() => isSaving = true);
-                          String nom = nomController.text.trim();
-                          List<String> tailles = taillesController.text
-                              .split(',')
-                              .map((e) => e.trim())
-                              .where((e) => e.isNotEmpty)
-                              .toList();
-
-                          if (nom.isEmpty || tailles.isEmpty) {
-                            _showSnackBar("Veuillez remplir tous les champs", isError: true);
-                            return;
-                          }
-
-                          await ApiService.addModele(nom, tailles);
-                          await _fetchModeles();
-                          Navigator.pop(context);
-                          _showSnackBar("Modèle ajouté avec succès !");
-                        },
-                  child: isSaving
-                      ? SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2))
-                      : Text("Ajouter"),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
 
   void _showSnackBar(String message, {bool isError = false}) {
     ScaffoldMessenger.of(context).showSnackBar(
@@ -158,10 +87,6 @@ class _AjouterModeleAdminState extends State<AjouterModeleAdmin> {
                           ),
                         ),
                         SizedBox(width: 10),
-                        IconButton(
-                          icon: Icon(Icons.add_circle, color: Colors.blue, size: 32),
-                          onPressed: _ajouterModeleDialog,
-                        ),
                       ],
                     ),
                     if (selectedModele != null) ...[

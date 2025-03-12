@@ -16,7 +16,14 @@ class ModeleProvider with ChangeNotifier {
       print("Erreur lors du chargement des modèles: $e");
     }
   }
-
+   Future<void> addModele(String nom, List<String> tailles, String? base) async {
+    try {
+      await ApiService.addModele(nom, tailles, base);
+      fetchModeles(); // Rafraîchir la liste des modèles
+    } catch (e) {
+      print("Erreur lors de l'ajout du modèle: $e");
+    }
+  }
 
   Map<String, Modele> get modeleMap {
     return {for (var m in _modeles) m.id: m};

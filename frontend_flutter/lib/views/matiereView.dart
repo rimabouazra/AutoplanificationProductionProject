@@ -386,7 +386,7 @@ class _MatiereViewState extends State<MatiereView> {
                                     .format(selectedDate!),
                             style: TextStyle(color: Colors.white)),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blueAccent,
+                          backgroundColor: const Color.fromARGB(255, 147, 179, 234),
                           padding: EdgeInsets.symmetric(vertical: 12),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(10),

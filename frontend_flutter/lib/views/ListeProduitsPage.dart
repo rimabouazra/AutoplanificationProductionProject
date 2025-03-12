@@ -207,19 +207,6 @@ class _ProduitsPageState extends State<ProduitsPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.lightBlue[200],
-        title:
-            Text("Liste des Produits", style: TextStyle(color: Colors.white)),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.search, color: Colors.white),
-            onPressed: () {
-              // Add search functionality if needed
-            },
-          ),
-        ],
-      ),
       body: _isLoading
           ? Center(child: CircularProgressIndicator())
           : ListView.builder(
