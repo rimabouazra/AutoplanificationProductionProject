@@ -406,7 +406,6 @@ class ApiService {
         var data = json.decode(response.body);
         print("Réponse du modèle : $data");
 
-        // Ensure the response structure matches your expectations
         if (data["_id"] != null) {
           String? modeleId = data["_id"].toString();
           print("ID du modèle trouvé: $modeleId");
@@ -424,8 +423,26 @@ class ApiService {
       return null;
     }
   }
+  static Future<void> addTailleToProduit(String produitId, Map<String, dynamic> tailleData) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/produits/$produitId/addTaille'),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(tailleData),
+    );
 
+    if (response.statusCode != 200) {
+      throw Exception("Erreur lors de l'ajout de la taille : ${response.body}");
+    }
+  }
+  static Future<void> deleteTailleFromProduit(String produitId, int tailleIndex) async {
+    final response = await http.delete(
+      Uri.parse('$baseUrl/produits/$produitId/deleteTaille/$tailleIndex'),
+      headers: {"Content-Type": "application/json"},
+    );
 
-
+    if (response.statusCode != 200) {
+      throw Exception("Erreur lors de la suppression de la taille : ${response.body}");
+    }
+  }
 
 }
