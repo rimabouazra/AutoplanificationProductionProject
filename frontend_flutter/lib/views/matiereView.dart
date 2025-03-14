@@ -515,7 +515,7 @@ class _MatiereViewState extends State<MatiereView> {
       floatingActionButton: FloatingActionButton(
         onPressed: () => _afficherFormulaireAjout(context),
         child: Icon(Icons.add, color: Colors.white),
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Color(0xFF1ABC9C),
         elevation: 4,
       ),
     );

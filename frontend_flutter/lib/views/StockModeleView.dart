@@ -167,10 +167,16 @@ class _StockModeleViewState extends State<StockModeleView> {
 
     return Scaffold(
       appBar: AppBar(
-        actions: [
-          IconButton(
-            icon: Icon(Icons.add),
-            onPressed: _addModeleDialog,
+          actions: [
+          Container(
+            margin: EdgeInsets.only(right: 16), 
+            child: CircleAvatar(
+              backgroundColor: Color(0xFF1ABC9C),
+              child: IconButton(
+                icon: const Icon(Icons.add, color: Colors.white),
+                onPressed: () => _addModeleDialog, 
+              ),
+            ),
           ),
         ],
       ),
