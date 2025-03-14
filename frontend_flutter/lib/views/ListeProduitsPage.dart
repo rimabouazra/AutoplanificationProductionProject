@@ -14,12 +14,24 @@ class ProduitsPage extends StatefulWidget {
 class _ProduitsPageState extends State<ProduitsPage> {
   List<Produit> _produits = [];
   bool _isLoading = true;
+  TextEditingController _searchController = TextEditingController();
+  bool _isSearching = false;
 
 
   @override
   void initState() {
     super.initState();
     _fetchProduits();
+  }
+  List<Produit> get filteredProduits {
+    final produits = Provider.of<ProduitProvider>(context).produits;
+
+    return produits.where((produit) {
+      final produitNom = produit.modele.nom.trim().toLowerCase();
+      final searchQuery = _searchController.text.trim().toLowerCase();
+
+      return searchQuery.isEmpty || produitNom.contains(searchQuery);
+    }).toList();
   }
 
   Future<void> _fetchProduits() async {
@@ -106,7 +118,7 @@ class _ProduitsPageState extends State<ProduitsPage> {
         return Dialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: AnimatedContainer(
-            duration: Duration(milliseconds: 300),
+            duration: Duration(milliseconds: 1000),
             curve: Curves.easeOut,
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -734,15 +746,43 @@ class _ProduitsPageState extends State<ProduitsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.lightBlue[100],
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.white),
-            onPressed: () {
-              // Add search functionality if needed
-            },
-          ),
-        ],
+        title: Row(
+          children: [
+            Expanded(
+              child: AnimatedContainer(
+                duration: Duration(milliseconds: 300),
+                width: _isSearching ? 200 : 0,
+                curve: Curves.easeInOut,
+                child: _isSearching
+                    ? TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: 'Rechercher...',
+                    border: InputBorder.none,
+                    hintStyle: TextStyle(color: Colors.black87),
+                  ),
+                  style: TextStyle(color: Colors.black87),
+                  onChanged: (query) {
+                    setState(() {});
+                  },
+                )
+                    : SizedBox(), // Empty space when search is closed
+              ),
+            ),
+            IconButton(
+              icon: Icon(_isSearching ? Icons.close : Icons.search, color: Colors.black87),
+              onPressed: () {
+                setState(() {
+                  _isSearching = !_isSearching;
+                  if (!_isSearching) {
+                    _searchController.clear();
+                  }
+                });
+              },
+            ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
