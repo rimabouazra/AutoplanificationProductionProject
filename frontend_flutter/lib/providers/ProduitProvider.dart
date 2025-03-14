@@ -42,5 +42,27 @@ class ProduitProvider with ChangeNotifier {
       print("Erreur lors de la suppression du produit : $e");
     }
   }
+  Future<void> ajouterTailleAuProduit(String produitId, Map<String, dynamic> tailleData) async {
+    try {
+      await ApiService.addTailleToProduit(produitId, tailleData);
+      notifyListeners();
+    } catch (e) {
+      print("Erreur lors de l'ajout de la taille : $e");
+    }
+  }
+
+  Future<void> supprimerTaille(String produitId, int tailleIndex) async {
+    try {
+      await ApiService.deleteTailleFromProduit(produitId, tailleIndex);
+      int produitIndex = _produits.indexWhere((produit) => produit.id == produitId);
+      if (produitIndex != -1) {
+        _produits[produitIndex].tailles.removeAt(tailleIndex);
+        notifyListeners(); 
+      }
+    } catch (e) {
+      print("Erreur lors de la suppression de la taille : $e");
+    }
+  }
+
 
 }

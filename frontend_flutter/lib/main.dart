@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/providers/MachineProvider.dart';
+import 'package:frontend/providers/ProduitProvider.dart';
 import 'package:frontend/providers/matiereProvider.dart';
 import 'package:frontend/providers/salleProvider.dart';
 import 'package:provider/provider.dart';
@@ -18,7 +19,9 @@ void main() {
         ChangeNotifierProvider(create: (context) => SalleProvider()),
         ChangeNotifierProvider(create: (context) => MatiereProvider()),
         ChangeNotifierProvider(create: (context) => MachineProvider()),
+        ChangeNotifierProvider(create: (context) => ProduitProvider()),
       ],
+
       child: MyApp(),
     ),
   );
