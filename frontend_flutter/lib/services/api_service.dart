@@ -71,7 +71,9 @@ class ApiService {
     }
   }
 
-  static Future<void> addModele(String nom, List<String> tailles, String? base) async {
+  // Ajouter un nouveau Modèle
+  static Future<void> addModele(
+      String nom, List<String> tailles, String? base) async {
     final response = await http.post(
       Uri.parse("$baseUrl/modeles/add"),
       headers: {"Content-Type": "application/json"},
@@ -253,6 +255,7 @@ class ApiService {
       throw Exception("Erreur lors de l'ajout de la matière");
     }
   }
+
   static Future<void> deleteMatiere(String id) async {
     final response = await http.delete(Uri.parse('$baseUrl/matieres/$id'));
     if (response.statusCode != 200) {
@@ -260,7 +263,7 @@ class ApiService {
     }
   }
 
-  static Future<Matiere?> updateMatiere(String id, double  newQuantite) async {
+  static Future<Matiere?> updateMatiere(String id, double newQuantite) async {
     final response = await http.put(
       Uri.parse('$baseUrl/matieres/update/$id'),
       headers: {"Content-Type": "application/json"},
@@ -273,44 +276,48 @@ class ApiService {
       return null;
     }
   }
-  static Future<List<Historique>> getHistoriqueMatiere(String matiereId) async {
-  final response = await http.get(Uri.parse('$baseUrl/matieres/historique/$matiereId'));
-  if (response.statusCode == 200) {
-    List<dynamic> jsonData = json.decode(response.body);
-    return jsonData.map((json) {
-      if (json is Map<String, dynamic>) {
-        return Historique.fromJson(json);
-      } else {
-        throw Exception("Format de données invalide : $json");
-      }
-    }).toList();
-  } else {
-    throw Exception("Erreur lors de la récupération de l'historique");
-  }
-}
-  static Future<Matiere?> renameMatiere(String id, String newReference) async {
-  try {
-    final response = await http.patch(
-      Uri.parse('$baseUrl/matieres/$id/rename'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'reference': newReference}),
-    );
 
+  static Future<List<Historique>> getHistoriqueMatiere(String matiereId) async {
+    final response =
+        await http.get(Uri.parse('$baseUrl/matieres/historique/$matiereId'));
     if (response.statusCode == 200) {
-      return Matiere.fromJson(jsonDecode(response.body));
+      List<dynamic> jsonData = json.decode(response.body);
+      return jsonData.map((json) {
+        if (json is Map<String, dynamic>) {
+          return Historique.fromJson(json);
+        } else {
+          throw Exception("Format de données invalide : $json");
+        }
+      }).toList();
     } else {
-      throw Exception("Erreur lors du renommage de la matière");
+      throw Exception("Erreur lors de la récupération de l'historique");
     }
-  } catch (e) {
-    throw Exception("Erreur de connexion : $e");
   }
-}
+
+  static Future<Matiere?> renameMatiere(String id, String newReference) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('$baseUrl/matieres/$id/rename'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'reference': newReference}),
+      );
+
+      if (response.statusCode == 200) {
+        return Matiere.fromJson(jsonDecode(response.body));
+      } else {
+        throw Exception("Erreur lors du renommage de la matière");
+      }
+    } catch (e) {
+      throw Exception("Erreur de connexion : $e");
+    }
+  }
 
   static Future<List<Produit>> getProduits() async {
     final response = await http.get(Uri.parse('$baseUrl/produits'));
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
-      print("Produits récupérés : $jsonData"); // Ajouter un print pour vérifier la réponse
+      print(
+          "Produits récupérés : $jsonData"); // Ajouter un print pour vérifier la réponse
 
       return jsonData.map((json) => Produit.fromJson(json)).toList();
     } else {
@@ -329,7 +336,8 @@ class ApiService {
     }
   }
 
-  static Future<void> updateProduit(String id, Map<String, dynamic> produitData) async {
+  static Future<void> updateProduit(
+      String id, Map<String, dynamic> produitData) async {
     final response = await http.put(
       Uri.parse('$baseUrl/produits/update/$id'),
       headers: {"Content-Type": "application/json"},
@@ -337,20 +345,24 @@ class ApiService {
     );
 
     if (response.statusCode != 200) {
-      throw Exception("Erreur lors de la mise à jour du produit : ${response.body}");
+      throw Exception(
+          "Erreur lors de la mise à jour du produit : ${response.body}");
     }
   }
-
 
   static Future<void> deleteProduit(String id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/produits/delete/$id'));
+    final response =
+        await http.delete(Uri.parse('$baseUrl/produits/delete/$id'));
     if (response.statusCode != 200) {
-      throw Exception("Erreur lors de la suppression du produit : ${response.body}");
+      throw Exception(
+          "Erreur lors de la suppression du produit : ${response.body}");
     }
   }
+
   Future<String?> getModeleNom(String modeleId) async {
     try {
-      final response = await http.get(Uri.parse("http://localhost:5000/api/modeles/$modeleId"));
+      final response = await http
+          .get(Uri.parse("http://localhost:5000/api/modeles/$modeleId"));
 
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
@@ -364,6 +376,7 @@ class ApiService {
       return null;
     }
   }
+
   Future<Modele?> getModeleParNom(String nomModele) async {
     try {
       print("Début de getModeleParNom avec nomModele: $nomModele");
@@ -390,14 +403,13 @@ class ApiService {
     }
   }
 
-
-
   Future<String?> getModeleId(String nomModele) async {
     print("Recherche du modèle pour nomModele: $nomModele");
     try {
       // Make sure the model name is URL-encoded to handle special characters
       String encodedNomModele = Uri.encodeComponent(nomModele);
-      var response = await http.get(Uri.parse("http://localhost:5000/api/modeles/findByName/$encodedNomModele"));
+      var response = await http.get(Uri.parse(
+          "http://localhost:5000/api/modeles/findByName/$encodedNomModele"));
 
       print("Réponse HTTP: ${response.statusCode}");
 
@@ -414,7 +426,8 @@ class ApiService {
           return null;
         }
       } else {
-        print("Erreur lors de la récupération du modèle: ${response.statusCode}");
+        print(
+            "Erreur lors de la récupération du modèle: ${response.statusCode}");
         return null;
       }
     } catch (e) {
@@ -422,7 +435,30 @@ class ApiService {
       return null;
     }
   }
-  static Future<void> addTailleToProduit(String produitId, Map<String, dynamic> tailleData) async {
+
+  static Future<void> updateModele(
+      String id, String nom, List<String> tailles, String? base) async {
+    final response = await http.put(
+      Uri.parse("$baseUrl/modeles/$id"),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode({"nom": nom, "tailles": tailles, "base": base}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception("Échec de la modification du modèle");
+    }
+  }
+
+  static Future<void> deleteModele(String id) async {
+    final response = await http.delete(
+      Uri.parse("$baseUrl/modeles/$id"),
+    );
+    if (response.statusCode != 200) {
+      throw Exception("Échec de la suppression du modèle");
+    }
+  }
+
+  static Future<void> addTailleToProduit(
+      String produitId, Map<String, dynamic> tailleData) async {
     final response = await http.post(
       Uri.parse('$baseUrl/produits/$produitId/addTaille'),
       headers: {"Content-Type": "application/json"},
@@ -433,15 +469,17 @@ class ApiService {
       throw Exception("Erreur lors de l'ajout de la taille : ${response.body}");
     }
   }
-  static Future<void> deleteTailleFromProduit(String produitId, int tailleIndex) async {
+
+  static Future<void> deleteTailleFromProduit(
+      String produitId, int tailleIndex) async {
     final response = await http.delete(
       Uri.parse('$baseUrl/produits/$produitId/deleteTaille/$tailleIndex'),
       headers: {"Content-Type": "application/json"},
     );
 
     if (response.statusCode != 200) {
-      throw Exception("Erreur lors de la suppression de la taille : ${response.body}");
+      throw Exception(
+          "Erreur lors de la suppression de la taille : ${response.body}");
     }
   }
-
 }
