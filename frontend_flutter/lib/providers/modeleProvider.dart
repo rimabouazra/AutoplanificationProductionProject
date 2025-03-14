@@ -32,4 +32,21 @@ class ModeleProvider with ChangeNotifier {
     final modele = _modeles.firstWhere((m) => m.nom == modeleNom, orElse: () => Modele(id: '', nom: '', tailles: []));
     return modele.tailles;
   }
+  Future<void> updateModele(String id, String nom, List<String> tailles, String? base) async {
+  try {
+    await ApiService.updateModele(id, nom, tailles, base);
+    fetchModeles(); // Rafraîchir la liste des modèles
+  } catch (e) {
+    print("Erreur lors de la modification du modèle: $e");
+  }
+}
+
+Future<void> deleteModele(String id) async {
+  try {
+    await ApiService.deleteModele(id);
+    fetchModeles(); // Rafraîchir la liste des modèles
+  } catch (e) {
+    print("Erreur lors de la suppression du modèle: $e");
+  }
+}
 }

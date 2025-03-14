@@ -92,7 +92,74 @@ class _StockModeleViewState extends State<StockModeleView> {
       },
     );
   }
+  void _editModeleDialog(Modele modele) {
+    final modeleProvider = Provider.of<ModeleProvider>(context, listen: false);
+    final basesDisponibles = modeleProvider.modeles.map((m) => m.nom).toList();
 
+    _nomController.text = modele.nom;
+    _taillesController.text = modele.tailles.join(', ');
+    //_selectedBase = modele.bases?.firstWhere((base) => true, orElse: () => null)?.nom;
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Modifier le modèle'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: _nomController,
+                decoration: InputDecoration(labelText: 'Nom du modèle'),
+              ),
+              TextField(
+                controller: _taillesController,
+                decoration: InputDecoration(labelText: 'Tailles (séparées par des virgules)'),
+              ),
+              DropdownButtonFormField<String>(
+                value: _selectedBase,
+                onChanged: (String? newValue) {
+                  setState(() {
+                    _selectedBase = newValue;
+                  });
+                },
+                items: [
+                  DropdownMenuItem(value: null, child: Text("Aucune base")),
+                  ...basesDisponibles.map((base) {
+                    return DropdownMenuItem(value: base, child: Text(base));
+                  }).toList(),
+                ],
+                decoration: InputDecoration(labelText: 'Base (optionnel)'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: Text('Annuler'),
+            ),
+            TextButton(
+              onPressed: () async {
+                String nom = _nomController.text;
+                List<String> tailles = _taillesController.text.split(',');
+
+                await modeleProvider.updateModele(modele.id, nom, tailles, _selectedBase);
+                Navigator.of(context).pop();
+              },
+              child: Text('Enregistrer'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _deleteModele(String id) async {
+    final modeleProvider = Provider.of<ModeleProvider>(context, listen: false);
+    await modeleProvider.deleteModele(id);
+  }
   @override
   Widget build(BuildContext context) {
     final modeleProvider = Provider.of<ModeleProvider>(context);
@@ -141,6 +208,19 @@ class _StockModeleViewState extends State<StockModeleView> {
                             ),
                           ),
                           subtitle: Text("Tailles disponibles: ${modele.tailles.join(', ')}"),
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              IconButton(
+                                icon: Icon(Icons.edit, color: Colors.blue),
+                                onPressed: () => _editModeleDialog(modele),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.delete, color: Colors.red),
+                                onPressed: () => _deleteModele(modele.id),
+                              ),
+                            ],
+                          ),
                           children: [
                             Padding(
                               padding: const EdgeInsets.all(8.0),
@@ -162,7 +242,7 @@ class _StockModeleViewState extends State<StockModeleView> {
                                             );
                                           }).toList(),
                                         )
-                                      : Text("Aucune base associée", style: TextStyle(color: Colors.grey)),
+                                      : Text("Moule d'origine", style: TextStyle(color: Colors.grey)),
                                 ],
                               ),
                             ),

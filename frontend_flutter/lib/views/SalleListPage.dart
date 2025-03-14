@@ -60,7 +60,8 @@ class _SalleListPageState extends State<SalleListPage> {
         "type": nouveauType,
       }),
     );
-  print("Réponse du serveur: ${response.statusCode} - ${response.body}"); // DEBUG
+    print(
+        "Réponse du serveur: ${response.statusCode} - ${response.body}"); // DEBUG
     if (response.statusCode == 200) {
       fetchSalles(); // Rafraîchir la liste après la modification
     } else {
@@ -118,7 +119,7 @@ class _SalleListPageState extends State<SalleListPage> {
                     }).toList(),
                     onChanged: (newValue) {
                       setState(() {
-                        selectedType = newValue?? "noir";
+                        selectedType = newValue ?? "noir";
                       });
                     },
                     decoration:
@@ -134,8 +135,7 @@ class _SalleListPageState extends State<SalleListPage> {
                 ElevatedButton(
                   onPressed: () {
                     if (isModification) {
-                      modifierSalle(id!, nomController.text,
-                          selectedType);
+                      modifierSalle(id!, nomController.text, selectedType);
                     } else {
                       ajouterSalle(nomController.text, selectedType);
                     }
@@ -182,13 +182,16 @@ class _SalleListPageState extends State<SalleListPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Liste des Salles'),
-        backgroundColor: const Color.fromARGB(255, 35, 99, 132),
-        centerTitle: true,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.add, color: Colors.white),
-            onPressed: () => afficherDialogueSalle(), // Ajouter une salle
+          Container(
+            margin: EdgeInsets.only(right: 16), 
+            child: CircleAvatar(
+              backgroundColor: Color(0xFF1ABC9C),
+              child: IconButton(
+                icon: const Icon(Icons.add, color: Colors.white),
+                onPressed: () => afficherDialogueSalle(), 
+              ),
+            ),
           ),
         ],
       ),
@@ -196,8 +199,8 @@ class _SalleListPageState extends State<SalleListPage> {
         decoration: BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Colors.blueGrey.shade900,
-              const Color.fromARGB(255, 69, 129, 157)
+              Color(0xFFF4F6F7),
+              Colors.white,
             ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
@@ -217,10 +220,12 @@ class _SalleListPageState extends State<SalleListPage> {
                     ),
                     child: ListTile(
                       leading: const Icon(Icons.meeting_room,
-                          color: Color.fromARGB(255, 116, 162, 185)),
+                          color: Color(0xFF1ABC9C)),
                       title: Text(
                         salle['nom'],
-                        style: const TextStyle(fontWeight: FontWeight.bold),
+                        style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF2C3E50)),
                       ),
                       subtitle: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
@@ -230,11 +235,11 @@ class _SalleListPageState extends State<SalleListPage> {
                             style: TextStyle(
                                 color: salle['type'] == 'noir'
                                     ? Colors.black
-                                    : Colors.blue),
+                                    : Color(0xFF3498DB)),
                           ),
                           Text(
                             "Nombre de machines: ${salle['machines'].length}",
-                            style: TextStyle(color: Colors.grey[600]),
+                            style: TextStyle(color: Color(0xFF7F8C8D)),
                           ),
                         ],
                       ),
@@ -242,7 +247,7 @@ class _SalleListPageState extends State<SalleListPage> {
                         mainAxisSize: MainAxisSize.min,
                         children: [
                           IconButton(
-                            icon: const Icon(Icons.edit, color: Colors.orange),
+                            icon: Icon(Icons.edit, color: Color(0xFF3498DB)),
                             onPressed: () => afficherDialogueSalle(
                               id: salle['_id'],
                               nomActuel: salle['nom'],
@@ -251,7 +256,8 @@ class _SalleListPageState extends State<SalleListPage> {
                             ),
                           ),
                           IconButton(
-                            icon: const Icon(Icons.delete, color: Colors.red),
+                            icon: const Icon(Icons.delete,
+                                color: Color(0xFFE74C3C)),
                             onPressed: () =>
                                 afficherConfirmationSuppression(salle['_id']),
                           ),

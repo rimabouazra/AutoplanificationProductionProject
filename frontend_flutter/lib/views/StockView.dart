@@ -28,11 +28,13 @@ class _StockViewState extends State<StockView>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        backgroundColor: Color.fromARGB(255, 170, 207, 247),
+        toolbarHeight: 10,
         bottom: TabBar(
           controller: _tabController,
           indicatorColor: Colors.white,
-          labelColor: const Color.fromARGB(255, 6, 6, 6),
-          unselectedLabelColor: const Color.fromARGB(227, 5, 5, 5),
+          labelColor: const Color.fromARGB(255, 173, 165, 165),
+          unselectedLabelColor: Colors.white.withOpacity(0.6),
           indicatorWeight: 3,
           tabs: [
             Tab(
@@ -50,7 +52,10 @@ class _StockViewState extends State<StockView>
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.teal.shade50, Colors.white],
+            colors: [
+              Color(0xFFF4F6F7),
+              Colors.white,
+            ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),

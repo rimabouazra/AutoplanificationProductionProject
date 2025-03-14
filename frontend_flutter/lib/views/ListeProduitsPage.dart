@@ -13,7 +13,6 @@ class _ProduitsPageState extends State<ProduitsPage> {
   List<Produit> _produits = [];
   bool _isLoading = true;
 
-
   @override
   void initState() {
     super.initState();
@@ -36,7 +35,6 @@ class _ProduitsPageState extends State<ProduitsPage> {
     List<dynamic> rawData = await ApiService.getMatieres();
     return rawData.map((json) => Matiere.fromJson(json)).toList();
   }
-
 
   void _modifierProduit(Produit produit, int indexTaille) {
     var tailleData = produit.tailles[indexTaille];
@@ -86,9 +84,7 @@ class _ProduitsPageState extends State<ProduitsPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(
-                      height:16
-                  ),
+                  const SizedBox(height: 16),
 
                   TextField(
                     controller: tailleController,
@@ -199,7 +195,8 @@ class _ProduitsPageState extends State<ProduitsPage> {
                 _fetchProduits();
                 Navigator.pop(context); // Close dialog
               },
-              child: const Text("Supprimer", style: TextStyle(color: Colors.white)),
+              child: const Text("Supprimer",
+                  style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red[600],
                 shape: RoundedRectangleBorder(
@@ -222,14 +219,16 @@ class _ProduitsPageState extends State<ProduitsPage> {
     String? etatSelectionne = 'coupé'; // Valeur par défaut
     Matiere? matiereSelectionnee; // Matière sélectionnée
 
-    List<Map<String, dynamic>> taillesList = []; // Liste pour stocker les tailles
+    List<Map<String, dynamic>> taillesList =
+        []; // Liste pour stocker les tailles
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           backgroundColor: Colors.white,
-          title: Text("Ajouter un Produit", style: TextStyle(color: Colors.blue[900])),
+          title: Text("Ajouter un Produit",
+              style: TextStyle(color: Colors.blue[900])),
           content: SizedBox(
             width: 500,
             height: 500,
@@ -244,14 +243,16 @@ class _ProduitsPageState extends State<ProduitsPage> {
                   const SizedBox(height: 16),
                   _buildTextField(_couleurController, "Couleur"),
                   const SizedBox(height: 16),
-                  _buildTextField(_quantiteController, "Quantité", isNumeric: true),
+                  _buildTextField(_quantiteController, "Quantité",
+                      isNumeric: true),
                   const SizedBox(height: 16),
 
                   // Dropdown pour l'état
                   DropdownButtonFormField<String>(
                     value: etatSelectionne,
                     items: ['coupé', 'moulé'].map((String value) {
-                      return DropdownMenuItem<String>(value: value, child: Text(value));
+                      return DropdownMenuItem<String>(
+                          value: value, child: Text(value));
                     }).toList(),
                     onChanged: (newValue) {
                       etatSelectionne = newValue;
@@ -265,14 +266,17 @@ class _ProduitsPageState extends State<ProduitsPage> {
 
                   // FutureBuilder pour charger les matières disponibles
                   FutureBuilder<List<Matiere>>(
-                    future: fetchMatieres(), // Fonction pour récupérer les matières
+                    future:
+                        fetchMatieres(), // Fonction pour récupérer les matières
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData) return const CircularProgressIndicator();
+                      if (!snapshot.hasData)
+                        return const CircularProgressIndicator();
                       List<Matiere> matieres = snapshot.data!;
                       return DropdownButtonFormField<Matiere>(
                         value: matiereSelectionnee,
                         items: matieres.map((Matiere matiere) {
-                          return DropdownMenuItem<Matiere>(value: matiere, child: Text(matiere.reference));
+                          return DropdownMenuItem<Matiere>(
+                              value: matiere, child: Text(matiere.reference));
                         }).toList(),
                         onChanged: (newValue) {
                           matiereSelectionnee = newValue;
@@ -291,7 +295,9 @@ class _ProduitsPageState extends State<ProduitsPage> {
                       String taille = _tailleController.text.trim();
                       String couleur = _couleurController.text.trim();
                       String quantiteStr = _quantiteController.text.trim();
-                      if (taille.isNotEmpty && couleur.isNotEmpty && quantiteStr.isNotEmpty) {
+                      if (taille.isNotEmpty &&
+                          couleur.isNotEmpty &&
+                          quantiteStr.isNotEmpty) {
                         int? quantite = int.tryParse(quantiteStr);
                         if (quantite != null && quantite > 0) {
                           taillesList.add({
@@ -328,7 +334,8 @@ class _ProduitsPageState extends State<ProduitsPage> {
                   matiereSelectionnee,
                 );
               },
-              child: Text("Ajouter", style: TextStyle(color: Colors.green[800])),
+              child:
+                  Text("Ajouter", style: TextStyle(color: Colors.green[800])),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blueAccent[50],
                 shape: RoundedRectangleBorder(
@@ -342,8 +349,8 @@ class _ProduitsPageState extends State<ProduitsPage> {
     );
   }
 
-
-  Widget _buildTextField(TextEditingController controller, String label, {bool isNumeric = false}) {
+  Widget _buildTextField(TextEditingController controller, String label,
+      {bool isNumeric = false}) {
     return TextField(
       controller: controller,
       keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
@@ -362,9 +369,10 @@ class _ProduitsPageState extends State<ProduitsPage> {
 
   Future<void> _validerEtAjouterProduit(
       String modeleNom,
-      List<Map<String, dynamic>> taillesList,  // Correctly expecting a list of sizes
-      String etat,                            // Correctly expecting a string for the state
-      Matiere? matiere                        // Correctly expecting an optional Matiere object
+      List<Map<String, dynamic>>
+          taillesList, // Correctly expecting a list of sizes
+      String etat, // Correctly expecting a string for the state
+      Matiere? matiere // Correctly expecting an optional Matiere object
       ) async {
     // Validation des champs
     if (modeleNom.isEmpty || taillesList.isEmpty || etat.isEmpty) {
@@ -392,9 +400,9 @@ class _ProduitsPageState extends State<ProduitsPage> {
 
       // Créer un objet Produit avec plusieurs tailles
       final nouveauProduit = Produit(
-        id: '',  // Il peut s'agir d'un ID vide ou être généré côté serveur
-        modele: modele,  // Pass the modele object
-        tailles: taillesList,  // Pass the list of sizes
+        id: '', // Il peut s'agir d'un ID vide ou être généré côté serveur
+        modele: modele, // Pass the modele object
+        tailles: taillesList, // Pass the list of sizes
       );
 
       await ApiService.addProduit(nouveauProduit);
@@ -417,14 +425,10 @@ class _ProduitsPageState extends State<ProduitsPage> {
     }
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.lightBlue[200],
-        title:
-            const Text("Liste des Produits", style: TextStyle(color: Colors.white)),
         actions: [
           IconButton(
             icon: const Icon(Icons.search, color: Colors.white),
@@ -432,7 +436,6 @@ class _ProduitsPageState extends State<ProduitsPage> {
               // Add search functionality if needed
             },
           ),
-
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
@@ -440,7 +443,8 @@ class _ProduitsPageState extends State<ProduitsPage> {
           _ajouterProduit();
         },
         icon: Icon(Icons.add),
-        backgroundColor: Colors.teal[300], label:Text(""),
+        backgroundColor: Colors.teal[300],
+        label: Text(""),
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -449,7 +453,8 @@ class _ProduitsPageState extends State<ProduitsPage> {
               itemBuilder: (context, index) {
                 final produit = _produits[index];
                 return Card(
-                  margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                  margin:
+                      const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                     side: BorderSide(color: Colors.teal[200]!),
@@ -457,8 +462,8 @@ class _ProduitsPageState extends State<ProduitsPage> {
                   elevation: 5,
                   color: Colors.blueAccent[50],
                   child: ExpansionTile(
-                    tilePadding:
-                        const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                    tilePadding: const EdgeInsets.symmetric(
+                        vertical: 10, horizontal: 16),
                     title: Text(produit.modele.nom,
                         style: const TextStyle(
                             color: Colors.black87,
@@ -497,13 +502,17 @@ class _ProduitsPageState extends State<ProduitsPage> {
                             return DataRow(
                               cells: [
                                 DataCell(Text(tailleData['taille'],
-                                    style: const TextStyle(color: Colors.black87))),
+                                    style: const TextStyle(
+                                        color: Colors.black87))),
                                 DataCell(Text(tailleData['couleur'],
-                                    style: const TextStyle(color: Colors.black87))),
+                                    style: const TextStyle(
+                                        color: Colors.black87))),
                                 DataCell(Text(tailleData['etat'],
-                                    style: const TextStyle(color: Colors.black87))),
+                                    style: const TextStyle(
+                                        color: Colors.black87))),
                                 DataCell(Text(tailleData['quantite'].toString(),
-                                    style: const TextStyle(color: Colors.black87))),
+                                    style: const TextStyle(
+                                        color: Colors.black87))),
                                 DataCell(
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.center,
@@ -537,12 +546,7 @@ class _ProduitsPageState extends State<ProduitsPage> {
                   ),
                 );
               },
-
-
             ),
-
     );
-
-
   }
 }
