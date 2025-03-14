@@ -38,6 +38,17 @@ class _ProduitsPageState extends State<ProduitsPage> {
     List<dynamic> rawData = await ApiService.getMatieres();
     return rawData.map((json) => Matiere.fromJson(json)).toList();
   }
+  Future<List<Modele>> fetchModeles() async {
+    final response = await ApiService.getModeles();
+    if (response is List<Modele>) {
+      return response;
+    } else {
+      throw Exception('Erreur lors de la récupération des modèles');
+    }
+  }
+
+
+
 
   Widget _buildDropdown({
     required String? value,
@@ -191,7 +202,7 @@ class _ProduitsPageState extends State<ProduitsPage> {
               onPressed: () async {
                 await ApiService.deleteProduit(id);
                 _fetchProduits();
-                Navigator.pop(context); // Close dialog
+                Navigator.pop(context);
               },
               child: const Text("Supprimer", style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
@@ -268,7 +279,6 @@ class _ProduitsPageState extends State<ProduitsPage> {
                 children: [
                   _buildTextField(_modeleController, "Modèle"),
                   const SizedBox(height: 16),
-                  // Champ pour ajouter une taille
                   _buildTextField(_tailleController, "Taille"),
                   const SizedBox(height: 16),
                   _buildTextField(_couleurController, "Couleur"),
@@ -276,7 +286,6 @@ class _ProduitsPageState extends State<ProduitsPage> {
                   _buildTextField(_quantiteController, "Quantité", isNumeric: true),
                   const SizedBox(height: 16),
 
-                  // Dropdown pour l'état
                   DropdownButtonFormField<String>(
                     value: etatSelectionne,
                     items: ['coupé', 'moulé'].map((String value) {
@@ -292,9 +301,8 @@ class _ProduitsPageState extends State<ProduitsPage> {
                   ),
                   const SizedBox(height: 16),
 
-                  // FutureBuilder pour charger les matières disponibles
                   FutureBuilder<List<Matiere>>(
-                    future: fetchMatieres(), // Fonction pour récupérer les matières
+                    future: fetchMatieres(),
                     builder: (context, snapshot) {
                       if (!snapshot.hasData) return const CircularProgressIndicator();
                       List<Matiere> matieres = snapshot.data!;
@@ -330,7 +338,6 @@ class _ProduitsPageState extends State<ProduitsPage> {
                             'matiere': matiereSelectionnee?.toJson(),
                             'quantite': quantite,
                           });
-                          // Clear the input fields for next size
                           _tailleController.clear();
                           _couleurController.clear();
                           _quantiteController.clear();
@@ -352,7 +359,7 @@ class _ProduitsPageState extends State<ProduitsPage> {
               onPressed: () async {
                 await _validerEtAjouterProduit(
                   _modeleController.text.trim(),
-                  taillesList, // Pass the list of sizes
+                  taillesList,
                   etatSelectionne ?? '',
                   matiereSelectionnee,
                 );
@@ -395,7 +402,6 @@ class _ProduitsPageState extends State<ProduitsPage> {
       String etat,
       Matiere? matiere
       ) async {
-    // Validation des champs
     if (modeleNom.isEmpty || taillesList.isEmpty || etat.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
@@ -446,112 +452,241 @@ class _ProduitsPageState extends State<ProduitsPage> {
   }
 
   void _showAddTailleDialog(String produitId) {
-    TextEditingController tailleController = TextEditingController();
-    TextEditingController couleurController = TextEditingController();
-    TextEditingController etatController = TextEditingController();
     TextEditingController quantiteController = TextEditingController();
-    String? selectedMatiere;
-    List<String> matieres = []; // List to hold matières from API
+    TextEditingController couleurController = TextEditingController();  // Controller for color input
+    String? selectedModeleNom;
+    String? selectedModeleId;
+    String? selectedTaille;
+    String? selectedEtat;
+    String? selectedMatiereId;
+    String? selectedCouleur; // Keep track of color in state as well
 
-
-    fetchMatieres();
+    List<Modele> modeles = [];
+    List<String> tailles = [];
+    List<String> etats = ['moulé', 'coupé'];
+    List<Matiere> matieres = [];
 
     showDialog(
       context: context,
       builder: (context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-          child: AnimatedContainer(
-            duration: Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-            padding: EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              gradient: LinearGradient(
-                colors: [Colors.blue.shade50, Colors.blue.shade100],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  "Ajouter une taille",
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue.shade700,
-                  ),
+        return FutureBuilder(
+          future: Future.wait([fetchModeles(), fetchMatieres()]),
+          builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Dialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Center(child: CircularProgressIndicator()),
                 ),
-                SizedBox(height: 15),
-                _buildStyledTextField(
-                    controller: tailleController, label: "Taille", icon: Icons.format_size),
-                _buildStyledTextField(
-                    controller: couleurController, label: "Couleur", icon: Icons.color_lens),
-                _buildStyledTextField(
-                    controller: etatController, label: "État", icon: Icons.timeline),
-                _buildStyledTextField(
-                    controller: quantiteController,
-                    label: "Quantité",
-                    icon: Icons.production_quantity_limits,
-                    keyboardType: TextInputType.number),
-                SizedBox(height: 10),
-                // Matière Dropdown
-                matieres.isNotEmpty
-                    ? _buildDropdown(
-                  value: selectedMatiere,
-                  label: "Matière",
-                  icon: Icons.category,
-                  items: matieres,
-                  onChanged: (String? newValue) {
-                    setState(() {
-                      selectedMatiere = newValue;
-                    });
-                  },
-                )
-                    : CircularProgressIndicator(), // Loading state while fetching
+              );
+            }
 
-                SizedBox(height: 20),
-                SizedBox(height: 20),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    _buildActionButton("Annuler", Icons.cancel, Colors.red.shade300, () {
-                      Navigator.of(context).pop();
-                    }),
-                    _buildActionButton("Ajouter", Icons.check_circle, Colors.green.shade400,
-                            () async {
-                          Map<String, dynamic> tailleData = {
-                            'taille': tailleController.text,
-                            'couleur': couleurController.text,
-                            'etat': etatController.text,
-                            'quantite': int.parse(quantiteController.text),
-                            'matiere': selectedMatiere,
-                          };
+            if (snapshot.hasError) {
+              print("Erreur lors du chargement : ${snapshot.error}");
+              return Dialog(
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Center(child: Text("Erreur de chargement des données")),
+                ),
+              );
+            }
 
-                          try {
-                            await Provider.of<ProduitProvider>(context, listen: false)
-                                .ajouterTailleAuProduit(produitId, tailleData);
+            modeles = snapshot.data![0] as List<Modele>;
+            matieres = snapshot.data![1] as List<Matiere>;
 
-                            // Update the UI immediately
+            return StatefulBuilder(
+              builder: (context, setState) {
+                return Dialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                  child: AnimatedContainer(
+                    duration: Duration(milliseconds: 300),
+                    curve: Curves.easeOut,
+                    padding: EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(20),
+                      gradient: LinearGradient(
+                        colors: [Colors.blue.shade50, Colors.blue.shade100],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          "Ajouter une taille",
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blue.shade700,
+                          ),
+                        ),
+                        SizedBox(height: 15),
+
+                        // Sélection du modèle par nom
+                        DropdownButtonFormField<String>(
+                          value: selectedModeleNom,
+                          decoration: _inputDecoration("Modèle", Icons.view_in_ar),
+                          items: modeles.map((modele) {
+                            return DropdownMenuItem(
+                              value: modele.nom,
+                              child: Text(modele.nom),
+                            );
+                          }).toList(),
+                          onChanged: (value) async {
                             setState(() {
-                              final produit = _produits.firstWhere((p) => p.id == produitId);
-                              produit.tailles.add(tailleData);
+                              selectedModeleNom = value;
                             });
-                          } catch (e) {
-                            print("Erreur lors de l'ajout de la taille : $e");
-                          }
 
-                          Navigator.of(context).pop();
-                        }),
-                  ],
-                ),
-              ],
-            ),
-          ),
+                            // Récupérer l'ID du modèle sélectionné
+                            Modele? modele = modeles.firstWhere((m) => m.nom == value, orElse: () => Modele(id: '', nom: '', tailles: []));
+                            if (modele.id.isNotEmpty) {
+                              setState(() {
+                                selectedModeleId = modele.id;
+                                tailles = modele.tailles;
+                                selectedTaille = null;
+                              });
+                            } else {
+                              selectedModeleId = null;
+                              tailles = [];
+                              selectedTaille = null;
+                            }
+                          },
+                        ),
+                        SizedBox(height: 10),
+
+                        // Sélection de la taille
+                        DropdownButtonFormField<String>(
+                          value: selectedTaille,
+                          decoration: _inputDecoration("Taille", Icons.format_size),
+                          items: tailles.map((taille) {
+                            return DropdownMenuItem(
+                              value: taille,
+                              child: Text(taille),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              selectedTaille = value;
+                            });
+                          },
+                        ),
+                        SizedBox(height: 10),
+
+                        // Sélection de l'état
+                        DropdownButtonFormField<String>(
+                          value: selectedEtat,
+                          decoration: _inputDecoration("État", Icons.timeline),
+                          items: etats.map((etat) {
+                            return DropdownMenuItem(
+                              value: etat,
+                              child: Text(etat),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              selectedEtat = value;
+                            });
+                          },
+                        ),
+                        SizedBox(height: 10),
+
+                        // Sélection de la matière
+                        DropdownButtonFormField<String>(
+                          value: selectedMatiereId,
+                          decoration: _inputDecoration("Matière", Icons.category),
+                          items: matieres.map((matiere) {
+                            return DropdownMenuItem(
+                              value: matiere.id, // Utilisation de l'ID de la matière
+                              child: Text(matiere.reference), // Affichage de la référence de la matière
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              selectedMatiereId = value;
+                            });
+                          },
+                        ),
+                        SizedBox(height: 10),
+
+                        // Sélection de la couleur
+                        TextField(
+                          controller: couleurController,  // Link controller
+                          decoration: _inputDecoration("Couleur", Icons.color_lens),
+                          onChanged: (value) {
+                            setState(() {
+                              selectedCouleur = value;  // Update state for color
+                            });
+                          },
+                        ),
+                        SizedBox(height: 10),
+
+                        // Champ de quantité
+                        TextField(
+                          controller: quantiteController,
+                          decoration: _inputDecoration("Quantité", Icons.production_quantity_limits),
+                          keyboardType: TextInputType.number,
+                        ),
+                        SizedBox(height: 20),
+
+                        // Boutons d'action
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            _buildActionButton("", Icons.cancel, Colors.red.shade300, () {
+                              Navigator.of(context).pop();
+                            }),
+                            _buildActionButton("", Icons.check_circle, Colors.green.shade400, () async {
+                              if (selectedModeleId == null || selectedTaille == null || selectedEtat == null || selectedMatiereId == null || selectedCouleur == null || quantiteController.text.isEmpty) {
+                                print("Veuillez remplir tous les champs !");
+                                return;
+                              }
+
+                              Map<String, dynamic> tailleData = {
+                                'modeleId': selectedModeleId,
+                                'taille': selectedTaille,
+                                'etat': selectedEtat,
+                                'matiere': selectedMatiereId,
+                                'couleur': selectedCouleur,
+                                'quantite': int.parse(quantiteController.text),
+                              };
+
+                              try {
+                                await Provider.of<ProduitProvider>(context, listen: false).ajouterTailleAuProduit(produitId, tailleData);
+                                setState(() {
+                                  final produit = _produits.firstWhere((p) => p.id == produitId);
+                                  produit.tailles.add(tailleData);
+                                });
+                              } catch (e) {
+                                print("Erreur lors de l'ajout de la taille : $e");
+                              }
+
+                              Navigator.of(context).pop();
+                            }),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          },
         );
       },
+    );
+  }
+
+
+  InputDecoration _inputDecoration(String label, IconData icon) {
+    return InputDecoration(
+      labelText: label,
+      prefixIcon: Icon(icon, color: Colors.blue.shade600),
+      filled: true,
+      fillColor: Colors.white,
+      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
     );
   }
 
@@ -653,10 +788,10 @@ class _ProduitsPageState extends State<ProduitsPage> {
                         borderRadius: BorderRadius.circular(30),
                       ),
                       child: DataTable(
-                        columnSpacing: 20,  // Adjust column spacing to make the table wider
-                        horizontalMargin: 10, // Increase horizontal margin for wider appearance
-                        dataTextStyle: TextStyle(fontSize: 16, color: Colors.black87), // Make text a little bigger
-                        headingTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.purple[600]), // Larger headers
+                        columnSpacing: 20,  // TO DO :Adjust column spacing to make the table wider
+                        horizontalMargin: 10, // TO DO :Increase horizontal margin for wider appearance
+                        dataTextStyle: TextStyle(fontSize: 16, color: Colors.black87),
+                        headingTextStyle: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.purple[600]),
                         columns: [
                           DataColumn(
                             label: Text('Taille', style: TextStyle(color: Colors.purple[600])),

@@ -57,7 +57,7 @@ class ProduitProvider with ChangeNotifier {
       int produitIndex = _produits.indexWhere((produit) => produit.id == produitId);
       if (produitIndex != -1) {
         _produits[produitIndex].tailles.removeAt(tailleIndex);
-        notifyListeners(); 
+        notifyListeners();
       }
     } catch (e) {
       print("Erreur lors de la suppression de la taille : $e");
