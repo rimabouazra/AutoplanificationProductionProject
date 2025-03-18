@@ -65,6 +65,7 @@ flutter:
       fonts:
         - asset: assets/fonts/Roboto.ttf
   assets:
+    - assets/images/FF.png
     - assets/icons/dashboard.png
     - assets/icons/users.png
     - assets/icons/stock.png

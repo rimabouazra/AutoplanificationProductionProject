@@ -8,6 +8,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'providers/CommandeProvider.dart';
 import 'package:frontend/providers/modeleProvider.dart';
 import 'views/admin_home_page.dart';
+import 'views/HomePage.dart';
 
 void main() {
   runApp(
@@ -44,7 +45,7 @@ class MyApp extends StatelessWidget {
         GlobalCupertinoLocalizations
             .delegate, // Add Cupertino localization delegate
       ],
-      home: AdminHomePage(),
+      home: HomePage(),
     );
   }
 }
