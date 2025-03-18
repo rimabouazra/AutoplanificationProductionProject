@@ -1,5 +1,5 @@
 const Machine = require("../models/Machine");
-const Modele = require("../models/modele");
+const Modele = require("../models/Modele");
 const Salle = require("../models/Salle");  
 
 exports.ajouterMachine = async (req, res) => {

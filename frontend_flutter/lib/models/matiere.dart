@@ -60,4 +60,7 @@ class Matiere {
       'historique': historique.map((h) => h.toJson()).toList(),
     };
   }
+  bool estStockSuffisant(double besoin) {
+    return quantite >= besoin;
+  }
 }

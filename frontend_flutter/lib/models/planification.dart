@@ -43,4 +43,8 @@ class Planification {
       'statut': statut,
     };
   }
+  void affecterSalleEtMachines(Salle salle, List<Machine> machines) {
+    this.salle = salle;
+    // Ajouter la logique pour affecter les machines
+  }
 }

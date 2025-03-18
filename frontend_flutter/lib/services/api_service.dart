@@ -33,8 +33,9 @@ class ApiService {
       body: jsonEncode({
         "nom": nom,
         "salle": salleId,
-        "modele": modele, // Peut être null
-        "taille": taille // Peut être null
+        "modele": modele, 
+        "taille": taille,
+         "etat": "disponible",
       }),
     );
     if (response.statusCode != 201) {
@@ -92,6 +93,7 @@ class ApiService {
       body: jsonEncode({
         "modele": modeleId,
         "taille": taille,
+        "etat": "occupee", 
       }),
     );
 

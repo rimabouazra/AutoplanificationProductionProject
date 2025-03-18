@@ -3,6 +3,7 @@ import 'CommandePage.dart';
 import 'SalleListPage.dart';
 import 'matiereView.dart';
 import 'StockView.dart';
+import 'PlanificationView.dart';
 
 class AdminHomePage extends StatefulWidget {
   const AdminHomePage({Key? key}) : super(key: key);
@@ -16,7 +17,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
   final List<Widget> _pages = [
     Center(child: Text('Statistique en développement')), // Placeholder
-    Center(child: Text('Planification en développement')), // Placeholder
+    PlanificationView(), 
     Center(child: Text('Utilisateurs en développement')), // Placeholder
     StockView(),
     CommandePage(),

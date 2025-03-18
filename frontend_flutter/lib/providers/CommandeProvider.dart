@@ -1,6 +1,10 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:frontend/models/machine.dart';
+import 'package:frontend/models/salle.dart';
+import 'package:frontend/providers/matiereProvider.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
 import '../models/commande.dart';
 class CommandeProvider with ChangeNotifier {
   final String _baseUrl = "http://localhost:5000/api/commandes";
@@ -204,5 +208,41 @@ class CommandeProvider with ChangeNotifier {
     }
     return [];
   }
+  Future<void> planifierCommande(BuildContext context, String commandeId, List<Salle> salles) async {
+  final commande = _commandes.firstWhere((cmd) => cmd.id == commandeId);
+  final matiereProvider = Provider.of<MatiereProvider>(context, listen: false);
+
+  for (var modele in commande.modeles) {
+    double besoin = modele.calculerBesoinMatiere();
+    final matiere = matiereProvider.getMatiereByCouleur(modele.couleur);
+
+    if (matiere != null && matiere.estStockSuffisant(besoin)) { // ✅ Vérification de null
+      bool estFoncee = modele.estCouleurFoncee(modele.couleur); // ✅ Correction de l'appel
+
+      for (var salle in salles) {
+        if ((estFoncee && salle.nom == "Salle Noire") || (!estFoncee && salle.nom == "Salle Blanche")) {
+          await affecterSalleEtMachines(commande, salle, salle.machines);
+          break;
+        }
+      }
+    } else {
+      throw Exception("Stock insuffisant ou matière introuvable pour le modèle ${modele.nomModele}");
+    }
+  }
+}
+
+
+
+  Future<void> affecterSalleEtMachines(Commande commande, Salle salle, List<Machine>? machines) async {
+  if (salle.id == null || machines == null) {
+    print("Erreur : Salle ou machines null");
+    return;
+  }
+
+  commande.salleAffectee = salle.id!;
+  commande.machinesAffectees = machines.map((m) => m.id!).toList();
+  await updateCommande(commande.id!, commande.modeles);
+}
+
 
 }

@@ -8,7 +8,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'providers/CommandeProvider.dart';
 import 'package:frontend/providers/modeleProvider.dart';
 import 'views/admin_home_page.dart';
-
+import 'package:frontend/providers/PlanificationProvider .dart';
 void main() {
   runApp(
     MultiProvider(
@@ -20,6 +20,12 @@ void main() {
         ChangeNotifierProvider(create: (context) => MatiereProvider()),
         ChangeNotifierProvider(create: (context) => MachineProvider()),
         ChangeNotifierProvider(create: (context) => ProduitProvider()),
+        ChangeNotifierProvider(
+          create: (context) => PlanificationProvider(
+            Provider.of<CommandeProvider>(context, listen: false),
+            Provider.of<MatiereProvider>(context, listen: false),
+          ),
+        ),
       ],
 
       child: MyApp(),
