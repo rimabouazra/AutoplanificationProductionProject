@@ -66,6 +66,8 @@ flutter:
         - asset: assets/fonts/Roboto.ttf
   assets:
     - assets/images/coque.jpg
+    - assets/images/bra-cup-1.jpg
+    - assets/images/braCup.jpg
     - assets/icons/dashboard.png
     - assets/icons/users.png
     - assets/icons/stock.png

@@ -8,7 +8,7 @@ class HomePage extends StatelessWidget {
         child: Column(
           children: [
             _buildHeader(),
-            _buildMainSection(),
+            _buildMainSection(context),
             _buildFooter(),
           ],
         ),
@@ -49,24 +49,13 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildMainSection() {
+  Widget _buildMainSection(BuildContext context) {
     return Container(
-      height: 500,
+      height: MediaQuery.of(context).size.height * 0.6, // 60% de la hauteur de l'écran
       decoration: BoxDecoration(
         image: DecorationImage(
-          image: AssetImage('assets/images/coque.jpg'), // Ensure this path is correct
+          image: AssetImage('assets/images/braCup.jpg'),
           fit: BoxFit.cover,
-        ),
-      ),
-      child: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Bienvenue sur notre site',
-              style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold, color: Colors.white),
-            ),
-          ],
         ),
       ),
     );
