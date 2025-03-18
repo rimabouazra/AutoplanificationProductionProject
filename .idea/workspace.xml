@@ -4,7 +4,9 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f1b1f5c6-b780-4356-ad10-8b85adb9bdf5" name="Changes" comment="Add the product api and view" />
+    <list default="true" id="f1b1f5c6-b780-4356-ad10-8b85adb9bdf5" name="Changes" comment="Add the product api and view">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -253,7 +255,55 @@
       <option name="project" value="LOCAL" />
       <updated>1741598526426</updated>
     </task>
-    <option name="localTasksCounter" value="23" />
+    <task id="LOCAL-00023" summary="Add the product api and view">
+      <option name="closed" value="true" />
+      <created>1741598755217</created>
+      <option name="number" value="00023" />
+      <option name="presentableId" value="LOCAL-00023" />
+      <option name="project" value="LOCAL" />
+      <updated>1741598755217</updated>
+    </task>
+    <task id="LOCAL-00024" summary="Add the product api and view">
+      <option name="closed" value="true" />
+      <created>1741607807338</created>
+      <option name="number" value="00024" />
+      <option name="presentableId" value="LOCAL-00024" />
+      <option name="project" value="LOCAL" />
+      <updated>1741607807338</updated>
+    </task>
+    <task id="LOCAL-00025" summary="Add the product api and view">
+      <option name="closed" value="true" />
+      <created>1741682694691</created>
+      <option name="number" value="00025" />
+      <option name="presentableId" value="LOCAL-00025" />
+      <option name="project" value="LOCAL" />
+      <updated>1741682694691</updated>
+    </task>
+    <task id="LOCAL-00026" summary="Add the product api and view">
+      <option name="closed" value="true" />
+      <created>1741684867107</created>
+      <option name="number" value="00026" />
+      <option name="presentableId" value="LOCAL-00026" />
+      <option name="project" value="LOCAL" />
+      <updated>1741684867107</updated>
+    </task>
+    <task id="LOCAL-00027" summary="Add the product api and view">
+      <option name="closed" value="true" />
+      <created>1741772889319</created>
+      <option name="number" value="00027" />
+      <option name="presentableId" value="LOCAL-00027" />
+      <option name="project" value="LOCAL" />
+      <updated>1741772889319</updated>
+    </task>
+    <task id="LOCAL-00028" summary="Add the product api and view">
+      <option name="closed" value="true" />
+      <created>1741773030626</created>
+      <option name="number" value="00028" />
+      <option name="presentableId" value="LOCAL-00028" />
+      <option name="project" value="LOCAL" />
+      <updated>1741773030626</updated>
+    </task>
+    <option name="localTasksCounter" value="29" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">

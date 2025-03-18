@@ -14,11 +14,23 @@ class ProduitsPage extends StatefulWidget {
 class _ProduitsPageState extends State<ProduitsPage> {
   List<Produit> _produits = [];
   bool _isLoading = true;
+  TextEditingController _searchController = TextEditingController();
+  bool _isSearching = false;
 
   @override
   void initState() {
     super.initState();
     _fetchProduits();
+  }
+  List<Produit> get filteredProduits {
+    final produits = Provider.of<ProduitProvider>(context).produits;
+
+    return produits.where((produit) {
+      final produitNom = produit.modele.nom.trim().toLowerCase();
+      final searchQuery = _searchController.text.trim().toLowerCase();
+
+      return searchQuery.isEmpty || produitNom.contains(searchQuery);
+    }).toList();
   }
 
   Future<void> _fetchProduits() async {
@@ -104,7 +116,7 @@ class _ProduitsPageState extends State<ProduitsPage> {
           shape:
               RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: AnimatedContainer(
-            duration: Duration(milliseconds: 300),
+            duration: Duration(milliseconds: 1000),
             curve: Curves.easeOut,
             padding: EdgeInsets.all(20),
             decoration: BoxDecoration(
@@ -464,14 +476,13 @@ class _ProduitsPageState extends State<ProduitsPage> {
 
   void _showAddTailleDialog(String produitId) {
     TextEditingController quantiteController = TextEditingController();
-    TextEditingController couleurController =
-        TextEditingController(); // Controller for color input
+    TextEditingController couleurController = TextEditingController();
     String? selectedModeleNom;
     String? selectedModeleId;
     String? selectedTaille;
     String? selectedEtat;
     String? selectedMatiereId;
-    String? selectedCouleur; // Keep track of color in state as well
+    String? selectedCouleur;
 
     List<Modele> modeles = [];
     List<String> tailles = [];
@@ -637,12 +648,12 @@ class _ProduitsPageState extends State<ProduitsPage> {
 
                         // Sélection de la couleur
                         TextField(
-                          controller: couleurController, // Link controller
-                          decoration:
-                              _inputDecoration("Couleur", Icons.color_lens),
+                          controller: couleurController,  // Link controller
+                          decoration: _inputDecoration("Couleur", Icons.color_lens),
                           onChanged: (value) {
                             setState(() {
-                              selectedCouleur = value; // Update state for color
+                              selectedCouleur = value;  // Update state for color
+
                             });
                           },
                         ),
@@ -718,6 +729,7 @@ class _ProduitsPageState extends State<ProduitsPage> {
     );
   }
 
+
   InputDecoration _inputDecoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
@@ -771,15 +783,44 @@ class _ProduitsPageState extends State<ProduitsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Colors.lightBlue[100],
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.search, color: Colors.white),
-            onPressed: () {
-              // Add search functionality if needed
-            },
-          ),
-        ],
+        title: Row(
+          children: [
+            Expanded(
+              child: AnimatedContainer(
+                duration: Duration(milliseconds: 300),
+                width: _isSearching ? 200 : 0,
+                curve: Curves.easeInOut,
+                child: _isSearching
+                    ? TextField(
+                  controller: _searchController,
+                  autofocus: true,
+                  decoration: InputDecoration(
+                    hintText: 'Rechercher...',
+                    border: InputBorder.none,
+                    hintStyle: TextStyle(color: Colors.black87),
+                  ),
+                  style: TextStyle(color: Colors.black87),
+                  onChanged: (query) {
+                    setState(() {});
+                  },
+                )
+                    : SizedBox(), // Empty space when search is closed
+              ),
+            ),
+            IconButton(
+              icon: Icon(_isSearching ? Icons.close : Icons.search,
+                  color: Colors.black87),
+              onPressed: () {
+                setState(() {
+                  _isSearching = !_isSearching;
+                  if (!_isSearching) {
+                    _searchController.clear();
+                  }
+                });
+              },
+            ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
@@ -792,154 +833,160 @@ class _ProduitsPageState extends State<ProduitsPage> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : ListView.builder(
-              itemCount: _produits.length,
-              itemBuilder: (context, index) {
-                final produit = _produits[index];
-                return Card(
-                  margin:
-                      const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                    side: BorderSide(color: Colors.teal[200]!),
+        itemCount: _produits.length,
+        itemBuilder: (context, index) {
+          final produit = _produits[index];
+          return Card(
+            margin:
+            const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+              side: BorderSide(color: Colors.teal[200]!),
+            ),
+            elevation: 5,
+            color: Colors.blueAccent[50],
+            child: Column(
+              children: [
+                ExpansionTile(
+                  tilePadding: const EdgeInsets.symmetric(
+                      vertical: 10, horizontal: 16),
+                  title: Text(
+                    produit.modele.nom,
+                    style: const TextStyle(
+                        color: Colors.black87,
+                        fontWeight: FontWeight.bold),
                   ),
-                  elevation: 5,
-                  color: Colors.blueAccent[50],
-                  child: Column(
-                    children: [
-                      ExpansionTile(
-                        tilePadding: const EdgeInsets.symmetric(
-                            vertical: 10, horizontal: 16),
-                        title: Text(
-                          produit.modele.nom,
-                          style: const TextStyle(
-                              color: Colors.black87,
-                              fontWeight: FontWeight.bold),
-                        ),
-                        trailing: IconButton(
-                          icon: Icon(Icons.delete, color: Colors.red[500]),
-                          onPressed: () {
-                            _supprimerProduit(produit.id);
-                          },
-                        ),
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.all(4),
-                            decoration: BoxDecoration(
-                              color: Colors.white60,
-                              borderRadius: BorderRadius.circular(30),
-                            ),
-                            child: DataTable(
-                              columnSpacing:
-                                  20, // TO DO :Adjust column spacing to make the table wider
-                              horizontalMargin:
-                                  10, // TO DO :Increase horizontal margin for wider appearance
-                              dataTextStyle: TextStyle(
-                                  fontSize: 16, color: Colors.black87),
-                              headingTextStyle: TextStyle(
-                                  fontSize: 18,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.purple[600]),
-                              columns: [
-                                DataColumn(
-                                  label: Text('Taille',
-                                      style:
-                                          TextStyle(color: Colors.purple[600])),
-                                ),
-                                DataColumn(
-                                  label: Text('Couleur',
-                                      style:
-                                          TextStyle(color: Colors.purple[600])),
-                                ),
-                                DataColumn(
-                                  label: Text('État',
-                                      style:
-                                          TextStyle(color: Colors.purple[600])),
-                                ),
-                                DataColumn(
-                                  label: Text('Quantité',
-                                      style:
-                                          TextStyle(color: Colors.purple[600])),
-                                ),
-                                DataColumn(
-                                  label: Text('Actions',
-                                      style:
-                                          TextStyle(color: Colors.purple[600])),
-                                ),
-                              ],
-                              rows: produit.tailles.map((tailleData) {
-                                return DataRow(
-                                  cells: [
-                                    DataCell(
-                                      Text(tailleData['taille'],
-                                          style: TextStyle(
-                                              color: Colors.black87,
-                                              fontSize: 16)),
-                                    ),
-                                    DataCell(
-                                      Text(tailleData['couleur'],
-                                          style: TextStyle(
-                                              color: Colors.black87,
-                                              fontSize: 16)),
-                                    ),
-                                    DataCell(
-                                      Text(tailleData['etat'],
-                                          style: TextStyle(
-                                              color: Colors.black87,
-                                              fontSize: 16)),
-                                    ),
-                                    DataCell(
-                                      Text(tailleData['quantite'].toString(),
-                                          style: TextStyle(
-                                              color: Colors.black87,
-                                              fontSize: 16)),
-                                    ),
-                                    DataCell(
-                                      Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          IconButton(
-                                            icon: Icon(Icons.add,
-                                                color: Colors.green),
-                                            onPressed: () {
-                                              _showAddTailleDialog(produit.id);
-                                            },
-                                          ),
-                                          IconButton(
-                                            icon: const Icon(Icons.edit,
-                                                color: Colors.lightBlue),
-                                            onPressed: () {
-                                              int indexTaille = produit.tailles
-                                                  .indexOf(tailleData);
-                                              _modifierProduit(
-                                                  produit, indexTaille);
-                                            },
-                                          ),
-                                          IconButton(
-                                            icon: Icon(Icons.delete,
-                                                color: Colors.red[500]),
-                                            onPressed: () {
-                                              int indexTaille = produit.tailles
-                                                  .indexOf(tailleData);
-                                              _supprimerTaille(
-                                                  produit.id, indexTaille);
-                                            },
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ],
-                                );
-                              }).toList(),
-                            ),
+                  trailing: IconButton(
+                    icon: Icon(Icons.delete, color: Colors.red[500]),
+                    onPressed: () {
+                      _supprimerProduit(produit.id);
+                    },
+                  ),
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.white60,
+                        borderRadius: BorderRadius.circular(30),
+                      ),
+                      child: DataTable(
+                        columnSpacing:
+                        20,
+                        // TO DO :Adjust column spacing to make the table wider
+                        horizontalMargin:
+                        10,
+                        // TO DO :Increase horizontal margin for wider appearance
+                        dataTextStyle: TextStyle(
+                            fontSize: 16, color: Colors.black87),
+                        headingTextStyle: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.purple[600]),
+                        columns: [
+                          DataColumn(
+                            label: Text('Taille',
+                                style:
+                                TextStyle(color: Colors.purple[600])),
+                          ),
+                          DataColumn(
+                            label: Text('Couleur',
+                                style:
+                                TextStyle(color: Colors.purple[600])),
+                          ),
+                          DataColumn(
+                            label: Text('État',
+                                style:
+                                TextStyle(color: Colors.purple[600])),
+                          ),
+                          DataColumn(
+                            label: Text('Quantité',
+                                style:
+                                TextStyle(color: Colors.purple[600])),
+                          ),
+                          DataColumn(
+                            label: Text('Actions',
+                                style:
+                                TextStyle(color: Colors.purple[600])),
                           ),
                         ],
-                      )
-                    ],
-                  ),
-                );
-              },
+                        rows: produit.tailles.map((tailleData) {
+                          return DataRow(
+                            cells: [
+                              DataCell(
+                                Text(tailleData['taille'],
+                                    style: TextStyle(
+                                        color: Colors.black87,
+                                        fontSize: 16)),
+                              ),
+                              DataCell(
+                                Text(tailleData['couleur'],
+                                    style: TextStyle(
+                                        color: Colors.black87,
+                                        fontSize: 16)),
+                              ),
+                              DataCell(
+                                Text(tailleData['etat'],
+                                    style: TextStyle(
+                                        color: Colors.black87,
+                                        fontSize: 16)),
+                              ),
+                              DataCell(
+                                Text(tailleData['quantite'].toString(),
+                                    style: TextStyle(
+                                        color: Colors.black87,
+                                        fontSize: 16)),
+                              ),
+                              DataCell(
+                                Row(
+                                  mainAxisAlignment:
+                                  MainAxisAlignment.center,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(Icons.add,
+                                          color: Colors.green),
+                                      onPressed: () {
+                                        _showAddTailleDialog(produit.id);
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.edit,
+                                          color: Colors.lightBlue),
+                                      onPressed: () {
+                                        int indexTaille = produit.tailles
+                                            .indexOf(tailleData);
+                                        _modifierProduit(
+                                            produit, indexTaille);
+                                      },
+                                    ),
+                                    IconButton(
+                                      icon: Icon(Icons.delete,
+                                          color: Colors.red[500]),
+                                      onPressed: () {
+                                        int indexTaille = produit.tailles
+                                            .indexOf(tailleData);
+                                        _supprimerTaille(
+                                            produit.id, indexTaille);
+                                      },
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                  ],
+                )
+              ],
             ),
+          );
+        },
+      ),
     );
   }
-}
+
+
+  }
+
+
