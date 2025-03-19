@@ -45,7 +45,7 @@ class MyApp extends StatelessWidget {
         GlobalCupertinoLocalizations
             .delegate, // Add Cupertino localization delegate
       ],
-      home: HomePage(),
+      home: AdminHomePage(),
     );
   }
 }
