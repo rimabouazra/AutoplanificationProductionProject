@@ -154,11 +154,11 @@ class ApiService {
 
   // Récupérer toutes les Planifications
   static Future<List<Planification>> getPlanifications() async {
-    final response = await http.get(Uri.parse('$baseUrl/planifications'));
-    print("Réponse brute de l'API: ${response.body}"); // Log de débogage
+    final response = await http.get(Uri.parse('$baseUrl/planifications/'));
+    //print("Réponse brute de l'API: ${response.body}"); // Log de débogage
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
-      print("Données JSON décodées: $jsonData"); // Log de débogage
+      //print("Données JSON décodées: $jsonData"); // Log de débogage
       return jsonData.map((json) => Planification.fromJson(json)).toList();
     } else {
       throw Exception("Erreur lors de la récupération des planifications");
@@ -167,7 +167,7 @@ class ApiService {
 
   static Future<bool> addPlanification(Planification planification) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/planifications'),
+      Uri.parse('$baseUrl/planifications/'),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(planification.toJson()),
     );
