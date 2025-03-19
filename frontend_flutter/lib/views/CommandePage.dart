@@ -69,7 +69,23 @@ class _CommandePageState extends State<CommandePage> {
       return matchesFilter && matchesSearch;
     }).toList();
   }
+  Map<String, int> calculateQuantities(List<CommandeModele> modeles) {
+  int totalDemandee = 0;
+  int totalCalculee = 0;
+  int totalReelle = 0;
 
+  for (var modele in modeles) {
+    totalDemandee += modele.quantite;
+    totalCalculee += modele.quantiteCalculee;
+    totalReelle += modele.quantiteReelle;
+  }
+
+  return {
+    'totalDemandee': totalDemandee,
+    'totalCalculee': totalCalculee,
+    'totalReelle': totalReelle,
+  };
+}
   void deleteCommande(String id) {
     showDialog(
       context: context,
@@ -748,6 +764,7 @@ class _CommandePageState extends State<CommandePage> {
                                         color: Color(
                                             0xFF2C3E50)))), // Couleur de texte
                           ],
+                          
                           rows: commande.modeles.map((commandeModele) {
                             final modeleNom = Provider.of<ModeleProvider>(
                                         context,

@@ -33,8 +33,9 @@ class ApiService {
       body: jsonEncode({
         "nom": nom,
         "salle": salleId,
-        "modele": modele, // Peut être null
-        "taille": taille // Peut être null
+        "modele": modele, 
+        "taille": taille,
+         "etat": "disponible",
       }),
     );
     if (response.statusCode != 201) {
@@ -92,6 +93,7 @@ class ApiService {
       body: jsonEncode({
         "modele": modeleId,
         "taille": taille,
+        "etat": "occupee", 
       }),
     );
 
@@ -153,8 +155,10 @@ class ApiService {
   // Récupérer toutes les Planifications
   static Future<List<Planification>> getPlanifications() async {
     final response = await http.get(Uri.parse('$baseUrl/planifications'));
+    print("Réponse brute de l'API: ${response.body}"); // Log de débogage
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
+      print("Données JSON décodées: $jsonData"); // Log de débogage
       return jsonData.map((json) => Planification.fromJson(json)).toList();
     } else {
       throw Exception("Erreur lors de la récupération des planifications");

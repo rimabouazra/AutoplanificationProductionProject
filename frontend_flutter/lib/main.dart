@@ -10,6 +10,7 @@ import 'package:frontend/providers/modeleProvider.dart';
 import 'views/admin_home_page.dart';
 import 'views/HomePage.dart';
 
+import 'package:frontend/providers/PlanificationProvider .dart';
 void main() {
   runApp(
     MultiProvider(

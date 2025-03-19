@@ -1,5 +1,5 @@
 const Produits = require("../models/produits");
-const Modele = require("../models/modele");
+const Modele = require("../models/Modele");
 exports.addProduit = async (req, res) => {
     try {
         const { modeleId, tailles } = req.body;  // Attends un tableau de tailles

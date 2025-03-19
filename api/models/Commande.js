@@ -4,7 +4,9 @@ const CommandeModeleSchema = new mongoose.Schema({
   modele: { type: mongoose.Schema.Types.ObjectId, ref: "Modele", required: true }, //  Référence au modèle
   taille: { type: String, required: true },
   couleur: { type: String, required: true },
-  quantite: { type: Number, required: true }
+  quantite: { type: Number, required: true },
+  quantiteCalculee: { type: Number, default: 0 }, // Quantité calculée
+  quantiteReelle: { type: Number, default: 0 }, // Quantité réelle
 });
 
 const CommandeSchema = new mongoose.Schema(

@@ -176,6 +176,7 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
       },
     );
   }
+
   Future<void> _confirmDeleteMachine(dynamic machine) async {
     bool confirm = await showDialog(
       context: context,
@@ -204,10 +205,12 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
           machines.removeWhere((m) => m["_id"] == machine["_id"]);
         });
       } catch (e) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Erreur lors de la suppression")));
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text("Erreur lors de la suppression")));
       }
     }
   }
+
   Future<void> _showEditMachineDialog(dynamic machine) async {
     TextEditingController nomController =
         TextEditingController(text: machine["nom"]);
@@ -243,10 +246,20 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
               SizedBox(height: 10),
               DropdownButton<String>(
                 value: etat,
-                onChanged: (String? newValue) {
+                onChanged: (String? newValue) async {
                   setState(() {
                     etat = newValue!;
                   });
+                  try {
+                    await ApiService.updateMachine(
+                        machine["_id"], nomController.text, etat);
+                    // Mettre à jour l'état localement
+                    setState(() {
+                      machine["etat"] = etat;
+                    });
+                  } catch (e) {
+                    print("Erreur lors de la mise à jour de l'état : $e");
+                  }
                 },
                 items: ["disponible", "occupee", "arretee"].map((String value) {
                   return DropdownMenuItem<String>(
@@ -281,6 +294,9 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
               onPressed: () async {
                 await ApiService.updateMachine(
                     machine["_id"], nomController.text, etat);
+                setState(() {
+                  machine["etat"] = etat;
+                });
                 Navigator.pop(context);
                 fetchMachinesParSalle();
               },
@@ -316,9 +332,10 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Machines par Salle", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: Text("Machines par Salle",
+            style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Color.fromARGB(255, 163, 228, 215),
         elevation: 4,
         iconTheme: IconThemeData(color: Colors.white),
       ),
@@ -342,7 +359,7 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
             ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showAddMachineDialog,
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Color(0xFF1ABC9C),
         child: Icon(Icons.add, color: Colors.white),
         tooltip: "Ajouter une machine",
       ),
@@ -392,5 +409,4 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
       ),
     );
   }
-
 }

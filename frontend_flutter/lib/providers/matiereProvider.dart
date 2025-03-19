@@ -115,5 +115,8 @@ Future<void> renameMatiere(String id, String newReference) async {
     print("Erreur lors du renommage de la matière : $e");
   }
 }
+Matiere? getMatiereByCouleur(String couleur) {
+  return _matieres.firstWhere((m) => m.couleur.toLowerCase() == couleur.toLowerCase(), orElse: () => Matiere(id: '', reference: '', couleur: '', quantite: 0, dateAjout: DateTime.now(), historique: []));
+}
 
 }
