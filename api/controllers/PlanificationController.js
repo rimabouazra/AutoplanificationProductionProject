@@ -8,7 +8,6 @@ const Matiere = require("../models/matiere");
 exports.addPlanification = async (req, res) => {
     try {
         const { commandes, salleId, machinesIds, debutPrevue, finPrevue } = req.body;
-
         // Vérifier l'existence de la salle et des machines
         const salle = await Salle.findById(salleId);
         if (!salle) return res.status(404).json({ message: "Salle non trouvée" });
@@ -18,8 +17,8 @@ exports.addPlanification = async (req, res) => {
 
         const newPlanification = new Planification({
             commandes,
-            salle,
-            machines,
+            salle: salle._id,
+            machines: machines.map(m => m._id),
             debutPrevue,
             finPrevue,
             statut: "en attente",
@@ -37,14 +36,27 @@ exports.getAllPlanifications = async (req, res) => {
     try {
         const planifications = await Planification.find()
             .populate("commandes")
-            .populate("salle")
-            .populate("machines");
+            .populate({
+                path: "salle",
+                model: "Salle",
+                populate: {
+                    path: "machines",
+                    model: "Machine"
+                }
+            })
+            .populate({
+                path: "machines",
+                model: "Machine"
+            });
+
+        console.log("Planifications envoyées:", JSON.stringify(planifications, null, 2)); // ✅ Log détaillé
 
         res.status(200).json(planifications);
     } catch (error) {
         res.status(500).json({ message: "Erreur serveur", error: error.message });
     }
 };
+
 
 // Récupérer une planification par ID
 exports.getPlanificationById = async (req, res) => {
@@ -53,7 +65,10 @@ exports.getPlanificationById = async (req, res) => {
         const planification = await Planification.findById(id)
             .populate("commandes")
             .populate("salle")
-            .populate("machines");
+            .populate({
+                path: "machines",
+                model: "Machine"
+            });
 
         if (!planification) return res.status(404).json({ message: "Planification non trouvée" });
 

@@ -93,7 +93,7 @@ class _PlanificationViewState extends State<PlanificationView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text("Commandes : ${planification.commandes.join(", ")}"),
-            Text("Machine : ${planification.machine?.nom ?? 'Aucune'}"),
+            Text("Machines : ${planification.machines.isNotEmpty ? planification.machines.map((m) => m.nom).join(", ") : 'Aucune'}"),
             Text("Début prévu : ${_formatDate(planification.debutPrevue)}"),
             Text("Fin prévue : ${_formatDate(planification.finPrevue)}"),
             _buildStatut(planification.statut),
