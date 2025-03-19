@@ -22,6 +22,12 @@ void main() {
         ChangeNotifierProvider(create: (context) => MatiereProvider()),
         ChangeNotifierProvider(create: (context) => MachineProvider()),
         ChangeNotifierProvider(create: (context) => ProduitProvider()),
+        ChangeNotifierProvider(
+          create: (context) => PlanificationProvider(
+            Provider.of<CommandeProvider>(context, listen: false),
+            Provider.of<MatiereProvider>(context, listen: false),
+          ),
+        ),
       ],
 
       child: MyApp(),
