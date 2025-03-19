@@ -68,6 +68,15 @@ flutter:
     - assets/images/coque.jpg
     - assets/images/bra-cup-1.jpg
     - assets/images/braCup.jpg
+    - assets/images/bigPanel.jpg
+    - assets/images/BALCONNET.jpg
+    - assets/images/BANDEAU.jpg
+    - assets/images/BIG-SIZES.jpg
+    - assets/images/COMFORT-BRA-CUP.jpg
+    - assets/images/ECO-FRIENDLY-BRA-CUP.jpg
+    - assets/images/TRIANGLE.jpg
+    - assets/images/trianglePushUp.jpg
+    - assets/images/push-up.jpg
     - assets/icons/dashboard.png
     - assets/icons/users.png
     - assets/icons/stock.png
