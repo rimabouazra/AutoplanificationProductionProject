@@ -24,7 +24,6 @@ void main() {
         ChangeNotifierProvider(create: (context) => SalleProvider()),
         ChangeNotifierProvider(create: (context) => MatiereProvider()),
         ChangeNotifierProvider(create: (context) => MachineProvider()),
-<<<<<<< HEAD
         ChangeNotifierProvider(create: (context) => ProduitProvider()), 
         ChangeNotifierProvider(
           create: (context) => PlanificationProvider(
@@ -32,9 +31,6 @@ void main() {
             Provider.of<MatiereProvider>(context, listen: false),
           ),
         ),
-=======
-        ChangeNotifierProvider(create: (context) => ProduitProvider()),
->>>>>>> 9a18285bd6f2f7fca9d8234d13edd705fd266bbd
       ],
       child: MyApp(),
     ),
