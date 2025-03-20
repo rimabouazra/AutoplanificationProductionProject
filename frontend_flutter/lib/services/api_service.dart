@@ -145,16 +145,28 @@ class ApiService {
 
   static Future<bool> addUser(User user) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/users'),
+      Uri.parse('$baseUrl/users/add'),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(user.toJson()),
     );
     return response.statusCode == 201;
   }
+  static Future<bool> updateUser(String id, User user) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/users/$id'),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(user.toJson()),
+    );
+    return response.statusCode == 200;
+  }
 
+  static Future<bool> deleteUser(String id) async {
+    final response = await http.delete(Uri.parse('$baseUrl/users/$id'));
+    return response.statusCode == 200;
+  }
   // Récupérer toutes les Planifications
   static Future<List<Planification>> getPlanifications() async {
-    final response = await http.get(Uri.parse('$baseUrl/planifications'));
+    final response = await http.get(Uri.parse('$baseUrl/planifications/'));
     print("Réponse brute de l'API: ${response.body}"); // Log de débogage
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);

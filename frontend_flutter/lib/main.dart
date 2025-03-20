@@ -9,17 +9,20 @@ import 'providers/CommandeProvider.dart';
 import 'package:frontend/providers/modeleProvider.dart';
 import 'views/admin_home_page.dart';
 import 'package:frontend/providers/PlanificationProvider .dart';
+import 'package:frontend/providers/userProvider.dart';
+
 void main() {
   runApp(
     MultiProvider(
       providers: [
+        ChangeNotifierProvider(create: (context) => UserProvider()),
         ChangeNotifierProvider(create: (_) => CommandeProvider()),
         ChangeNotifierProvider(
             create: (context) => ModeleProvider()..fetchModeles()),
         ChangeNotifierProvider(create: (context) => SalleProvider()),
         ChangeNotifierProvider(create: (context) => MatiereProvider()),
         ChangeNotifierProvider(create: (context) => MachineProvider()),
-        ChangeNotifierProvider(create: (context) => ProduitProvider()),
+        ChangeNotifierProvider(create: (context) => ProduitProvider()), 
         ChangeNotifierProvider(
           create: (context) => PlanificationProvider(
             Provider.of<CommandeProvider>(context, listen: false),
@@ -27,7 +30,6 @@ void main() {
           ),
         ),
       ],
-
       child: MyApp(),
     ),
   );
