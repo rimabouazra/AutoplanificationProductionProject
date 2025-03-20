@@ -8,6 +8,8 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'providers/CommandeProvider.dart';
 import 'package:frontend/providers/modeleProvider.dart';
 import 'views/admin_home_page.dart';
+import 'views/HomePage.dart';
+
 import 'package:frontend/providers/PlanificationProvider .dart';
 import 'package:frontend/providers/userProvider.dart';
 
@@ -22,6 +24,7 @@ void main() {
         ChangeNotifierProvider(create: (context) => SalleProvider()),
         ChangeNotifierProvider(create: (context) => MatiereProvider()),
         ChangeNotifierProvider(create: (context) => MachineProvider()),
+<<<<<<< HEAD
         ChangeNotifierProvider(create: (context) => ProduitProvider()), 
         ChangeNotifierProvider(
           create: (context) => PlanificationProvider(
@@ -29,6 +32,9 @@ void main() {
             Provider.of<MatiereProvider>(context, listen: false),
           ),
         ),
+=======
+        ChangeNotifierProvider(create: (context) => ProduitProvider()),
+>>>>>>> 9a18285bd6f2f7fca9d8234d13edd705fd266bbd
       ],
       child: MyApp(),
     ),

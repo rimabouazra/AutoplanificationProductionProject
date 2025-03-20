@@ -4,8 +4,8 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f1b1f5c6-b780-4356-ad10-8b85adb9bdf5" name="Changes" comment="Add the product api and view">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    <list default="true" id="f1b1f5c6-b780-4356-ad10-8b85adb9bdf5" name="Changes" comment="update website design">
+      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/main.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -45,20 +45,20 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Flutter.main.dart.executor": "Run",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "main",
-    "io.flutter.reload.alreadyRun": "true",
-    "kotlin-language-version-configured": "true",
-    "last_opened_file_path": "C:/Users/mayar/Desktop/PFE/AutoplanificationProductionProject/frontend_flutter",
-    "settings.editor.selected.configurable": "preferences.pluginManager",
-    "show.migrate.to.gradle.popup": "false"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Flutter.main.dart.executor&quot;: &quot;Run&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;io.flutter.reload.alreadyRun&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/mayar/Desktop/PFE/AutoplanificationProductionProject/frontend_flutter&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;preferences.pluginManager&quot;,
+    &quot;show.migrate.to.gradle.popup&quot;: &quot;false&quot;
   }
-}]]></component>
+}</component>
   <component name="RunManager">
     <configuration name="main.dart" type="FlutterRunConfigurationType" factoryName="Flutter" temporary="true" nameIsGenerated="true">
       <option name="filePath" value="$PROJECT_DIR$/frontend_flutter/lib/main.dart" />
@@ -303,7 +303,71 @@
       <option name="project" value="LOCAL" />
       <updated>1741773030626</updated>
     </task>
-    <option name="localTasksCounter" value="29" />
+    <task id="LOCAL-00029" summary="update website design">
+      <option name="closed" value="true" />
+      <created>1742286764458</created>
+      <option name="number" value="00029" />
+      <option name="presentableId" value="LOCAL-00029" />
+      <option name="project" value="LOCAL" />
+      <updated>1742286764458</updated>
+    </task>
+    <task id="LOCAL-00030" summary="update website design">
+      <option name="closed" value="true" />
+      <created>1742286772493</created>
+      <option name="number" value="00030" />
+      <option name="presentableId" value="LOCAL-00030" />
+      <option name="project" value="LOCAL" />
+      <updated>1742286772493</updated>
+    </task>
+    <task id="LOCAL-00031" summary="update website design">
+      <option name="closed" value="true" />
+      <created>1742287745029</created>
+      <option name="number" value="00031" />
+      <option name="presentableId" value="LOCAL-00031" />
+      <option name="project" value="LOCAL" />
+      <updated>1742287745029</updated>
+    </task>
+    <task id="LOCAL-00032" summary="update website design">
+      <option name="closed" value="true" />
+      <created>1742287753681</created>
+      <option name="number" value="00032" />
+      <option name="presentableId" value="LOCAL-00032" />
+      <option name="project" value="LOCAL" />
+      <updated>1742287753681</updated>
+    </task>
+    <task id="LOCAL-00033" summary="update website design">
+      <option name="closed" value="true" />
+      <created>1742287828713</created>
+      <option name="number" value="00033" />
+      <option name="presentableId" value="LOCAL-00033" />
+      <option name="project" value="LOCAL" />
+      <updated>1742287828713</updated>
+    </task>
+    <task id="LOCAL-00034" summary="update website design">
+      <option name="closed" value="true" />
+      <created>1742292110292</created>
+      <option name="number" value="00034" />
+      <option name="presentableId" value="LOCAL-00034" />
+      <option name="project" value="LOCAL" />
+      <updated>1742292110292</updated>
+    </task>
+    <task id="LOCAL-00035" summary="update website design">
+      <option name="closed" value="true" />
+      <created>1742292341440</created>
+      <option name="number" value="00035" />
+      <option name="presentableId" value="LOCAL-00035" />
+      <option name="project" value="LOCAL" />
+      <updated>1742292341440</updated>
+    </task>
+    <task id="LOCAL-00036" summary="update website design">
+      <option name="closed" value="true" />
+      <created>1742376041459</created>
+      <option name="number" value="00036" />
+      <option name="presentableId" value="LOCAL-00036" />
+      <option name="project" value="LOCAL" />
+      <updated>1742376041459</updated>
+    </task>
+    <option name="localTasksCounter" value="37" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -344,6 +408,7 @@
     <MESSAGE value="add print feature to commande" />
     <MESSAGE value="hébérger la base de données dans le cloud" />
     <MESSAGE value="Add the product api and view" />
-    <option name="LAST_COMMIT_MESSAGE" value="Add the product api and view" />
+    <MESSAGE value="update website design" />
+    <option name="LAST_COMMIT_MESSAGE" value="update website design" />
   </component>
 </project>
