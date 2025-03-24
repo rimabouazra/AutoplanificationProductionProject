@@ -77,7 +77,6 @@ class _PlanificationViewState extends State<PlanificationView> {
     return widgets;
   }
 
-  /// Création d'une carte de planification
   Widget _buildPlanificationCard(Planification planification) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
@@ -86,9 +85,9 @@ class _PlanificationViewState extends State<PlanificationView> {
       child: ListTile(
         contentPadding: const EdgeInsets.all(16),
         title: Text(
-          "Salle : ${planification.salle?.nom ?? 'Non assignée'}",
-          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+            "Salle : ${planification.machines.isNotEmpty ? planification.machines.first.salle.nom : 'Non assignée'}"
         ),
+
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [

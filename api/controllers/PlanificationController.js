@@ -4,20 +4,17 @@ const Salle = require("../models/Salle");
 const Machine = require("../models/Machine");
 const Matiere = require("../models/matiere");
 
-// Ajouter une planification
+
 exports.addPlanification = async (req, res) => {
     try {
-        const { commandes, salleId, machinesIds, debutPrevue, finPrevue } = req.body;
-        // Vérifier l'existence de la salle et des machines
-        const salle = await Salle.findById(salleId);
-        if (!salle) return res.status(404).json({ message: "Salle non trouvée" });
+        const { commandes, machinesIds, debutPrevue, finPrevue } = req.body;
 
+        // Fetch machines
         const machines = await Machine.find({ _id: { $in: machinesIds } });
         if (machines.length === 0) return res.status(404).json({ message: "Machines non trouvées" });
 
         const newPlanification = new Planification({
             commandes,
-            salle: salle._id,
             machines: machines.map(m => m._id),
             debutPrevue,
             finPrevue,
@@ -31,25 +28,20 @@ exports.addPlanification = async (req, res) => {
     }
 };
 
-// Récupérer toutes les planifications
 exports.getAllPlanifications = async (req, res) => {
     try {
         const planifications = await Planification.find()
             .populate("commandes")
-            .populate({
-                path: "salle",
-                model: "Salle",
-                populate: {
-                    path: "machines",
-                    model: "Machine"
-                }
-            })
+
             .populate({
                 path: "machines",
-                model: "Machine"
+                model: "Machine",
+                populate: { path: "salle" }
+
             });
 
-        console.log("Planifications envoyées:", JSON.stringify(planifications, null, 2)); // ✅ Log détaillé
+
+        console.log("Planifications envoyées:", JSON.stringify(planifications, null, 2)); //  Log détaillé
 
         res.status(200).json(planifications);
     } catch (error) {
@@ -64,7 +56,6 @@ exports.getPlanificationById = async (req, res) => {
         const { id } = req.params;
         const planification = await Planification.findById(id)
             .populate("commandes")
-            .populate("salle")
             .populate({
                 path: "machines",
                 model: "Machine"
@@ -86,7 +77,6 @@ exports.updatePlanification = async (req, res) => {
 
         const updatedPlanification = await Planification.findByIdAndUpdate(id, updateData, { new: true })
             .populate("commandes")
-            .populate("salle")
             .populate("machines");
 
         if (!updatedPlanification) return res.status(404).json({ message: "Planification non trouvée" });

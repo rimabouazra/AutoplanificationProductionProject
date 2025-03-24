@@ -48,7 +48,6 @@ exports.listerToutesLesSalles = async (req, res) => {
     }
 };
 
-// Récupérer toutes les salles avec le nombre de machines
 exports.getAllSalles = async (req, res) => {
     try {
         const salles = await Salle.find().populate("machines");
