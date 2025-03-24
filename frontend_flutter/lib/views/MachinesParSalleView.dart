@@ -111,7 +111,7 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
                               orElse: () => Modele(
                                   id: '',
                                   nom: '',
-                                  tailles: []), // Retourne un objet Modele vide si non trouvé
+                                  tailles: [], consommation: []), // Retourne un objet Modele vide si non trouvé
                             )
                             .tailles
                             .map<DropdownMenuItem<String>>((taille) {

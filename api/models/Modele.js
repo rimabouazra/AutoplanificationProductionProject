@@ -8,6 +8,10 @@ const ModeleSchema = new mongoose.Schema({
     taillesBases: [{
         baseId: { type: mongoose.Schema.Types.ObjectId, ref: "Modele" },
         tailles: [{ type: String }]
+    }],
+    consommation: [{
+        taille: { type: String, required: true },
+        quantite: { type: Number, required: true, default: 0 } 
     }]
 });
 

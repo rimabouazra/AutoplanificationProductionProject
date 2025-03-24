@@ -33,9 +33,9 @@ class ApiService {
       body: jsonEncode({
         "nom": nom,
         "salle": salleId,
-        "modele": modele, 
+        "modele": modele,
         "taille": taille,
-         "etat": "disponible",
+        "etat": "disponible",
       }),
     );
     if (response.statusCode != 201) {
@@ -73,17 +73,23 @@ class ApiService {
   }
 
   // Ajouter un nouveau Modèle
-  static Future<void> addModele(
-      String nom, List<String> tailles, String? base) async {
+  static Future<void> addModele(String nom, List<String> tailles, String? base, 
+      List<Consommation> consommation) async {
     final response = await http.post(
       Uri.parse("$baseUrl/modeles/add"),
       headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"nom": nom, "tailles": tailles}),
+      body: jsonEncode({
+        "nom": nom,
+        "tailles": tailles,
+        'base': base,
+        'consommation': consommation.map((c) => c.toJson()).toList(), // Convertir la liste
+      }),
     );
     if (response.statusCode != 201) {
       throw Exception("Échec de l'ajout du modèle");
     }
   }
+
 
   static Future<bool> updateMachineModele(
       String machineId, String modeleId, String taille) async {
@@ -93,7 +99,7 @@ class ApiService {
       body: jsonEncode({
         "modele": modeleId,
         "taille": taille,
-        "etat": "occupee", 
+        "etat": "occupee",
       }),
     );
 
@@ -151,6 +157,7 @@ class ApiService {
     );
     return response.statusCode == 201;
   }
+
   static Future<bool> updateUser(String id, User user) async {
     final response = await http.put(
       Uri.parse('$baseUrl/users/$id'),
@@ -164,6 +171,7 @@ class ApiService {
     final response = await http.delete(Uri.parse('$baseUrl/users/$id'));
     return response.statusCode == 200;
   }
+
   // Récupérer toutes les Planifications
   static Future<List<Planification>> getPlanifications() async {
     final response = await http.get(Uri.parse('$baseUrl/planifications/'));
@@ -410,7 +418,7 @@ class ApiService {
         return null;
       }
 
-      Modele modele = Modele(id: modeleId, nom: modeleNom, tailles: []);
+      Modele modele = Modele(id: modeleId, nom: modeleNom, tailles: [], consommation: []);
       print("Modele construit avec succès: ${modele.id}, ${modele.nom}");
       return modele;
     } catch (e) {
@@ -452,17 +460,23 @@ class ApiService {
     }
   }
 
-  static Future<void> updateModele(
-      String id, String nom, List<String> tailles, String? base) async {
+  static Future<void> updateModele(String id, String nom, List<String> tailles,
+      String? base, List<Consommation> consommation) async {
     final response = await http.put(
       Uri.parse("$baseUrl/modeles/$id"),
       headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"nom": nom, "tailles": tailles, "base": base}),
+      body: jsonEncode({
+        "nom": nom,
+        "tailles": tailles,
+        "base": base,
+        'consommation': consommation.map((c) => c.toJson()).toList(),
+      }),
     );
     if (response.statusCode != 200) {
       throw Exception("Échec de la modification du modèle");
     }
   }
+
 
   static Future<void> deleteModele(String id) async {
     final response = await http.delete(
@@ -472,6 +486,40 @@ class ApiService {
       throw Exception("Échec de la suppression du modèle");
     }
   }
+
+  static Future<bool> updateConsommation(String modeleId, String taille, double quantite) async {
+  final url = Uri.parse('$baseUrl/modeles/$modeleId/consommation');
+  
+  final body = jsonEncode({
+    "modeleId": modeleId,
+    "taille": taille,
+    "quantite": quantite,
+  });
+
+  print("Envoi de la requête à $url");
+  print("Body: $body");
+
+  try {
+    final response = await http.put(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: body,
+    );
+
+    print("Réponse HTTP: ${response.statusCode}");
+    print("Body: ${response.body}");
+
+    if (response.statusCode == 200) {
+      return true;
+    } else {
+      print("Erreur: ${response.body}");
+      return false;
+    }
+  } catch (e) {
+    print("Erreur réseau: $e");
+    return false;
+  }
+}
 
   static Future<void> addTailleToProduit(
       String produitId, Map<String, dynamic> tailleData) async {
