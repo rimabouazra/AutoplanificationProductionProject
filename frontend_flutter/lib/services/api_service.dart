@@ -152,14 +152,37 @@ class ApiService {
     return response.statusCode == 201;
   }
 
-  // Récupérer toutes les Planifications
   static Future<List<Planification>> getPlanifications() async {
-    final response = await http.get(Uri.parse('$baseUrl/planifications/'));
-    if (response.statusCode == 200) {
-      List<dynamic> jsonData = json.decode(response.body);
-      return jsonData.map((json) => Planification.fromJson(json)).toList();
-    } else {
-      throw Exception("Erreur lors de la récupération des planifications");
+    try {
+      print(" Envoi de la requête HTTP pour récupérer les planifications");
+
+      final response = await http.get(Uri.parse('$baseUrl/planifications/'));
+      print(" Réponse reçue avec le code de statut: ${response.statusCode}");
+
+      if (response.statusCode == 200) {
+        List<dynamic> jsonData = json.decode(response.body);
+
+
+
+        List<Planification> planifications = jsonData.map((json) {
+          try {
+            Planification planification = Planification.fromJson(json);
+            return planification;
+          } catch (e) {
+            print("Erreur lors de la conversion de la planification: $e");
+            print("JSON problématique: $json");
+            throw e; // Rethrow the exception if conversion fails
+          }
+        }).toList();
+
+        return planifications;
+      } else {
+        print("Erreur lors de la récupération des planifications, code: ${response.statusCode}");
+        throw Exception("Erreur lors de la récupération des planifications");
+      }
+    } catch (e) {
+      print("Erreur lors de la requête HTTP: $e");
+      rethrow; // Rethrow the exception to be handled elsewhere
     }
   }
 

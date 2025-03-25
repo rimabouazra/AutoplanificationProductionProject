@@ -17,21 +17,20 @@ class PlanificationProvider with ChangeNotifier {
   Future<void> fetchPlanifications() async {
     try {
       final response = await ApiService.getPlanifications();
-      print("Réponse de l'API: $response");
 
-      if (response is List) {
-        _planifications = response.map<Planification>((json) {
-          return Planification.fromJson(json as Map<String, dynamic>);
-        }).toList();
-
+      if (response is List<Planification>) {
+        print("La réponse est bien une liste avec ${response.length} éléments.");
+        _planifications = response; // 🔥 Directement assignée
         notifyListeners();
       } else {
-        throw Exception("Réponse inattendue du serveur");
+        print("Réponse inattendue du serveur: ${response.runtimeType}");
+        throw Exception("Réponse du serveur incorrecte");
       }
     } catch (e) {
-      print("Erreur lors du chargement des planifications: $e");
+      print(" Erreur lors du chargement des planifications: $e");
     }
   }
+
 
   Future<void> planifierCommande(String commandeId, List<Salle> salles) async {
     final commande = commandeProvider.commandes.firstWhere((cmd) => cmd.id == commandeId);

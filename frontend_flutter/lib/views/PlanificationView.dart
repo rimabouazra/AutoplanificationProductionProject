@@ -91,7 +91,7 @@ class _PlanificationViewState extends State<PlanificationView> {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text("Commandes : ${planification.commandes.join(", ")}"),
+            Text("Commandes : ${planification.commandes.map((c) => c.client).join(", ")}"),
             Text("Machines : ${planification.machines.isNotEmpty ? planification.machines.map((m) => m.nom).join(", ") : 'Aucune'}"),
             Text("Début prévu : ${_formatDate(planification.debutPrevue)}"),
             Text("Fin prévue : ${_formatDate(planification.finPrevue)}"),
@@ -102,7 +102,6 @@ class _PlanificationViewState extends State<PlanificationView> {
     );
   }
 
-  /// Affichage du statut de la commande avec une couleur
   Widget _buildStatut(String statut) {
     Color statutColor;
     switch (statut) {
