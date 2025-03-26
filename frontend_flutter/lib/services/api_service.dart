@@ -73,7 +73,7 @@ class ApiService {
   }
 
   // Ajouter un nouveau Modèle
-  static Future<void> addModele(String nom, List<String> tailles, String? base, 
+  static Future<void> addModele(String nom, List<String> tailles, String? base,
       List<Consommation> consommation) async {
     final response = await http.post(
       Uri.parse("$baseUrl/modeles/add"),
@@ -82,14 +82,15 @@ class ApiService {
         "nom": nom,
         "tailles": tailles,
         'base': base,
-        'consommation': consommation.map((c) => c.toJson()).toList(), // Convertir la liste
+        if (consommation.isNotEmpty)
+          'consommation': consommation.map((c) => c.toJson()).toList(),
+        // Convertir la liste
       }),
     );
     if (response.statusCode != 201) {
       throw Exception("Échec de l'ajout du modèle");
     }
   }
-
 
   static Future<bool> updateMachineModele(
       String machineId, String modeleId, String taille) async {
@@ -418,7 +419,8 @@ class ApiService {
         return null;
       }
 
-      Modele modele = Modele(id: modeleId, nom: modeleNom, tailles: [], consommation: []);
+      Modele modele =
+          Modele(id: modeleId, nom: modeleNom, tailles: [], consommation: []);
       print("Modele construit avec succès: ${modele.id}, ${modele.nom}");
       return modele;
     } catch (e) {
@@ -477,7 +479,6 @@ class ApiService {
     }
   }
 
-
   static Future<void> deleteModele(String id) async {
     final response = await http.delete(
       Uri.parse("$baseUrl/modeles/$id"),
@@ -487,39 +488,40 @@ class ApiService {
     }
   }
 
-  static Future<bool> updateConsommation(String modeleId, String taille, double quantite) async {
-  final url = Uri.parse('$baseUrl/modeles/$modeleId/consommation');
-  
-  final body = jsonEncode({
-    "modeleId": modeleId,
-    "taille": taille,
-    "quantite": quantite,
-  });
+  static Future<bool> updateConsommation(
+      String modeleId, String taille, double quantite) async {
+    final url = Uri.parse('$baseUrl/modeles/$modeleId/consommation');
 
-  print("Envoi de la requête à $url");
-  print("Body: $body");
+    final body = jsonEncode({
+      "modeleId": modeleId,
+      "taille": taille,
+      "quantite": quantite,
+    });
 
-  try {
-    final response = await http.put(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: body,
-    );
+    print("Envoi de la requête à $url");
+    print("Body: $body");
 
-    print("Réponse HTTP: ${response.statusCode}");
-    print("Body: ${response.body}");
+    try {
+      final response = await http.put(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: body,
+      );
 
-    if (response.statusCode == 200) {
-      return true;
-    } else {
-      print("Erreur: ${response.body}");
+      print("Réponse HTTP: ${response.statusCode}");
+      print("Body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print("Erreur: ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      print("Erreur réseau: $e");
       return false;
     }
-  } catch (e) {
-    print("Erreur réseau: $e");
-    return false;
   }
-}
 
   static Future<void> addTailleToProduit(
       String produitId, Map<String, dynamic> tailleData) async {

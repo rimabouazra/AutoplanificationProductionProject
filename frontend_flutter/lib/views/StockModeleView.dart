@@ -38,7 +38,7 @@ class _StockModeleViewState extends State<StockModeleView> {
     final modeleProvider = Provider.of<ModeleProvider>(context, listen: false);
     final basesDisponibles = modeleProvider.modeles.map((m) => m.nom).toList();
     TextEditingController _consommationController = TextEditingController();
-    
+
     showDialog(
       context: context,
       builder: (context) {
@@ -60,7 +60,7 @@ class _StockModeleViewState extends State<StockModeleView> {
                 controller: _consommationController,
                 decoration: InputDecoration(labelText: 'Consommation (en m)'),
                 keyboardType: TextInputType.number,
-              ),
+              ),//a changer
               DropdownButtonFormField<String>(
                 value: _selectedBase,
                 onChanged: (String? newValue) {
@@ -87,13 +87,15 @@ class _StockModeleViewState extends State<StockModeleView> {
               onPressed: () async {
                 String nom = _nomController.text;
                 List<String> tailles = _taillesController.text.split(',');
-                double consommationValue =
-                    double.tryParse(_consommationController.text) ?? 0.0;
-                List<Consommation> consommations = tailles
-                    .map((taille) => Consommation(
-                        taille: taille, quantity: consommationValue))
-                    .toList();
-
+                List<Consommation> consommations = [];
+                if (_consommationController.text.isNotEmpty) {
+                  double consommationValue =
+                      double.tryParse(_consommationController.text) ?? 0.0;
+                  consommations = tailles
+                      .map((taille) => Consommation(
+                          taille: taille, quantity: consommationValue))
+                      .toList();
+                }
                 await modeleProvider.addModele(
                     nom, tailles, _selectedBase, consommations);
 
@@ -114,10 +116,10 @@ class _StockModeleViewState extends State<StockModeleView> {
     final modeleProvider = Provider.of<ModeleProvider>(context, listen: false);
     final basesDisponibles = modeleProvider.modeles.map((m) => m.nom).toList();
     TextEditingController _consommationController = TextEditingController(
-      text: modele.consommation.isNotEmpty 
-          ? modele.consommation[0].quantity.toStringAsFixed(2)
-          : '0.0'
-    );
+        text: (modele.consommation.isNotEmpty &&
+                modele.consommation[0].quantity > 0)
+            ? modele.consommation[0].quantity.toStringAsFixed(2)
+            : '');
 
     _nomController.text = modele.nom;
     _taillesController.text = modele.tailles.join(', ');
@@ -134,16 +136,7 @@ class _StockModeleViewState extends State<StockModeleView> {
                 controller: _nomController,
                 decoration: InputDecoration(labelText: 'Nom du modèle'),
               ),
-              TextField(
-                controller: _taillesController,
-                decoration: InputDecoration(
-                    labelText: 'Tailles (séparées par des virgules)'),
-              ),
-              TextField(
-                controller: _consommationController,
-                decoration: InputDecoration(labelText: 'Consommation (en m)'),
-                keyboardType: TextInputType.number,
-              ),
+              
               DropdownButtonFormField<String>(
                 value: _selectedBase,
                 onChanged: (String? newValue) {
@@ -169,15 +162,15 @@ class _StockModeleViewState extends State<StockModeleView> {
             TextButton(
               onPressed: () async {
                 String nom = _nomController.text;
-                List<String> tailles = _taillesController.text.split(',');
-                double consommationValue =
-                    double.tryParse(_consommationController.text) ?? 0.0;
-                List<Consommation> consommations = tailles
-                    .map((taille) => Consommation(
-                        taille: taille, quantity: consommationValue))
-                    .toList();
+                //List<String> tailles = _taillesController.text.split(',');
+                //double consommationValue =
+                    //double.tryParse(_consommationController.text) ?? 0.0;
+                //List<Consommation> consommations = tailles
+                    //.map((taille) => Consommation(
+                        //taille: taille, quantity: consommationValue))
+                    //.toList();
                 await modeleProvider.updateModele(
-                    modele.id, nom, tailles, _selectedBase, consommations);
+                    modele.id, nom, modele.tailles, _selectedBase, modele.consommation);
                 Navigator.pop(context);
               },
               child: Text('Enregistrer'),
@@ -224,7 +217,7 @@ class _StockModeleViewState extends State<StockModeleView> {
               onPressed: () {
                 final newValue = double.tryParse(controller.text) ?? 0.0;
                 Provider.of<ModeleProvider>(context, listen: false)
-                  .updateConsommation(modele.id, taille, newValue);
+                    .updateConsommation(modele.id, taille, newValue);
                 Navigator.pop(context);
               },
               child: Text('Valider'),
@@ -319,13 +312,16 @@ class _StockModeleViewState extends State<StockModeleView> {
                                     ),
                                   ),
                                   SizedBox(height: 8),
-                                  modele.derives != null && modele.derives!.isNotEmpty
+                                  modele.derives != null &&
+                                          modele.derives!.isNotEmpty
                                       ? Column(
                                           children: modele.derives!.map((base) {
                                             return ListTile(
-                                              leading: Icon(Icons.link, color: Colors.blue),
+                                              leading: Icon(Icons.link,
+                                                  color: Colors.blue),
                                               title: Text(base.nom),
-                                              subtitle: Text(base.tailles.join(', ')),
+                                              subtitle:
+                                                  Text(base.tailles.join(', ')),
                                             );
                                           }).toList(),
                                         )
@@ -348,23 +344,55 @@ class _StockModeleViewState extends State<StockModeleView> {
                                       columnSpacing: 20,
                                       columns: [
                                         DataColumn(label: Text('Taille')),
-                                        DataColumn(label: Text('Consommation (m)')),
+                                        DataColumn(label: Text('Tailles Base')),
+                                        DataColumn(
+                                            label: Text('Consommation (m)')),
                                         DataColumn(label: Text('Actions')),
                                       ],
                                       rows: modele.tailles.map((taille) {
-                                        final consommation = modele.consommation.firstWhere(
+                                        final consommation =
+                                            modele.consommation.firstWhere(
                                           (c) => c.taille == taille,
-                                          orElse: () => Consommation(taille: taille, quantity: 0.0),
+                                          orElse: () => Consommation(
+                                              taille: taille, quantity: 0.0),
                                         );
+                                        // Trouver la taille correspondante dans la base associée
+                                        String taillesBase =
+                                            "N/A"; // Valeur par défaut
+                                        if (modele.taillesBases.isNotEmpty) {
+                                          final baseCorrespondante =
+                                              modele.taillesBases.firstWhere(
+                                            (tb) => tb.tailles.contains(taille),
+                                            orElse: () => TailleBase(
+                                                baseId: "", tailles: []),
+                                          );
+
+                                          if (baseCorrespondante != null) {
+                                            int index =
+                                                modele.tailles.indexOf(taille);
+                                            if (index != -1 &&
+                                                index <
+                                                    baseCorrespondante
+                                                        .tailles.length) {
+                                              taillesBase = baseCorrespondante
+                                                  .tailles[index];
+                                            }
+                                          }
+                                        }
 
                                         return DataRow(
                                           cells: [
                                             DataCell(Text(taille)),
-                                            DataCell(Text(consommation.quantity.toStringAsFixed(2))),
+                                            DataCell(Text(taillesBase)),
+                                            DataCell(Text(consommation.quantity
+                                                .toStringAsFixed(2))),
                                             DataCell(
                                               IconButton(
-                                                icon: Icon(Icons.edit, size: 20),
-                                                onPressed: () => _showEditConsommationDialog(modele, taille),
+                                                icon:
+                                                    Icon(Icons.edit, size: 20),
+                                                onPressed: () =>
+                                                    _showEditConsommationDialog(
+                                                        modele, taille),
                                               ),
                                             ),
                                           ],

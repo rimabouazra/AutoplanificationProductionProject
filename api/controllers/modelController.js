@@ -12,13 +12,28 @@ exports.addModele = async (req, res) => {
                 return res.status(404).json({ message: "Matière non trouvée" });
             }
         }
+        // Vérifier si des bases sont spécifiées
+        let baseReferences = [];
+        let taillesBasesFormatted = [];
 
+        if (bases && bases.length > 0) {
+            baseReferences = await Modele.find({ _id: { $in: bases } });
+            if (baseReferences.length !== bases.length) {
+                return res.status(404).json({ message: "Une ou plusieurs bases n'existent pas" });
+            }
+
+            // Correspondance automatique entre les tailles du modèle et les tailles des bases
+            taillesBasesFormatted = bases.map((baseId, index) => ({
+                baseId: baseId,
+                tailles: tailles.map((_, i) => bases[index] ? baseReferences[index].tailles[i] || "?" : "?")
+            }));
+        }
         const newModele = new Modele({
             nom,
             matiere: matiereId || null,  // Accepte un modèle sans matière
             tailles,
             bases,
-            taillesBases,
+            taillesBases: taillesBasesFormatted,
             consommation: consommation || [] 
         });
 
@@ -40,7 +55,12 @@ exports.getModeleById = async (req, res) => {
                 quantite: 0
             }));
         }
-
+        if (modele.bases && modele.bases.length > 0) {
+            modele.taillesBases = modele.bases.map(base => ({
+                baseId: base._id,
+                tailles: modele.tailles.map((taille, index) => base.tailles[index] || "?")
+            }));
+        }
         res.status(200).json(modele);
     } catch (error) {
         res.status(500).json({ message: "Erreur serveur", error: error.message });
