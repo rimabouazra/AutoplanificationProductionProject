@@ -33,9 +33,9 @@ class ApiService {
       body: jsonEncode({
         "nom": nom,
         "salle": salleId,
-        "modele": modele, 
+        "modele": modele,
         "taille": taille,
-         "etat": "disponible",
+        "etat": "disponible",
       }),
     );
     if (response.statusCode != 201) {
@@ -73,12 +73,19 @@ class ApiService {
   }
 
   // Ajouter un nouveau Modèle
-  static Future<void> addModele(
-      String nom, List<String> tailles, String? base) async {
+  static Future<void> addModele(String nom, List<String> tailles, String? base,
+      List<Consommation> consommation) async {
     final response = await http.post(
       Uri.parse("$baseUrl/modeles/add"),
       headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"nom": nom, "tailles": tailles}),
+      body: jsonEncode({
+        "nom": nom,
+        "tailles": tailles,
+        'base': base,
+        if (consommation.isNotEmpty)
+          'consommation': consommation.map((c) => c.toJson()).toList(),
+        // Convertir la liste
+      }),
     );
     if (response.statusCode != 201) {
       throw Exception("Échec de l'ajout du modèle");
@@ -93,7 +100,7 @@ class ApiService {
       body: jsonEncode({
         "modele": modeleId,
         "taille": taille,
-        "etat": "occupee", 
+        "etat": "occupee",
       }),
     );
 
@@ -145,44 +152,38 @@ class ApiService {
 
   static Future<bool> addUser(User user) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/users'),
+      Uri.parse('$baseUrl/users/add'),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(user.toJson()),
     );
     return response.statusCode == 201;
   }
 
+
+  static Future<bool> updateUser(String id, User user) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/users/$id'),
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(user.toJson()),
+    );
+    return response.statusCode == 200;
+  }
+
+  static Future<bool> deleteUser(String id) async {
+    final response = await http.delete(Uri.parse('$baseUrl/users/$id'));
+    return response.statusCode == 200;
+  }
+
+  // Récupérer toutes les Planifications
   static Future<List<Planification>> getPlanifications() async {
-    try {
-      print(" Envoi de la requête HTTP pour récupérer les planifications");
-
-      final response = await http.get(Uri.parse('$baseUrl/planifications/'));
-      print(" Réponse reçue avec le code de statut: ${response.statusCode}");
-
-      if (response.statusCode == 200) {
-        List<dynamic> jsonData = json.decode(response.body);
-
-
-
-        List<Planification> planifications = jsonData.map((json) {
-          try {
-            Planification planification = Planification.fromJson(json);
-            return planification;
-          } catch (e) {
-            print("Erreur lors de la conversion de la planification: $e");
-            print("JSON problématique: $json");
-            throw e; // Rethrow the exception if conversion fails
-          }
-        }).toList();
-
-        return planifications;
-      } else {
-        print("Erreur lors de la récupération des planifications, code: ${response.statusCode}");
-        throw Exception("Erreur lors de la récupération des planifications");
-      }
-    } catch (e) {
-      print("Erreur lors de la requête HTTP: $e");
-      rethrow; // Rethrow the exception to be handled elsewhere
+    final response = await http.get(Uri.parse('$baseUrl/planifications/'));
+    print("Réponse brute de l'API: ${response.body}"); // Log de débogage
+    if (response.statusCode == 200) {
+      List<dynamic> jsonData = json.decode(response.body);
+      print("Données JSON décodées: $jsonData"); // Log de débogage
+      return jsonData.map((json) => Planification.fromJson(json)).toList();
+    } else {
+      throw Exception("Erreur lors de la récupération des planifications");
     }
   }
 
@@ -420,7 +421,8 @@ class ApiService {
         return null;
       }
 
-      Modele modele = Modele(id: modeleId, nom: modeleNom, tailles: []);
+      Modele modele =
+          Modele(id: modeleId, nom: modeleNom, tailles: [], consommation: []);
       print("Modele construit avec succès: ${modele.id}, ${modele.nom}");
       return modele;
     } catch (e) {
@@ -462,12 +464,17 @@ class ApiService {
     }
   }
 
-  static Future<void> updateModele(
-      String id, String nom, List<String> tailles, String? base) async {
+  static Future<void> updateModele(String id, String nom, List<String> tailles,
+      String? base, List<Consommation> consommation) async {
     final response = await http.put(
       Uri.parse("$baseUrl/modeles/$id"),
       headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"nom": nom, "tailles": tailles, "base": base}),
+      body: jsonEncode({
+        "nom": nom,
+        "tailles": tailles,
+        "base": base,
+        'consommation': consommation.map((c) => c.toJson()).toList(),
+      }),
     );
     if (response.statusCode != 200) {
       throw Exception("Échec de la modification du modèle");
@@ -480,6 +487,41 @@ class ApiService {
     );
     if (response.statusCode != 200) {
       throw Exception("Échec de la suppression du modèle");
+    }
+  }
+
+  static Future<bool> updateConsommation(
+      String modeleId, String taille, double quantite) async {
+    final url = Uri.parse('$baseUrl/modeles/$modeleId/consommation');
+
+    final body = jsonEncode({
+      "modeleId": modeleId,
+      "taille": taille,
+      "quantite": quantite,
+    });
+
+    print("Envoi de la requête à $url");
+    print("Body: $body");
+
+    try {
+      final response = await http.put(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: body,
+      );
+
+      print("Réponse HTTP: ${response.statusCode}");
+      print("Body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        return true;
+      } else {
+        print("Erreur: ${response.body}");
+        return false;
+      }
+    } catch (e) {
+      print("Erreur réseau: $e");
+      return false;
     }
   }
 

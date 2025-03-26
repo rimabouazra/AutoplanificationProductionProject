@@ -572,7 +572,7 @@ class _ProduitsPageState extends State<ProduitsPage> {
                             Modele? modele = modeles.firstWhere(
                                 (m) => m.nom == value,
                                 orElse: () =>
-                                    Modele(id: '', nom: '', tailles: []));
+                                    Modele(id: '', nom: '', tailles: [], consommation: []));
                             if (modele.id.isNotEmpty) {
                               setState(() {
                                 selectedModeleId = modele.id;

@@ -24,7 +24,7 @@ class Machine {
       nom: json['nom'],
       etat: json['etat'],
       salle: Salle.fromJson(json['salle']),
-      modele: json['modele'] != null ? Modele.fromJson(json['modele']) : Modele(id: '', nom: '', tailles: []),
+      modele: json['modele'] != null ? Modele.fromJson(json['modele']) : Modele(id: '', nom: '', tailles: [], consommation: []),
       taille: json['taille'],
     );
   }

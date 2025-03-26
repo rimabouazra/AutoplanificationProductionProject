@@ -7,6 +7,7 @@ router.get("/:id", modelController.getModeleById);
 router.get("/findByName/:nomModele", modelController.getModeleByName);
 router.get("/", modelController.getAllModeles);
 router.put("/update/:id", modelController.updateModele);
+router.put("/:id/consommation", modelController.updateConsommation);
 router.delete("/delete/:id", modelController.deleteModele);
 
 module.exports = router;

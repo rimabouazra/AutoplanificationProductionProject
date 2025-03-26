@@ -4,6 +4,7 @@ import 'SalleListPage.dart';
 import 'matiereView.dart';
 import 'StockView.dart';
 import 'PlanificationView.dart';
+import 'UsersView.dart';
 
 class AdminHomePage extends StatefulWidget {
   const AdminHomePage({Key? key}) : super(key: key);
@@ -17,13 +18,12 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
   final List<Widget> _pages = [
     Center(child: Text('Statistique en développement')), // Placeholder
-    PlanificationView(), 
-    Center(child: Text('Utilisateurs en développement')), // Placeholder
+    PlanificationView(),
+    UsersView(),
     StockView(),
     CommandePage(),
     SalleListPage(),
   ];
-
   void _onItemTapped(int index) {
     setState(() {
       _selectedIndex = index;
@@ -33,7 +33,6 @@ class _AdminHomePageState extends State<AdminHomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-
       body: _pages[_selectedIndex],
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
