@@ -12,7 +12,7 @@ exports.addModele = async (req, res) => {
                 return res.status(404).json({ message: "Matière non trouvée" });
             }
         }
-        // Vérifier si des bases sont spécifiées
+
         let baseReferences = [];
         let taillesBasesFormatted = [];
 
@@ -22,19 +22,20 @@ exports.addModele = async (req, res) => {
                 return res.status(404).json({ message: "Une ou plusieurs bases n'existent pas" });
             }
 
-            // Correspondance automatique entre les tailles du modèle et les tailles des bases
-            taillesBasesFormatted = bases.map((baseId, index) => ({
+            // Utiliser les taillesBases fournies ou créer des associations par défaut
+            taillesBasesFormatted = taillesBases || bases.map((baseId, index) => ({
                 baseId: baseId,
-                tailles: tailles.map((_, i) => bases[index] ? baseReferences[index].tailles[i] || "?" : "?")
+                tailles: tailles.map((_, i) => baseReferences[index].tailles[i] || "?")
             }));
         }
+
         const newModele = new Modele({
             nom,
-            matiere: matiereId || null,  // Accepte un modèle sans matière
+            matiere: matiereId || null,
             tailles,
             bases,
             taillesBases: taillesBasesFormatted,
-            consommation: consommation || [] 
+            consommation: consommation || []
         });
 
         await newModele.save();
@@ -43,7 +44,6 @@ exports.addModele = async (req, res) => {
         res.status(500).json({ message: "Erreur serveur", error: error.message });
     }
 };
-
 exports.getModeleById = async (req, res) => {
     try {
         const { id } = req.params;

@@ -38,7 +38,7 @@ class _StockModeleViewState extends State<StockModeleView> {
     final modeleProvider = Provider.of<ModeleProvider>(context, listen: false);
     final basesDisponibles = modeleProvider.modeles.map((m) => m.nom).toList();
     TextEditingController _consommationController = TextEditingController();
-
+    String? _selectedBase;
     showDialog(
       context: context,
       builder: (context) {
@@ -56,11 +56,11 @@ class _StockModeleViewState extends State<StockModeleView> {
                 decoration: InputDecoration(
                     labelText: 'Tailles (séparées par des virgules)'),
               ),
-              TextField(
-                controller: _consommationController,
-                decoration: InputDecoration(labelText: 'Consommation (en m)'),
-                keyboardType: TextInputType.number,
-              ),//a changer
+              //TextField(
+              //controller: _consommationController,
+              //decoration: InputDecoration(labelText: 'Consommation (en m)'),
+              //keyboardType: TextInputType.number,
+              //),//a changer
               DropdownButtonFormField<String>(
                 value: _selectedBase,
                 onChanged: (String? newValue) {
@@ -87,26 +87,285 @@ class _StockModeleViewState extends State<StockModeleView> {
               onPressed: () async {
                 String nom = _nomController.text;
                 List<String> tailles = _taillesController.text.split(',');
-                List<Consommation> consommations = [];
-                if (_consommationController.text.isNotEmpty) {
-                  double consommationValue =
-                      double.tryParse(_consommationController.text) ?? 0.0;
-                  consommations = tailles
-                      .map((taille) => Consommation(
-                          taille: taille, quantity: consommationValue))
-                      .toList();
-                }
-                await modeleProvider.addModele(
-                    nom, tailles, _selectedBase, consommations);
+                if (_selectedBase != null) {
+                  // Afficher le dialogue de validation des associations
+                  _showAssociationDialog(context, modeleProvider, nom, tailles,
+                      _selectedBase!, _consommationController.text);
+                } else {
+                  // Pas de base sélectionnée, procéder directement
+                  List<Consommation> consommations = [];
+                  if (_consommationController.text.isNotEmpty) {
+                    double consommationValue =
+                        double.tryParse(_consommationController.text) ?? 0.0;
+                    consommations = tailles
+                        .map((taille) => Consommation(
+                            taille: taille, quantity: consommationValue))
+                        .toList();
+                  }
 
-                _nomController.clear();
-                _taillesController.clear();
-                _consommationController.clear();
-                Navigator.pop(context);
+                  await modeleProvider
+                      .addModele(nom, tailles, null, consommations, []);
+
+                  _nomController.clear();
+                  _taillesController.clear();
+                  _consommationController.clear();
+                  Navigator.pop(context);
+                }
               },
-              child: Text('Ajouter'),
+              child: Text('Suivant'),
             ),
           ],
+        );
+      },
+    );
+  }
+
+  void _editTailleAssociation(Modele modele, String tailleModele) {
+    final modeleProvider = Provider.of<ModeleProvider>(context, listen: false);
+    final bases = modeleProvider.modeles;
+
+    String? selectedBase;
+    String? selectedTailleBase;
+
+    // Trouver l'association existante
+    final existingAssociation = modele.taillesBases.firstWhere(
+      (tb) => tb.tailles.contains(tailleModele),
+      orElse: () => TailleBase(baseId: "", tailles: []),
+    );
+
+    if (existingAssociation.baseId.isNotEmpty) {
+      selectedBase = modeleProvider.modeles
+          .firstWhere(
+            (m) => m.id == existingAssociation.baseId,
+            orElse: () =>
+                Modele(id: '', nom: '', tailles: [], consommation: []),
+          )
+          .nom;
+      selectedTailleBase = existingAssociation.tailles.first;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Modifier association pour $tailleModele'),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  DropdownButtonFormField<String>(
+                    value: selectedBase,
+                    onChanged: (String? newValue) {
+                      setState(() {
+                        selectedBase = newValue;
+                        selectedTailleBase = null;
+                      });
+                    },
+                    items: [
+                      DropdownMenuItem(value: null, child: Text("Aucune base")),
+                      ...bases.map((base) {
+                        return DropdownMenuItem(
+                          value: base.nom,
+                          child: Text(base.nom),
+                        );
+                      }).toList(),
+                    ],
+                    decoration: InputDecoration(labelText: 'Base'),
+                  ),
+                  if (selectedBase != null)
+                    DropdownButtonFormField<String>(
+                      value: selectedTailleBase,
+                      onChanged: (String? newValue) {
+                        setState(() {
+                          selectedTailleBase = newValue;
+                        });
+                      },
+                      items: [
+                        DropdownMenuItem(
+                            value: null, child: Text("Sélectionner")),
+                        ...bases
+                            .firstWhere((b) => b.nom == selectedBase)
+                            .tailles
+                            .map((taille) {
+                          return DropdownMenuItem(
+                            value: taille,
+                            child: Text(taille),
+                          );
+                        }).toList(),
+                      ],
+                      decoration:
+                          InputDecoration(labelText: 'Taille correspondante'),
+                    ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Annuler'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    if (selectedBase != null && selectedTailleBase != null) {
+                      final baseId =
+                          bases.firstWhere((b) => b.nom == selectedBase).id;
+
+                      // Mettre à jour les taillesBases
+                      final updatedTaillesBases = [...modele.taillesBases];
+                      updatedTaillesBases.removeWhere(
+                          (tb) => tb.tailles.contains(tailleModele));
+                      updatedTaillesBases.add(TailleBase(
+                        baseId: baseId,
+                        tailles: [selectedTailleBase!],
+                      ));
+
+                      await modeleProvider.updateModele(
+                        modele.id,
+                        modele.nom,
+                        modele.tailles,
+                        _selectedBase,
+                        modele.consommation,
+                        updatedTaillesBases,
+                      );
+                    }
+                    Navigator.pop(context);
+                  },
+                  child: Text('Enregistrer'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
+  void _showAssociationDialog(
+    BuildContext context,
+    ModeleProvider modeleProvider,
+    String nom,
+    List<String> tailles,
+    String baseNom,
+    String consommationText,
+  ) {
+    final baseModel = modeleProvider.modeles.firstWhere(
+      (m) => m.nom == baseNom,
+      orElse: () => Modele(id: '', nom: '', tailles: [], consommation: []),
+    );
+
+    // Créer les associations par défaut (index par index)
+    List<Map<String, dynamic>> associations =
+        tailles.asMap().entries.map((entry) {
+      int index = entry.key;
+      String tailleModele = entry.value;
+      String tailleBase =
+          index < baseModel.tailles.length ? baseModel.tailles[index] : "N/A";
+
+      return {
+        'tailleModele': tailleModele,
+        'tailleBase': tailleBase,
+      };
+    }).toList();
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text('Valider les associations de tailles'),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                        'Vérifiez les associations entre les tailles du modèle et celles de la base "$baseNom"'),
+                    SizedBox(height: 16),
+                    ...associations.map((association) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Text('${association['tailleModele']} →'),
+                            ),
+                            SizedBox(width: 10),
+                            Expanded(
+                              child: DropdownButtonFormField<String>(
+                                value: association['tailleBase'],
+                                onChanged: (String? newValue) {
+                                  setState(() {
+                                    association['tailleBase'] = newValue;
+                                  });
+                                },
+                                items: [
+                                  ...baseModel.tailles.map((baseTaille) {
+                                    return DropdownMenuItem(
+                                      value: baseTaille,
+                                      child: Text(baseTaille),
+                                    );
+                                  }).toList(),
+                                  DropdownMenuItem(
+                                    value: "N/A",
+                                    child: Text('Non associé',
+                                        style: TextStyle(color: Colors.grey)),
+                                  ),
+                                ],
+                                decoration: InputDecoration(
+                                  border: OutlineInputBorder(),
+                                  contentPadding:
+                                      EdgeInsets.symmetric(horizontal: 10),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    }).toList(),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text('Annuler'),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    // Préparer les taillesBases pour l'API
+                    List<TailleBase> taillesBases = [];
+                    for (var assoc in associations) {
+                      if (assoc['tailleBase'] != "N/A") {
+                        taillesBases.add(TailleBase(
+                          baseId: baseModel.id,
+                          tailles: [assoc['tailleBase']!],
+                        ));
+                      }
+                    }
+
+                    // Préparer les consommations
+                    List<Consommation> consommations = [];
+                    if (consommationText.isNotEmpty) {
+                      double consommationValue =
+                          double.tryParse(consommationText) ?? 0.0;
+                      consommations = tailles
+                          .map((taille) => Consommation(
+                              taille: taille, quantity: consommationValue))
+                          .toList();
+                    }
+
+                    await modeleProvider.addModele(
+                        nom, tailles, baseNom, consommations, taillesBases);
+
+                    _nomController.clear();
+                    _taillesController.clear();
+                    Navigator.of(context).popUntil((route) => route.isFirst);
+                  },
+                  child: Text('Confirmer'),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -136,7 +395,6 @@ class _StockModeleViewState extends State<StockModeleView> {
                 controller: _nomController,
                 decoration: InputDecoration(labelText: 'Nom du modèle'),
               ),
-              
               DropdownButtonFormField<String>(
                 value: _selectedBase,
                 onChanged: (String? newValue) {
@@ -164,13 +422,13 @@ class _StockModeleViewState extends State<StockModeleView> {
                 String nom = _nomController.text;
                 //List<String> tailles = _taillesController.text.split(',');
                 //double consommationValue =
-                    //double.tryParse(_consommationController.text) ?? 0.0;
+                //double.tryParse(_consommationController.text) ?? 0.0;
                 //List<Consommation> consommations = tailles
-                    //.map((taille) => Consommation(
-                        //taille: taille, quantity: consommationValue))
-                    //.toList();
-                await modeleProvider.updateModele(
-                    modele.id, nom, modele.tailles, _selectedBase, modele.consommation);
+                //.map((taille) => Consommation(
+                //taille: taille, quantity: consommationValue))
+                //.toList();
+                await modeleProvider.updateModele(modele.id, nom,
+                    modele.tailles, _selectedBase, modele.consommation);
                 Navigator.pop(context);
               },
               child: Text('Enregistrer'),
@@ -383,7 +641,29 @@ class _StockModeleViewState extends State<StockModeleView> {
                                         return DataRow(
                                           cells: [
                                             DataCell(Text(taille)),
-                                            DataCell(Text(taillesBase)),
+                                            DataCell(
+                                              Builder(
+                                                builder: (context) {
+                                                  final tailleBase = modele
+                                                      .getTailleBaseForTaille(
+                                                          taille);
+                                                  return Row(
+                                                    children: [
+                                                      Text(tailleBase ?? "N/A"),
+                                                      if (tailleBase != null)
+                                                        IconButton(
+                                                          icon: Icon(Icons.edit,
+                                                              size: 16),
+                                                          onPressed: () =>
+                                                              _editTailleAssociation(
+                                                                  modele,
+                                                                  taille),
+                                                        ),
+                                                    ],
+                                                  );
+                                                },
+                                              ),
+                                            ),
                                             DataCell(Text(consommation.quantity
                                                 .toStringAsFixed(2))),
                                             DataCell(

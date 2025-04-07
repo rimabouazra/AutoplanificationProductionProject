@@ -74,7 +74,7 @@ class ApiService {
 
   // Ajouter un nouveau Modèle
   static Future<void> addModele(String nom, List<String> tailles, String? base,
-      List<Consommation> consommation) async {
+      List<Consommation> consommation,[List<TailleBase> taillesBases = const []]) async {
     final response = await http.post(
       Uri.parse("$baseUrl/modeles/add"),
       headers: {"Content-Type": "application/json"},
@@ -85,6 +85,8 @@ class ApiService {
         if (consommation.isNotEmpty)
           'consommation': consommation.map((c) => c.toJson()).toList(),
         // Convertir la liste
+         if (taillesBases.isNotEmpty)
+        'taillesBases': taillesBases.map((tb) => tb.toJson()).toList(),
       }),
     );
     if (response.statusCode != 201) {
@@ -159,7 +161,6 @@ class ApiService {
     return response.statusCode == 201;
   }
 
-
   static Future<bool> updateUser(String id, User user) async {
     final response = await http.put(
       Uri.parse('$baseUrl/users/$id'),
@@ -186,7 +187,6 @@ class ApiService {
       throw Exception("Erreur lors de la récupération des planifications");
     }
   }
-
 
   static Future<bool> addPlanification(Planification planification) async {
     final response = await http.post(
@@ -465,7 +465,7 @@ class ApiService {
   }
 
   static Future<void> updateModele(String id, String nom, List<String> tailles,
-      String? base, List<Consommation> consommation) async {
+      String? base, List<Consommation> consommation,[List<TailleBase> taillesBases = const []]) async {
     final response = await http.put(
       Uri.parse("$baseUrl/modeles/$id"),
       headers: {"Content-Type": "application/json"},
@@ -474,6 +474,7 @@ class ApiService {
         "tailles": tailles,
         "base": base,
         'consommation': consommation.map((c) => c.toJson()).toList(),
+        'taillesBases': taillesBases.map((tb) => tb.toJson()).toList(),
       }),
     );
     if (response.statusCode != 200) {
@@ -550,4 +551,52 @@ class ApiService {
           "Erreur lors de la suppression de la taille : ${response.body}");
     }
   }
+  Future<Map<String, dynamic>> loginUser(String email, String password) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/users/login'),
+    headers: {"Content-Type": "application/json"},
+    body: jsonEncode({"email": email, "password": password}),
+  );
+
+  if (response.statusCode == 200) {
+    final data = jsonDecode(response.body);
+    return {
+      "success": true,
+      "token": data['token'],
+      "user": data['user']     // les infos de l'utilisateur connecté
+    };
+  } else {
+    return {
+      "success": false,
+      "message": jsonDecode(response.body)['message'] ?? 'Erreur de connexion'
+    };
+  }
+}
+Future<Map<String, dynamic>?> register(String nom, String email, String motDePasse, String role) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/users/add'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({
+      'nom': nom,
+      'email': email,
+      'motDePasse': motDePasse,
+      'role': role,
+    }),
+  );
+
+  if (response.statusCode == 201 || response.statusCode == 200) {
+    // Inscription réussie
+    return {
+      'success': true,
+      'user': jsonDecode(response.body),
+    };
+  } else {
+    // Inscription échouée
+    return {
+      'success': false,
+      'message': jsonDecode(response.body)['message'] ?? 'Erreur lors de l’inscription',
+    };
+  }
+}
+
 }

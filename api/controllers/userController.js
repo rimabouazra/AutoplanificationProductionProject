@@ -1,6 +1,6 @@
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
-
+const jwt = require("jsonwebtoken");
 // Ajouter un utilisateur
 exports.ajouterUtilisateur = async (req, res) => {
     try {
@@ -78,5 +78,38 @@ exports.deleteUtilisateur = async (req, res) => {
         res.status(200).json({ message: "Utilisateur supprimé avec succès" });
     } catch (error) {
         res.status(500).json({ message: "Erreur lors de la suppression de l'utilisateur", error });
+    }
+};
+exports.login = async (req, res) => {
+    try {
+        const { email, motDePasse } = req.body;
+
+        const utilisateur = await User.findOne({ email });
+        if (!utilisateur) {
+            return res.status(400).json({ message: "Utilisateur non trouvé." });
+        }
+
+        const passwordMatch = await bcrypt.compare(motDePasse, utilisateur.motDePasse);
+        if (!passwordMatch) {
+            return res.status(401).json({ message: "Mot de passe incorrect." });
+        }
+
+        const token = jwt.sign(
+            { id: utilisateur._id, role: utilisateur.role },
+            "votre_clé_secrète", // Utilise une vraie clé en prod
+            { expiresIn: "24h" }
+        );
+
+        res.status(200).json({
+            token,
+            utilisateur: {
+                _id: utilisateur._id,
+                nom: utilisateur.nom,
+                email: utilisateur.email,
+                role: utilisateur.role,
+            }
+        });
+    } catch (error) {
+        res.status(500).json({ message: "Erreur lors de la connexion", error });
     }
 };
