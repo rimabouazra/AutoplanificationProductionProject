@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/views/LoginPage.dart';
+import 'package:frontend/views/RegisterPage.dart';
 
 class HomePage extends StatelessWidget {
   final List<Map<String, String>> products = [
@@ -25,7 +27,7 @@ class HomePage extends StatelessWidget {
       body: SingleChildScrollView(
         child: Column(
           children: [
-            _buildHeader(),
+            _buildHeader(context),
             SizedBox(height: 20),
             _buildMainSection(),
             SizedBox(height: 40),
@@ -40,7 +42,7 @@ class HomePage extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(BuildContext context) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
       color: Colors.blue.shade700,
@@ -62,13 +64,23 @@ class HomePage extends StatelessWidget {
               Text('+216 73 49 05 00', style: TextStyle(color: Colors.white)),
               SizedBox(width: 20),
               TextButton(
-                onPressed: () {},
-                child: Text('Sign In', style: TextStyle(color: Colors.white)),
+                onPressed: () {
+                  Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => LoginPage()),
+                );
+                },
+                child: Text('se connecter', style: TextStyle(color: Colors.white)),
               ),
               SizedBox(width: 10),
               OutlinedButton(
-                onPressed: () {},
-                child: Text('Sign Up', style: TextStyle(color: Colors.white)),
+                onPressed: () {
+                  Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => RegisterPage()),
+                );
+                },
+                child: Text("s'inscrire", style: TextStyle(color: Colors.white)),
                 style: OutlinedButton.styleFrom(side: BorderSide(color: Colors.white)),
               ),
             ],

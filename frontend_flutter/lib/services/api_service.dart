@@ -65,7 +65,7 @@ class ApiService {
     final response = await http.get(Uri.parse('$baseUrl/modeles'));
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
-      print("Modèles récupérés: $jsonData"); // Debug des données reçues
+      //print("Modèles récupérés: $jsonData"); // Debug des données reçues
       return jsonData.map((json) => Modele.fromJson(json)).toList();
     } else {
       throw Exception("Erreur lors de la récupération des modèles");
@@ -74,7 +74,8 @@ class ApiService {
 
   // Ajouter un nouveau Modèle
   static Future<void> addModele(String nom, List<String> tailles, String? base,
-      List<Consommation> consommation,[List<TailleBase> taillesBases = const []]) async {
+      List<Consommation> consommation,
+      [List<TailleBase> taillesBases = const []]) async {
     final response = await http.post(
       Uri.parse("$baseUrl/modeles/add"),
       headers: {"Content-Type": "application/json"},
@@ -85,8 +86,8 @@ class ApiService {
         if (consommation.isNotEmpty)
           'consommation': consommation.map((c) => c.toJson()).toList(),
         // Convertir la liste
-         if (taillesBases.isNotEmpty)
-        'taillesBases': taillesBases.map((tb) => tb.toJson()).toList(),
+        if (taillesBases.isNotEmpty)
+          'taillesBases': taillesBases.map((tb) => tb.toJson()).toList(),
       }),
     );
     if (response.statusCode != 201) {
@@ -187,33 +188,6 @@ class ApiService {
       throw Exception("Erreur lors de la récupération des planifications");
     }
   }
-  static Future<bool> autoPlanifierCommande(String commandeId) async {
-    final url = Uri.parse('$baseUrl/planifications/auto');
-
-    try {
-      final response = await http.post(
-        url,
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "commandeId": commandeId,
-        }),
-      );
-
-      if (response.statusCode == 201) {
-        print('Planification réussie');
-        return true;
-      } else {
-        print('Erreur lors de la planification automatique : ${response.statusCode}');
-        print('Body: ${response.body}');
-        return false;
-      }
-    } catch (e) {
-      print('Exception: $e');
-      return false;
-    }
-  }
-
-
 
   static Future<bool> addPlanification(Planification planification) async {
     final response = await http.post(
@@ -490,7 +464,8 @@ class ApiService {
   }
 
   static Future<void> updateModele(String id, String nom, List<String> tailles,
-      String? base, List<Consommation> consommation,[List<TailleBase> taillesBases = const []]) async {
+      String? base, List<Consommation> consommation,
+      [List<TailleBase> taillesBases = const []]) async {
     final response = await http.put(
       Uri.parse("$baseUrl/modeles/$id"),
       headers: {"Content-Type": "application/json"},

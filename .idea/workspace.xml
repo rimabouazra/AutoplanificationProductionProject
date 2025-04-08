@@ -5,13 +5,18 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f1b1f5c6-b780-4356-ad10-8b85adb9bdf5" name="Changes" comment="fixer erreur de chargement de planification">
+      <change afterPath="$PROJECT_DIR$/frontend_flutter/assets/auth_bg.jpeg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend_flutter/assets/logo.jpg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/controllers/PlanificationController.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/controllers/PlanificationController.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/controllers/commandeController.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/controllers/commandeController.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/routes/planificationRoutes.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/routes/planificationRoutes.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/providers/CommandeProvider.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/providers/CommandeProvider.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/providers/PlanificationProvider .dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/providers/PlanificationProvider .dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/controllers/userController.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/controllers/userController.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/main.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/services/api_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/services/api_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/HomePage.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/HomePage.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/LoginPage.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/LoginPage.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/RegisterPage.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/RegisterPage.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend_flutter/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/pubspec.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend_flutter/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/pubspec.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -60,7 +65,7 @@
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
     &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
     &quot;dart.analysis.tool.window.visible&quot;: &quot;false&quot;,
-    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;Merging main&quot;,
     &quot;io.flutter.reload.alreadyRun&quot;: &quot;true&quot;,
     &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
     &quot;last_opened_file_path&quot;: &quot;C:/Users/mayar/Desktop/PFE/AutoplanificationProductionProject/frontend_flutter&quot;,
