@@ -84,6 +84,8 @@ flutter:
     - assets/icons/orders.png
     - assets/icons/rooms.png
     - assets/icons/planning.png
+    - assets/auth_bg.jpeg
+    - assets/logo.jpg
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in

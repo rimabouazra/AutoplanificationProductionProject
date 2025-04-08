@@ -3,6 +3,8 @@ import 'package:frontend/providers/MachineProvider.dart';
 import 'package:frontend/providers/ProduitProvider.dart';
 import 'package:frontend/providers/matiereProvider.dart';
 import 'package:frontend/providers/salleProvider.dart';
+import 'package:frontend/views/LoginPage.dart';
+import 'package:frontend/views/RegisterPage.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'providers/CommandeProvider.dart';
@@ -55,7 +57,12 @@ class MyApp extends StatelessWidget {
         GlobalCupertinoLocalizations
             .delegate, // Add Cupertino localization delegate
       ],
-      home: AdminHomePage(),
+      routes: {
+        '/login': (context) => LoginPage(),
+        '/register': (context) => RegisterPage(),
+        '/adminHome': (context) => AdminHomePage(),
+      },
+      home: HomePage(),
     );
   }
 }

@@ -65,7 +65,7 @@ class ApiService {
     final response = await http.get(Uri.parse('$baseUrl/modeles'));
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
-      print("Modèles récupérés: $jsonData"); // Debug des données reçues
+      //print("Modèles récupérés: $jsonData"); // Debug des données reçues
       return jsonData.map((json) => Modele.fromJson(json)).toList();
     } else {
       throw Exception("Erreur lors de la récupération des modèles");
@@ -74,7 +74,8 @@ class ApiService {
 
   // Ajouter un nouveau Modèle
   static Future<void> addModele(String nom, List<String> tailles, String? base,
-      List<Consommation> consommation,[List<TailleBase> taillesBases = const []]) async {
+      List<Consommation> consommation,
+      [List<TailleBase> taillesBases = const []]) async {
     final response = await http.post(
       Uri.parse("$baseUrl/modeles/add"),
       headers: {"Content-Type": "application/json"},
@@ -85,8 +86,8 @@ class ApiService {
         if (consommation.isNotEmpty)
           'consommation': consommation.map((c) => c.toJson()).toList(),
         // Convertir la liste
-         if (taillesBases.isNotEmpty)
-        'taillesBases': taillesBases.map((tb) => tb.toJson()).toList(),
+        if (taillesBases.isNotEmpty)
+          'taillesBases': taillesBases.map((tb) => tb.toJson()).toList(),
       }),
     );
     if (response.statusCode != 201) {
@@ -343,8 +344,8 @@ class ApiService {
     final response = await http.get(Uri.parse('$baseUrl/produits'));
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
-      print(
-          "Produits récupérés : $jsonData"); // Ajouter un print pour vérifier la réponse
+      //print(
+      //  "Produits récupérés : $jsonData"); // Ajouter un print pour vérifier la réponse
 
       return jsonData.map((json) => Produit.fromJson(json)).toList();
     } else {
@@ -465,7 +466,8 @@ class ApiService {
   }
 
   static Future<void> updateModele(String id, String nom, List<String> tailles,
-      String? base, List<Consommation> consommation,[List<TailleBase> taillesBases = const []]) async {
+      String? base, List<Consommation> consommation,
+      [List<TailleBase> taillesBases = const []]) async {
     final response = await http.put(
       Uri.parse("$baseUrl/modeles/$id"),
       headers: {"Content-Type": "application/json"},
@@ -501,8 +503,8 @@ class ApiService {
       "quantite": quantite,
     });
 
-    print("Envoi de la requête à $url");
-    print("Body: $body");
+    //print("Envoi de la requête à $url");
+    //print("Body: $body");
 
     try {
       final response = await http.put(
@@ -511,8 +513,8 @@ class ApiService {
         body: body,
       );
 
-      print("Réponse HTTP: ${response.statusCode}");
-      print("Body: ${response.body}");
+      //print("Réponse HTTP: ${response.statusCode}");
+      //print("Body: ${response.body}");
 
       if (response.statusCode == 200) {
         return true;
@@ -551,52 +553,83 @@ class ApiService {
           "Erreur lors de la suppression de la taille : ${response.body}");
     }
   }
+
   Future<Map<String, dynamic>> loginUser(String email, String password) async {
-  final response = await http.post(
-    Uri.parse('$baseUrl/users/login'),
-    headers: {"Content-Type": "application/json"},
-    body: jsonEncode({"email": email, "password": password}),
-  );
+    try {
+      print('Tentative de connexion avec email: $email');
 
-  if (response.statusCode == 200) {
-    final data = jsonDecode(response.body);
-    return {
-      "success": true,
-      "token": data['token'],
-      "user": data['user']     // les infos de l'utilisateur connecté
-    };
-  } else {
-    return {
-      "success": false,
-      "message": jsonDecode(response.body)['message'] ?? 'Erreur de connexion'
-    };
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/login'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'email': email,
+          'motDePasse': password,
+        }),
+      );
+      print('Statut: ${response.statusCode}');
+      print('Réponse brute: ${response.body}');
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return {
+          'token': data['token'],
+          'utilisateur': data['utilisateur'] ??
+              data['user'] // Selon ce que retourne réellement l'API
+        };
+      } else {
+        final error = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': error['message'] ?? 'Erreur inconnue'
+        };
+      }
+    } catch (e) {
+      print('Erreur lors de la connexion: $e');
+      return {'success': false, 'message': 'Erreur de connexion réseau'};
+    }
   }
-}
-Future<Map<String, dynamic>?> register(String nom, String email, String motDePasse, String role) async {
-  final response = await http.post(
-    Uri.parse('$baseUrl/users/add'),
-    headers: {'Content-Type': 'application/json'},
-    body: jsonEncode({
-      'nom': nom,
-      'email': email,
-      'motDePasse': motDePasse,
-      'role': role,
-    }),
-  );
 
-  if (response.statusCode == 201 || response.statusCode == 200) {
-    // Inscription réussie
-    return {
-      'success': true,
-      'user': jsonDecode(response.body),
-    };
-  } else {
-    // Inscription échouée
-    return {
-      'success': false,
-      'message': jsonDecode(response.body)['message'] ?? 'Erreur lors de l’inscription',
-    };
+  Future<Map<String, dynamic>?> register(
+      String username, String email, String password, String role) async {
+    try {
+      print('Tentative d\'inscription: $username, $email, $role');
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/add'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'nom': username,
+          'email': email,
+          'motDePasse': password,
+          'role': role.toLowerCase().replaceAll(' ', '_'),
+        }),
+      );
+
+      print('Statut: ${response.statusCode}');
+      print('Réponse brute: ${response.body}');
+
+       final data = jsonDecode(response.body);
+    
+    if (response.statusCode == 201) {
+      return {
+        'success': true,
+        'user': data 
+      };
+    } else {
+        final error = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': error['message'] ?? 'Erreur inconnue'
+        };
+      }
+    } catch (e) {
+      print('Erreur d\'inscription: $e');
+      return {'success': false, 'message': 'Erreur de connexion réseau'};
+    }
   }
-}
-
 }

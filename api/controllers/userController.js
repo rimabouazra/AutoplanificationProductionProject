@@ -4,22 +4,25 @@ const jwt = require("jsonwebtoken");
 // Ajouter un utilisateur
 exports.ajouterUtilisateur = async (req, res) => {
     try {
+        console.log('Requête reçue:', req.body); // DEBUG
         const { nom, email, motDePasse, role } = req.body;
-
+        if (!nom || !email || !motDePasse || !role) {
+            console.log('Champs manquants:', {nom, email, motDePasse, role});
+            return res.status(400).json({ message: "Tous les champs sont requis" });
+        }
         // Vérifier si l'utilisateur existe déjà
         const utilisateurExistant = await User.findOne({ email });
         if (utilisateurExistant) {
             return res.status(400).json({ message: "Cet utilisateur existe déjà." });
         }
 
-        // Hacher le mot de passe
-        const hashedPassword = await bcrypt.hash(motDePasse, 10);
-
+        const hashedPassword = await bcrypt.hash(motDePasse, 10);// Hacher le mot de passe
         const nouvelUtilisateur = new User({ nom, email, motDePasse: hashedPassword, role });
         await nouvelUtilisateur.save();
         
         res.status(201).json(nouvelUtilisateur);
     } catch (error) {
+        console.error('Erreur lors de l\'ajout:', error); // DEBUG
         res.status(500).json({ message: "Erreur lors de l'ajout de l'utilisateur", error });
     }
 };
