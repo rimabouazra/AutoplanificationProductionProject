@@ -16,9 +16,9 @@ class ModeleProvider with ChangeNotifier {
     print("Erreur lors du chargement des modèles: $e");
   }
 }
-   Future<void> addModele(String nom, List<String> tailles, String? base, List<Consommation> consommation) async {
+   Future<void> addModele(String nom, List<String> tailles, String? base, List<Consommation> consommation,[List<TailleBase> taillesBases = const []]) async {
     try {
-      await ApiService.addModele(nom, tailles, base, consommation);
+      await ApiService.addModele(nom, tailles, base, consommation, taillesBases);
       fetchModeles(); // Rafraîchir la liste des modèles
     } catch (e) {
       print("Erreur lors de l'ajout du modèle: $e");
@@ -32,9 +32,9 @@ class ModeleProvider with ChangeNotifier {
     final modele = _modeles.firstWhere((m) => m.nom == modeleNom, orElse: () => Modele(id: '', nom: '', tailles: [], consommation: []));
     return modele.tailles;
   }
-  Future<void> updateModele(String id, String nom, List<String> tailles, String? base, List<Consommation> consommation) async {
+  Future<void> updateModele(String id, String nom, List<String> tailles, String? base, List<Consommation> consommation,[List<TailleBase> taillesBases = const []]) async {
   try {
-    await ApiService.updateModele(id, nom, tailles, base, consommation);
+    await ApiService.updateModele(id, nom, tailles, base, consommation, taillesBases);
     fetchModeles(); // Rafraîchir la liste des modèles
   } catch (e) {
     print("Erreur lors de la modification du modèle: $e");
