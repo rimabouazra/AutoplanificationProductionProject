@@ -188,6 +188,31 @@ class ApiService {
       throw Exception("Erreur lors de la récupération des planifications");
     }
   }
+  static Future<bool> autoPlanifierCommande(String commandeId) async {
+    final url = Uri.parse('$baseUrl/planifications/auto');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "commandeId": commandeId,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        print('Planification réussie');
+        return true;
+      } else {
+        print('Erreur lors de la planification automatique : ${response.statusCode}');
+        print('Body: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('Exception: $e');
+      return false;
+    }
+  }
 
   static Future<bool> addPlanification(Planification planification) async {
     final response = await http.post(
