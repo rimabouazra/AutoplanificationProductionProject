@@ -2,6 +2,7 @@ const Commande = require("../models/Commande");
 const Salle = require("../models/Salle");
 const Machine = require("../models/Machine");
 const Modele = require("../models/Modele");
+const planificationController = require("./PlanificationController");
 
 
 exports.ajouterCommande = async (req, res) => {
@@ -10,7 +11,11 @@ exports.ajouterCommande = async (req, res) => {
         console.log("Données reçues :", JSON.stringify(req.body, null, 2)); //Vérifier les données reçues
 
         const { client, conditionnement, delais, etat, salleAffectee, machinesAffectees, modeles } = req.body;
-
+         if (!client ) {
+             return res.status(400).json({
+                 message: "Les champs client, conditionnement, delais et etat sont obligatoires."
+             });
+         }
         if (salleAffectee) {
             console.log("Vérification de la salle :", salleAffectee);
             const salleExistante = await Salle.findById(salleAffectee);
@@ -38,6 +43,9 @@ exports.ajouterCommande = async (req, res) => {
              if (!modeleExist) {
                  return res.status(400).json({ message: `Modèle non trouvé: ${item.modele}` });
              }
+             if (typeof item.quantite !== "number" || item.quantite <= 0) {
+                     return res.status(400).json({ message: `Quantité invalide pour le modèle: ${item.modele}` });
+                 }
          }
         const nouvelleCommande = new Commande({
             client,
@@ -51,7 +59,18 @@ exports.ajouterCommande = async (req, res) => {
 
         await nouvelleCommande.save();
 
-        console.log("Commande enregistrée :", nouvelleCommande); // Debug
+        console.log("Commande enregistrée :");
+        req.body.commandeId = nouvelleCommande._id.toString(); // injecter commandeId dans req.body
+        try {
+            const fakeRes = {
+                status: (code) => ({
+                    json: (data) => console.log(`Planification auto (status ${code}):`, data),
+                })
+            };
+            await planificationController.autoPlanifierCommande(req, fakeRes);
+        } catch (e) {
+            console.error("Erreur pendant la planification automatique :", e.message);
+        }
         res.status(201).json(nouvelleCommande);
     } catch (error) {
         console.error("Erreur lors de l'ajout de la commande :", error); // Debug
@@ -65,7 +84,6 @@ exports.getCommandes = async (req, res) => {
             .populate("salleAffectee")
             .populate("machinesAffectees");
 
-        console.log("Commandes fetched:", commandes); // Debugging statement
 
         res.status(200).json(commandes);
     } catch (error) {
