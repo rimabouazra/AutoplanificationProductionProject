@@ -5,14 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f1b1f5c6-b780-4356-ad10-8b85adb9bdf5" name="Changes" comment="fixer erreur de chargement de planification">
-      <change beforePath="$PROJECT_DIR$/api/controllers/userController.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/controllers/userController.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/models/User.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/models/User.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/routes/userRoutes.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/routes/userRoutes.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/models/user.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/models/user.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/providers/userProvider.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/providers/userProvider.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/services/api_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/services/api_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/RegisterPage.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/RegisterPage.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/UsersView.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/UsersView.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/api/models/Client.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -61,7 +55,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "Merging main",
+    "git-widget-placeholder": "main",
     "io.flutter.reload.alreadyRun": "true",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/mayar/Desktop/PFE/AutoplanificationProductionProject/frontend_flutter",
