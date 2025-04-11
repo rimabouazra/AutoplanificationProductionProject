@@ -62,7 +62,7 @@ class MyApp extends StatelessWidget {
         '/register': (context) => RegisterPage(),
         '/adminHome': (context) => AdminHomePage(),
       },
-      home: HomePage(),
+      home: AdminHomePage(),
     );
   }
 }

@@ -25,7 +25,7 @@ class CommandeModele {
       nomModele: json['nomModele'] ?? '',
       taille: json['taille'],
       couleur: json['couleur'],
-      quantite: json['quantiteDemandee'] ?? 0,
+      quantite: json['quantite'] ?? 0,
       quantiteCalculee: json['quantiteCalculee'] ?? 0,
       quantiteReelle: json['quantiteReelle'] ?? 0,
     );
@@ -37,7 +37,7 @@ class CommandeModele {
       'nomModele': nomModele, // Inclusion du nom du modèle dans la requête
       'taille': taille,
       'couleur': couleur,
-      'quantiteDemandee': quantite,
+      'quantite': quantite,
       'quantiteCalculee': quantiteCalculee,
       'quantiteReelle': quantiteReelle,
     };
