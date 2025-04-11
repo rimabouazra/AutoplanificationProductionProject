@@ -593,9 +593,9 @@ class ApiService {
   }
 
   Future<Map<String, dynamic>?> register(
-      String username, String email, String password, String role) async {
+      String username, String email, String password) async {
     try {
-      print('Tentative d\'inscription: $username, $email, $role');
+      print('Tentative d\'inscription: $username, $email');
 
       final response = await http.post(
         Uri.parse('$baseUrl/users/add'),
@@ -606,7 +606,6 @@ class ApiService {
           'nom': username,
           'email': email,
           'motDePasse': password,
-          'role': role.toLowerCase().replaceAll(' ', '_'),
         }),
       );
 
@@ -632,4 +631,22 @@ class ApiService {
       return {'success': false, 'message': 'Erreur de connexion réseau'};
     }
   }
+  static Future<bool> approveUser(String id, String role) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/users/approve/$id'),
+    headers: {'Content-Type': 'application/json'},
+    body: jsonEncode({'role': role}),
+  );
+  return response.statusCode == 200;
+}
+
+static Future<bool> rejectUser(String id) async {
+  final response = await http.post(
+    Uri.parse('$baseUrl/users/reject/$id'),
+    headers: {'Content-Type': 'application/json'},
+  );
+  return response.statusCode == 200;
+}
+
+
 }
