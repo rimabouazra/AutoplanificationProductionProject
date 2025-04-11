@@ -6,8 +6,8 @@ exports.ajouterUtilisateur = async (req, res) => {
     try {
         console.log('Requête reçue:', req.body); // DEBUG
         const { nom, email, motDePasse, role } = req.body;
-        if (!nom || !email || !motDePasse || !role) {
-            console.log('Champs manquants:', {nom, email, motDePasse, role});
+        if (!nom || !email || !motDePasse) {
+            console.log('Champs manquants:', { nom, email, motDePasse, role });
             return res.status(400).json({ message: "Tous les champs sont requis" });
         }
         // Vérifier si l'utilisateur existe déjà
@@ -17,9 +17,12 @@ exports.ajouterUtilisateur = async (req, res) => {
         }
 
         const hashedPassword = await bcrypt.hash(motDePasse, 10);// Hacher le mot de passe
-        const nouvelUtilisateur = new User({ nom, email, motDePasse: hashedPassword, role });
+        const nouvelUtilisateur = new User({
+            nom, email, motDePasse: hashedPassword, role: null,
+            status: 'pending'
+        });
         await nouvelUtilisateur.save();
-        
+
         res.status(201).json(nouvelUtilisateur);
     } catch (error) {
         console.error('Erreur lors de l\'ajout:', error); // DEBUG
@@ -115,4 +118,19 @@ exports.login = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: "Erreur lors de la connexion", error });
     }
+};
+exports.getPendingUsers = async (req, res) => {
+    const users = await User.find({ status: 'pending' });
+    res.json(users);
+};
+
+exports.approveUser = async (req, res) => {
+    const { role } = req.body;
+    await User.findByIdAndUpdate(req.params.id, { status: 'approved', role });
+    res.json({ success: true });
+};
+
+exports.rejectUser = async (req, res) => {
+    await User.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
 };

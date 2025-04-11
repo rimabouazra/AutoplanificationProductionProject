@@ -2,13 +2,15 @@ class User {
   final String id;
   final String nom;
   final String email;
-  final String role;
+  final String? role;
+  final String status;
 
   User({
     required this.id,
     required this.nom,
     required this.email,
-    required this.role,
+    this.role,
+    required this.status,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -17,6 +19,7 @@ class User {
       nom: json['nom'],
       email: json['email'],
       role: json['role'],
+      status: json['status'] ?? 'pending',
     );
   }
 
@@ -26,6 +29,7 @@ class User {
       'nom': nom,
       'email': email,
       'role': role,
+       'status': status,
     };
   }
 }

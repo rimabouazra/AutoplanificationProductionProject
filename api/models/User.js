@@ -7,8 +7,9 @@ const UserSchema = new mongoose.Schema({
     role: { 
         type: String, 
         enum: ["admin", "manager", "responsable_modele", "responsable_matiere", "ouvrier"],
-        required: true
-    }
+        default: null
+    },
+    status: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'pending' },
 }, { timestamps: true });
 
 module.exports = mongoose.model("User", UserSchema);

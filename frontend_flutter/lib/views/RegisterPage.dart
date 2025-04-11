@@ -34,7 +34,6 @@ class _RegisterPageState extends State<RegisterPage> {
         _usernameController.text,
         _emailController.text,
         _passwordController.text,
-        selectedRole ?? 'Ouvrier',
       );
 
       setState(() => isLoading = false);
@@ -169,35 +168,6 @@ class _RegisterPageState extends State<RegisterPage> {
                               validator: (value) => value!.length < 6
                                   ? 'Au moins 6 caractères'
                                   : null,
-                            ),
-                            SizedBox(height: 20),
-                            DropdownButtonFormField<String>(
-                              value: selectedRole,
-                              items: roles.map((role) {
-                                return DropdownMenuItem(
-                                  value: role,
-                                  child: Text(
-                                    role,
-                                    style: TextStyle(color: Colors.deepPurple),
-                                  ),
-                                );
-                              }).toList(),
-                              onChanged: (value) {
-                                setState(() {
-                                  selectedRole = value!;
-                                });
-                              },
-                              decoration: InputDecoration(
-                                labelText: 'Rôle',
-                                prefixIcon:
-                                    Icon(Icons.work, color: Colors.deepPurple),
-                                border: OutlineInputBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                                filled: true,
-                                fillColor: Colors.grey[50],
-                              ),
-                              dropdownColor: Colors.white,
                             ),
                             SizedBox(height: 30),
                             if (isLoading)

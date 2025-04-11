@@ -45,4 +45,16 @@ class UserProvider with ChangeNotifier {
     }
     return success;
   }
+  Future<bool> approveUser(String id, String role) async {
+  final success = await ApiService.approveUser(id, role);
+  if (success) await fetchUsers();
+  return success;
+}
+
+Future<bool> rejectUser(String id) async {
+  final success = await ApiService.rejectUser(id);
+  if (success) await fetchUsers();
+  return success;
+}
+
 }
