@@ -6,12 +6,14 @@ import 'package:frontend/providers/matiereProvider.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../models/commande.dart';
+import '../providers/client_provider.dart';
 class CommandeProvider with ChangeNotifier {
   final String _baseUrl = "http://localhost:5000/api/commandes";
 
   List<Commande> _commandes = [];
 
   List<Commande> get commandes => _commandes;
+
 
   Future<bool> updateCommande(String commandeId, List<CommandeModele> updatedModeles) async {
     try {
@@ -148,6 +150,7 @@ class CommandeProvider with ChangeNotifier {
 
 
   Future<bool> addCommande(Commande commande) async {
+
     final response = await http.post(
       Uri.parse("$_baseUrl/add"),
       headers: {"Content-Type": "application/json"},
@@ -204,40 +207,40 @@ class CommandeProvider with ChangeNotifier {
     return [];
   }
   Future<void> planifierCommande(BuildContext context, String commandeId, List<Salle> salles) async {
-  final commande = _commandes.firstWhere((cmd) => cmd.id == commandeId);
-  final matiereProvider = Provider.of<MatiereProvider>(context, listen: false);
+    final commande = _commandes.firstWhere((cmd) => cmd.id == commandeId);
+    final matiereProvider = Provider.of<MatiereProvider>(context, listen: false);
 
-  for (var modele in commande.modeles) {
-    double besoin = modele.calculerBesoinMatiere();
-    final matiere = matiereProvider.getMatiereByCouleur(modele.couleur);
+    for (var modele in commande.modeles) {
+      double besoin = modele.calculerBesoinMatiere();
+      final matiere = matiereProvider.getMatiereByCouleur(modele.couleur);
 
-    if (matiere != null && matiere.estStockSuffisant(besoin)) { // ✅ Vérification de null
-      bool estFoncee = modele.estCouleurFoncee(modele.couleur); // ✅ Correction de l'appel
+      if (matiere != null && matiere.estStockSuffisant(besoin)) {
+        bool estFoncee = modele.estCouleurFoncee(modele.couleur);
 
-      for (var salle in salles) {
-        if ((estFoncee && salle.nom == "Salle Noire") || (!estFoncee && salle.nom == "Salle Blanche")) {
-          await affecterSalleEtMachines(commande, salle, salle.machines);
-          break;
+        for (var salle in salles) {
+          if ((estFoncee && salle.nom == "Salle Noire") || (!estFoncee && salle.nom == "Salle Blanche")) {
+            await affecterSalleEtMachines(commande, salle, salle.machines);
+            break;
+          }
         }
+      } else {
+        throw Exception("Stock insuffisant ou matière introuvable pour le modèle ${modele.nomModele}");
       }
-    } else {
-      throw Exception("Stock insuffisant ou matière introuvable pour le modèle ${modele.nomModele}");
     }
   }
-}
 
 
 
   Future<void> affecterSalleEtMachines(Commande commande, Salle salle, List<Machine>? machines) async {
-  if (salle.id == null || machines == null) {
-    print("Erreur : Salle ou machines null");
-    return;
-  }
+    if (salle.id == null || machines == null) {
+      print("Erreur : Salle ou machines null");
+      return;
+    }
 
-  commande.salleAffectee = salle.id!;
-  commande.machinesAffectees = machines.map((m) => m.id!).toList();
-  await updateCommande(commande.id!, commande.modeles);
-}
+    commande.salleAffectee = salle.id!;
+    commande.machinesAffectees = machines.map((m) => m.id!).toList();
+    await updateCommande(commande.id!, commande.modeles);
+  }
 
 
 }

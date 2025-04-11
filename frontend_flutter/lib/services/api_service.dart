@@ -8,6 +8,8 @@ import '../models/salle.dart';
 import '../models/user.dart';
 import '../models/planification.dart';
 import '../models/commande.dart';
+import '../models/client.dart';
+
 
 class ApiService {
   static const String baseUrl = "http://localhost:5000/api";
@@ -673,5 +675,29 @@ class ApiService {
       headers: {'Content-Type': 'application/json'},
     );
     return response.statusCode == 200;
+  }
+
+  static Future<List<Client>> getClients() async {
+    final response = await http.get(Uri.parse('$baseUrl/clients'));
+    if (response.statusCode == 200) {
+      final List jsonData = json.decode(response.body);
+      return jsonData.map((e) => Client.fromJson(e)).toList();
+    } else {
+      throw Exception('Failed to load clients');
+    }
+  }
+
+  static Future<Client> addClient(String name) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/clients'),
+      headers: {'Content-Type': 'application/json'},
+      body: json.encode({'name': name}),
+    );
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      return Client.fromJson(json.decode(response.body));
+    } else {
+      throw Exception('Failed to add client');
+    }
   }
 }

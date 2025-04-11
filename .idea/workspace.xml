@@ -4,9 +4,16 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="f1b1f5c6-b780-4356-ad10-8b85adb9bdf5" name="Changes" comment="fixer erreur de chargement de planification">
-      <change afterPath="$PROJECT_DIR$/api/models/Client.js" afterDir="false" />
+    <list default="true" id="f1b1f5c6-b780-4356-ad10-8b85adb9bdf5" name="Changes" comment="ajouter schema client">
+      <change afterPath="$PROJECT_DIR$/frontend_flutter/lib/models/client.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend_flutter/lib/providers/client_provider.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/controllers/commandeController.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/controllers/commandeController.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/server.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/server.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/main.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/providers/CommandeProvider.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/providers/CommandeProvider.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/services/api_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/services/api_service.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/AddCommandePage.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/AddCommandePage.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -395,7 +402,15 @@
       <option name="project" value="LOCAL" />
       <updated>1742897889014</updated>
     </task>
-    <option name="localTasksCounter" value="40" />
+    <task id="LOCAL-00040" summary="ajouter schema client">
+      <option name="closed" value="true" />
+      <created>1744360255845</created>
+      <option name="number" value="00040" />
+      <option name="presentableId" value="LOCAL-00040" />
+      <option name="project" value="LOCAL" />
+      <updated>1744360255845</updated>
+    </task>
+    <option name="localTasksCounter" value="41" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">
@@ -438,6 +453,7 @@
     <MESSAGE value="Add the product api and view" />
     <MESSAGE value="update website design" />
     <MESSAGE value="fixer erreur de chargement de planification" />
-    <option name="LAST_COMMIT_MESSAGE" value="fixer erreur de chargement de planification" />
+    <MESSAGE value="ajouter schema client" />
+    <option name="LAST_COMMIT_MESSAGE" value="ajouter schema client" />
   </component>
 </project>

@@ -13,7 +13,7 @@ exports.ajouterCommande = async (req, res) => {
         const { client, conditionnement, delais, etat, salleAffectee, machinesAffectees, modeles } = req.body;
          if (!client ) {
              return res.status(400).json({
-                 message: "Les champs client, conditionnement, delais et etat sont obligatoires."
+                 message: "Les champs client est obligatoires."
              });
          }
         if (salleAffectee) {

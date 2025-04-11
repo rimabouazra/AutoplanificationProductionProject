@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../models/commande.dart';
 import '../providers/CommandeProvider.dart';
+import '../providers/client_provider.dart';
 
 class AddCommandePage extends StatefulWidget {
   @override
@@ -40,6 +41,7 @@ void initState() {
   final commandeProvider = Provider.of<CommandeProvider>(context, listen: false);
   final modeleProvider = Provider.of<ModeleProvider>(context, listen: false);
 
+
   commandeProvider.fetchCommandes().then((_) {
     setState(() {
       clients = commandeProvider.getClients();
@@ -53,32 +55,42 @@ void initState() {
 });
 }
 
-Widget _buildClientField() {
-  return Autocomplete<String>(
-    optionsBuilder: (TextEditingValue textEditingValue) {
-      if (textEditingValue.text.isEmpty) {
-        return const Iterable<String>.empty();
-      }
-      return clients.where((client) => client.toLowerCase().contains(textEditingValue.text.toLowerCase()));
-    },
-    onSelected: (String selection) {
-      setState(() {
-        clientController.text = selection;
-      });
-    },
-    fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
-      return TextFormField(
-        controller: controller,
-        focusNode: focusNode,
-        decoration: InputDecoration(
-          labelText: "Client",
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-          prefixIcon: Icon(Icons.person, color: Colors.teal),
-        ),
-      );
-    },
-  );
-}
+  Widget _buildClientField(ClientProvider clientProvider) {
+    return Autocomplete<String>(
+      optionsBuilder: (TextEditingValue textEditingValue) {
+        if (textEditingValue.text.isEmpty) {
+          return const Iterable<String>.empty();
+        }
+        return clientProvider.clients
+            .map((c) => c.name)
+            .where((name) => name.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+      },
+      onSelected: (String selection) {
+        setState(() {
+          clientController.text = selection;
+        });
+      },
+      fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
+        return TextFormField(
+          controller: controller,
+          focusNode: focusNode,
+          onFieldSubmitted: (value) async {
+            if (!clientProvider.clients.any((c) => c.name.toLowerCase() == value.toLowerCase())) {
+              final newClient = await clientProvider.addClient(value);
+              setState(() {
+                clientController.text = newClient.name;
+              });
+            }
+          },
+          decoration: InputDecoration(
+            labelText: "Client",
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
+            prefixIcon: Icon(Icons.person, color: Colors.teal),
+          ),
+        );
+      },
+    );
+  }
 
   Widget _buildModeleField() {
   return Autocomplete<String>(
@@ -253,6 +265,8 @@ Widget _buildTailleField() {
 
   @override
   Widget build(BuildContext context) {
+    final clientProvider = Provider.of<ClientProvider>(context);
+
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
@@ -280,7 +294,7 @@ Widget _buildTailleField() {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-_buildClientField(),
+                      _buildClientField(clientProvider),
                       _buildTextField(conditionnementController,
                           "Conditionnement", Icons.inventory,
                           isOptional: true),

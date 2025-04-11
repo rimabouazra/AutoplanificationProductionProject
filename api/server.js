@@ -10,6 +10,7 @@ const machineRoutes = require("./routes/machineRoutes");
 const matiereRoutes = require("./routes/matiereRoutes");
 const produitsRoutes = require("./routes/produitsRoutes");
 const planificationRoutes = require("./routes/planificationRoutes");
+const clientRoutes = require("./routes/clientRoutes");
 const UserRoutes = require("./routes/userRoutes");
 
 dotenv.config();

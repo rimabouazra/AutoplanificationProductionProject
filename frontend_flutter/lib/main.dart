@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'providers/CommandeProvider.dart';
 import 'package:frontend/providers/modeleProvider.dart';
+import 'package:frontend/providers/client_provider.dart';
 import 'views/admin_home_page.dart';
 import 'views/HomePage.dart';
 
@@ -27,7 +28,9 @@ void main() {
         ChangeNotifierProvider(create: (context) => MatiereProvider()),
         ChangeNotifierProvider(create: (context) => MachineProvider()),
 
-        ChangeNotifierProvider(create: (context) => ProduitProvider()), 
+        ChangeNotifierProvider(create: (context) => ProduitProvider()),
+        ChangeNotifierProvider(create: (context) => ClientProvider()),
+
         ChangeNotifierProvider(
           create: (context) => PlanificationProvider(
             Provider.of<CommandeProvider>(context, listen: false),
