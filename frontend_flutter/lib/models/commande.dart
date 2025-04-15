@@ -1,8 +1,9 @@
 import 'package:flutter/painting.dart';
+import 'client.dart';
 
 class CommandeModele {
   String? modele; // Référence à un Modele (ID)
-  String nomModele; // Ajout du nom du modèle
+  String nomModele;
   String taille;
   String couleur;
   int quantite; // Quantité demandée par le client
@@ -63,7 +64,7 @@ class CommandeModele {
 
 class Commande {
   String? id;
-  String client;
+  Client client;
   List<CommandeModele> modeles;
   String? conditionnement;
   DateTime? delais;
@@ -89,7 +90,9 @@ class Commande {
   factory Commande.fromJson(Map<String, dynamic> json) {
     return Commande(
       id: json['_id'],
-      client: json['client'] ?? '',
+      client: json['client'] is Map<String, dynamic>
+          ? Client.fromJson(json['client'])
+          : Client(name: json['client'].toString()),
       modeles: (json['modeles'] as List<dynamic>?)
               ?.map((item) => CommandeModele.fromJson(item))
               .toList() ??
@@ -113,7 +116,7 @@ class Commande {
   Map<String, dynamic> toJson() {
     return {
       '_id': id,
-      'client': client,
+      'client': client.name,
       'modeles': modeles.map((m) => m.toJson()).toList(),
       'conditionnement': conditionnement,
       'delais': delais?.toIso8601String(),

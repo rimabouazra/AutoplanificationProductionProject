@@ -284,7 +284,7 @@ class _PlanificationViewState extends State<PlanificationView> {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
-                                      Flexible(child: Text(plan.commandes.isNotEmpty ? plan.commandes.first.client : 'No client', overflow: TextOverflow.ellipsis)),
+                                      Flexible(child: Text(plan.commandes.isNotEmpty ? plan.commandes.first.client.name : 'No client')),
                                       Flexible(child: Text(plan.machines.isNotEmpty ? plan.machines.first.nom : 'No machine', style: TextStyle(fontSize: 12))),
                                       Flexible(child: Text('Salle: ${plan.machines.first.salle.nom}', style: TextStyle(fontSize: 12))),
                                       _buildStatut(plan.statut),

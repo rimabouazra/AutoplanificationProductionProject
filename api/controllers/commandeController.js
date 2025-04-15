@@ -3,6 +3,8 @@ const Salle = require("../models/Salle");
 const Machine = require("../models/Machine");
 const Modele = require("../models/Modele");
 const planificationController = require("./PlanificationController");
+const Client = require("../models/Client");
+
 
 
 exports.ajouterCommande = async (req, res) => {
@@ -11,11 +13,18 @@ exports.ajouterCommande = async (req, res) => {
         //console.log("Données reçues :", JSON.stringify(req.body, null, 2)); //Vérifier les données reçues
 
         const { client, conditionnement, delais, etat, salleAffectee, machinesAffectees, modeles } = req.body;
-         if (!client ) {
-             return res.status(400).json({
-                 message: "Les champs client est obligatoires."
-             });
-         }
+        console.log("📦 Donnée client reçue:", client);
+
+         if (!client || !client.name || client.name.trim() === "") {
+               return res.status(400).json({ message: "Le nom du client est requis." });
+             }
+
+             let clientRecord = await Client.findOne({ name: client.name.trim() });
+             if (!clientRecord) {
+               clientRecord = new Client({ name: client.name.trim() });
+               await clientRecord.save();
+             }
+
         if (salleAffectee) {
             console.log("Vérification de la salle :", salleAffectee);
             const salleExistante = await Salle.findById(salleAffectee);
@@ -48,7 +57,7 @@ exports.ajouterCommande = async (req, res) => {
                  }
          }
         const nouvelleCommande = new Commande({
-            client,
+            client: clientRecord._id,
             modeles, //  Contient {modele, taille, couleur, quantite}
             conditionnement,
             delais,
@@ -68,6 +77,7 @@ exports.ajouterCommande = async (req, res) => {
                 })
             };
             await planificationController.autoPlanifierCommande(req, fakeRes);
+
         } catch (e) {
             console.error("Erreur pendant la planification automatique :", e.message);
         }
@@ -81,6 +91,7 @@ exports.ajouterCommande = async (req, res) => {
 exports.getCommandes = async (req, res) => {
     try {
         const commandes = await Commande.find()
+            .populate("client")
             .populate("salleAffectee")
             .populate("machinesAffectees");
 

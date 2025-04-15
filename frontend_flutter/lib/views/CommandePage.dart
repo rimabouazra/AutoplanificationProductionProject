@@ -62,9 +62,7 @@ class _CommandePageState extends State<CommandePage> {
 
       final matchesFilter = etatFiltre == 'tous' || etatCommande == etatFiltre;
       final matchesSearch = searchController.text.isEmpty ||
-          commande.client
-              .toLowerCase()
-              .contains(searchController.text.toLowerCase());
+          commande.client.name.toLowerCase().contains(searchController.text.toLowerCase());
 
       return matchesFilter && matchesSearch;
     }).toList();
@@ -182,8 +180,8 @@ class _CommandePageState extends State<CommandePage> {
   }
 
   Future<void> editCommande(Commande commande) async {
-    TextEditingController clientController =
-        TextEditingController(text: commande.client);
+    TextEditingController clientController = TextEditingController(text: commande.client.name);
+
 
     List<TextEditingController> nomModeleControllers = [];
     List<TextEditingController> tailleControllers = [];
@@ -635,7 +633,7 @@ class _CommandePageState extends State<CommandePage> {
             margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             child: ExpansionTile(
               title: Text(
-                commande.client,
+                commande.client.name,
                 style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,

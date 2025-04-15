@@ -3,6 +3,7 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:frontend/providers/modeleProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import '../models/client.dart';
 import '../models/commande.dart';
 import '../providers/CommandeProvider.dart';
 import '../providers/client_provider.dart';
@@ -24,7 +25,6 @@ class _AddCommandePageState extends State<AddCommandePage> {
       TextEditingController();
   DateTime? selectedDate;
   bool isLoading = false;
-  //TO DO : make the client auto complete and the modele should be dropdown
 
   List<CommandeModele> modeles = [];
   final TextEditingController modeleController = TextEditingController();
@@ -72,7 +72,7 @@ void initState() {
       },
       fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
         return TextFormField(
-          controller: controller,
+          controller: clientController,
           focusNode: focusNode,
           onFieldSubmitted: (value) async {
             if (!clientProvider.clients.any((c) => c.name.toLowerCase() == value.toLowerCase())) {
@@ -245,7 +245,7 @@ Widget _buildTailleField() {
     }
 
     Commande newCommande = Commande(
-      client: clientController.text,
+      client: Client(name: clientController.text),
       modeles: modelesWithId,
       conditionnement: conditionnementController.text,
       delais: selectedDate ?? DateTime.now(),

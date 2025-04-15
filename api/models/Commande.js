@@ -11,8 +11,11 @@ const CommandeModeleSchema = new mongoose.Schema({
 
 const CommandeSchema = new mongoose.Schema(
   {
-    client: { type: String, required: true },
-    etat: {
+client: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Client",
+      required: true,
+    },    etat: {
       type: String,
       enum: ["en attente", "en coupe", "en moulage", "en presse", "en contrôle", "emballage", "terminé"],
       default: "en attente"

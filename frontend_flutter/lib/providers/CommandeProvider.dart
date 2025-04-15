@@ -191,9 +191,10 @@ class CommandeProvider with ChangeNotifier {
       print("Erreur lors de la récupération des commandes: $error");
     }
   }
-   List<String> getClients() {
-    return _commandes.map((c) => c.client).toSet().toList();
+  List<String> getClients() {
+    return _commandes.map((c) => c.client.name).toSet().toList();
   }
+
   Future<List<Map<String, dynamic>>> fetchModeles() async {
     try {
       final response = await http.get(Uri.parse("http://localhost:5000/api/modeles"));
