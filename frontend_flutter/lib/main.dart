@@ -73,7 +73,7 @@ class MyApp extends StatelessWidget {
         '/planification': (context) => PlanificationView(),
         '/users': (context) => UsersView(),
       },
-      home: HomePage(),
+      home: AdminHomePage(),
     );
   }
 }

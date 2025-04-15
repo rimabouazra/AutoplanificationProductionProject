@@ -55,7 +55,7 @@ class CommandeProvider with ChangeNotifier {
             "nomModele": modele.nomModele,
             "taille": modele.taille,
             "couleur": modele.couleur,
-            "quantite": modele.quantite,
+            "quantiteDemandee": modele.quantite,
           }).toList(),
           "conditionnement": commandeExistante.conditionnement,
           "delais": commandeExistante.delais?.toIso8601String(),
@@ -176,15 +176,10 @@ class CommandeProvider with ChangeNotifier {
 
   Future<void> fetchCommandes() async {
     try {
-      print("Fetching commandes depuis $_baseUrl");
       final response = await http.get(Uri.parse(_baseUrl));
-      print("Statut HTTP: ${response.statusCode}");
-      print("Réponse: ${response.body}");
-
       if (response.statusCode == 200) {
         Iterable data = jsonDecode(response.body);
         _commandes = data.map((e) => Commande.fromJson(e)).toList();
-        print("Commandes récupérées: $_commandes");
         notifyListeners();
       } else {
         print("Erreur HTTP: ${response.statusCode}");

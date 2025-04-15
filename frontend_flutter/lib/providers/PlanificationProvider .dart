@@ -5,6 +5,7 @@ import 'package:frontend/providers/matiereProvider.dart';
 import 'package:frontend/models/commande.dart';
 import 'package:frontend/models/planification.dart';
 import 'package:frontend/services/api_service.dart';
+import 'package:http/http.dart' as http;
 
 class PlanificationProvider with ChangeNotifier {
   final CommandeProvider commandeProvider;
@@ -14,13 +15,29 @@ class PlanificationProvider with ChangeNotifier {
 
   PlanificationProvider(this.commandeProvider, this.matiereProvider);
 
+
+  Future<void> autoPlanifierToutesLesCommandes() async {
+    final url = Uri.parse('http://localhost:5000/api/planifications/auto');
+    final response = await http.post(url);
+
+    print('Status code: ${response.statusCode}');
+    print('Body: ${response.body}');
+
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      await fetchPlanifications();
+    } else {
+      throw Exception('Erreur ${response.statusCode}: ${response.body}');
+    }
+  }
+
+
   Future<void> fetchPlanifications() async {
     try {
       final response = await ApiService.getPlanifications();
 
       if (response is List<Planification>) {
         print("La réponse est bien une liste avec ${response.length} éléments.");
-        _planifications = response; // 🔥 Directement assignée
+        _planifications = response; // Directement assignée
         notifyListeners();
       } else {
         print("Réponse inattendue du serveur: ${response.runtimeType}");
@@ -28,6 +45,20 @@ class PlanificationProvider with ChangeNotifier {
       }
     } catch (e) {
       print(" Erreur lors du chargement des planifications: $e");
+    }
+  }
+
+  Future<void> autoPlanifierCommande(String commandeId) async {
+    try {
+      bool success = await ApiService.autoPlanifierCommande(commandeId);
+      if (success) {
+        await fetchPlanifications();
+        print("Planification automatique réussie");
+      } else {
+        throw Exception("Erreur lors de la planification automatique");
+      }
+    } catch (e) {
+      print("Erreur: $e");
     }
   }
 

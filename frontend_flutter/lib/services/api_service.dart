@@ -267,6 +267,31 @@ class ApiService {
       throw Exception("Erreur lors de la récupération des planifications");
     }
   }
+  static Future<bool> autoPlanifierCommande(String commandeId) async {
+    final url = Uri.parse('$baseUrl/planifications/auto');
+
+    try {
+      final response = await http.post(
+        url,
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "commandeId": commandeId,
+        }),
+      );
+
+      if (response.statusCode == 201) {
+        print('Planification réussie');
+        return true;
+      } else {
+        print('Erreur lors de la planification automatique : ${response.statusCode}');
+        print('Body: ${response.body}');
+        return false;
+      }
+    } catch (e) {
+      print('Exception: $e');
+      return false;
+    }
+  }
 
   static Future<bool> addPlanification(Planification planification) async {
     final response = await http.post(
@@ -633,22 +658,22 @@ class ApiService {
     }
   }
 
+
+
   static Future<bool> approveUser(String id, String role) async {
-  final response = await http.post(
-    Uri.parse('$baseUrl/users/approve/$id'),
-    headers: {'Content-Type': 'application/json'},
-    body: jsonEncode({'role': role}),
-  );
-  return response.statusCode == 200;
-}
+    final response = await http.post(
+      Uri.parse('$baseUrl/users/approve/$id'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'role': role}),
+    );
+    return response.statusCode == 200;
+  }
 
-static Future<bool> rejectUser(String id) async {
-  final response = await http.post(
-    Uri.parse('$baseUrl/users/reject/$id'),
-    headers: {'Content-Type': 'application/json'},
-  );
-  return response.statusCode == 200;
-}
-
-
+  static Future<bool> rejectUser(String id) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/users/reject/$id'),
+      headers: {'Content-Type': 'application/json'},
+    );
+    return response.statusCode == 200;
+  }
 }
