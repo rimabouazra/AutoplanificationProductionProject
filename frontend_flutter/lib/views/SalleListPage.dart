@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/services/auth_service.dart';
+import 'package:frontend/views/LoginPage.dart';
 import 'MachinesParSalleView.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class SalleListPage extends StatefulWidget {
   const SalleListPage({Key? key}) : super(key: key);
@@ -18,7 +21,10 @@ class _SalleListPageState extends State<SalleListPage> {
     super.initState();
     fetchSalles();
   }
-
+  Future<String?> _getUserRole() async {
+  final prefs = await SharedPreferences.getInstance();
+  return prefs.getString('role');
+}
   Future<void> fetchSalles() async {
     final response =
         await http.get(Uri.parse('http://localhost:5000/api/salles'));
@@ -177,106 +183,137 @@ class _SalleListPageState extends State<SalleListPage> {
       },
     );
   }
-
+  void _confirmLogout(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text("Confirmer la déconnexion"),
+      content: Text("Voulez-vous vraiment vous déconnecter ?"),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text("Annuler"),
+        ),
+        TextButton(
+          onPressed: () async {
+            await AuthService.logout();
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => LoginPage()),
+              (Route<dynamic> route) => false,
+            );
+          },
+          child: Text("Déconnexion", style: TextStyle(color: Colors.red)),
+        ),
+      ],
+    ),
+  );
+}
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        actions: [
-          Container(
-            margin: EdgeInsets.only(right: 16), 
-            child: CircleAvatar(
-              backgroundColor: Color(0xFF1ABC9C),
-              child: IconButton(
-                icon: const Icon(Icons.add, color: Colors.white),
-                onPressed: () => afficherDialogueSalle(), 
+    return FutureBuilder<String?>(
+      future: _getUserRole(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
+        
+        final role = snapshot.data!;
+        final isAdminOrManager = role == 'admin' || role == 'manager';
+
+        return Scaffold(
+          appBar: AppBar(
+            automaticallyImplyLeading: false,
+            actions: [
+              IconButton(
+      icon: Icon(Icons.logout),
+      onPressed: () => _confirmLogout(context),
+    ),
+              if (isAdminOrManager)
+                Container(
+                  margin: EdgeInsets.only(right: 16),
+                  child: CircleAvatar(
+                    backgroundColor: Color(0xFF1ABC9C),
+                    child: IconButton(
+                      icon: const Icon(Icons.add, color: Colors.white),
+                      onPressed: () => afficherDialogueSalle(),
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Color(0xFFF4F6F7), Colors.white],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
             ),
+            child: salles.isEmpty
+                ? const Center(child: CircularProgressIndicator())
+                : ListView.builder(
+                    padding: const EdgeInsets.all(10),
+                    itemCount: salles.length,
+                    itemBuilder: (context, index) {
+                      final salle = salles[index];
+                      return Card(
+                        elevation: 5,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(15),
+                        ),
+                        child: ListTile(
+                          leading: const Icon(Icons.meeting_room, color: Color(0xFF1ABC9C)),
+                          title: Text(
+                            salle['nom'],
+                            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2C3E50)),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                "Type : ${salle['type'].toUpperCase()}",
+                                style: TextStyle(
+                                  color: salle['type'] == 'noir' ? Colors.black : Color(0xFF3498DB)),
+                              ),
+                              Text(
+                                "Nombre de machines: ${salle['machines'].length}",
+                                style: TextStyle(color: Color(0xFF7F8C8D)),
+                              ),
+                            ],
+                          ),
+                          trailing: isAdminOrManager
+                              ? Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(Icons.edit, color: Color(0xFF3498DB)),
+                                      onPressed: () => afficherDialogueSalle(
+                                        id: salle['_id'],
+                                        nomActuel: salle['nom'],
+                                        typeActuel: salle['type'],
+                                        isModification: true,
+                                      ),
+                                    ),
+                                    IconButton(
+                                      icon: const Icon(Icons.delete, color: Color(0xFFE74C3C)),
+                                      onPressed: () => afficherConfirmationSuppression(salle['_id']),
+                                    ),
+                                  ],
+                                )
+                              : null,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => MachinesParSalleView(salleId: salle['_id']),
+                              ),
+                            );
+                          },
+                        ),
+                      );
+                    },
+                  ),
           ),
-        ],
-      ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFFF4F6F7),
-              Colors.white,
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: salles.isEmpty
-            ? const Center(child: CircularProgressIndicator())
-            : ListView.builder(
-                padding: const EdgeInsets.all(10),
-                itemCount: salles.length,
-                itemBuilder: (context, index) {
-                  final salle = salles[index];
-                  return Card(
-                    elevation: 5,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(15),
-                    ),
-                    child: ListTile(
-                      leading: const Icon(Icons.meeting_room,
-                          color: Color(0xFF1ABC9C)),
-                      title: Text(
-                        salle['nom'],
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2C3E50)),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            "Type : ${salle['type'].toUpperCase()}", // Affichage du type de salle
-                            style: TextStyle(
-                                color: salle['type'] == 'noir'
-                                    ? Colors.black
-                                    : Color(0xFF3498DB)),
-                          ),
-                          Text(
-                            "Nombre de machines: ${salle['machines'].length}",
-                            style: TextStyle(color: Color(0xFF7F8C8D)),
-                          ),
-                        ],
-                      ),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            icon: Icon(Icons.edit, color: Color(0xFF3498DB)),
-                            onPressed: () => afficherDialogueSalle(
-                              id: salle['_id'],
-                              nomActuel: salle['nom'],
-                              typeActuel: salle['type'],
-                              isModification: true,
-                            ),
-                          ),
-                          IconButton(
-                            icon: const Icon(Icons.delete,
-                                color: Color(0xFFE74C3C)),
-                            onPressed: () =>
-                                afficherConfirmationSuppression(salle['_id']),
-                          ),
-                        ],
-                      ),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                MachinesParSalleView(salleId: salle['_id']),
-                          ),
-                        );
-                      },
-                    ),
-                  );
-                },
-              ),
-      ),
+        );
+      },
     );
   }
 }

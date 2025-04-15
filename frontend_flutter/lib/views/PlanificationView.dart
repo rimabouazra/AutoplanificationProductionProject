@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/services/auth_service.dart';
+import 'package:frontend/views/LoginPage.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/planification.dart';
@@ -27,23 +29,55 @@ class _PlanificationViewState extends State<PlanificationView> {
     _verticalScrollController.dispose();
     super.dispose();
   }
+
   @override
   void initState() {
     super.initState();
-    Provider.of<PlanificationProvider>(context, listen: false).fetchPlanifications();
+    Provider.of<PlanificationProvider>(context, listen: false)
+        .fetchPlanifications();
   }
 
-
+  void _confirmLogout(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Confirmer la déconnexion"),
+        content: Text("Voulez-vous vraiment vous déconnecter ?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Annuler"),
+          ),
+          TextButton(
+            onPressed: () async {
+              await AuthService.logout();
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => LoginPage()),
+                (Route<dynamic> route) => false,
+              );
+            },
+            child: Text("Déconnexion", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Planifications", style: TextStyle(fontWeight: FontWeight.bold)),
+        automaticallyImplyLeading: false,
+        title: const Text("Planifications",
+            style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.teal,
         centerTitle: true,
         elevation: 4,
         actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: () => _confirmLogout(context),
+          ),
           IconButton(
             icon: Icon(Icons.today),
             onPressed: () {
@@ -100,7 +134,8 @@ class _PlanificationViewState extends State<PlanificationView> {
     _endDate = maxDate.add(Duration(days: 1));
   }
 
-  Widget _buildDateRangeSelector(BuildContext context, PlanificationProvider provider) {
+  Widget _buildDateRangeSelector(
+      BuildContext context, PlanificationProvider provider) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Row(
@@ -133,10 +168,13 @@ class _PlanificationViewState extends State<PlanificationView> {
     );
   }
 
-  Future<void> _selectDate(BuildContext context, {required bool isStartDate}) async {
+  Future<void> _selectDate(BuildContext context,
+      {required bool isStartDate}) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: isStartDate ? _startDate ?? DateTime.now() : _endDate ?? DateTime.now(),
+      initialDate: isStartDate
+          ? _startDate ?? DateTime.now()
+          : _endDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
@@ -150,8 +188,6 @@ class _PlanificationViewState extends State<PlanificationView> {
       });
     }
   }
-
-
 
   Widget _buildGanttChart(PlanificationProvider provider) {
     if (_startDate == null || _endDate == null) {
@@ -170,11 +206,13 @@ class _PlanificationViewState extends State<PlanificationView> {
 
     // Sync horizontal scrolling between header and content
     _headerHorizontalScrollController.addListener(() {
-      _contentHorizontalScrollController.jumpTo(_headerHorizontalScrollController.offset);
+      _contentHorizontalScrollController
+          .jumpTo(_headerHorizontalScrollController.offset);
     });
 
     _contentHorizontalScrollController.addListener(() {
-      _headerHorizontalScrollController.jumpTo(_contentHorizontalScrollController.offset);
+      _headerHorizontalScrollController
+          .jumpTo(_contentHorizontalScrollController.offset);
     });
 
     return Column(
@@ -216,7 +254,8 @@ class _PlanificationViewState extends State<PlanificationView> {
                               Text(DateFormat('EEE').format(date),
                                   style: TextStyle(fontSize: 12)),
                               Text(DateFormat('dd/MM').format(date),
-                                  style: TextStyle(fontWeight: FontWeight.bold)),
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
                             ],
                           ),
                         );
@@ -260,9 +299,13 @@ class _PlanificationViewState extends State<PlanificationView> {
                           final startOffset = plan.debutPrevue != null
                               ? plan.debutPrevue!.difference(_startDate!).inDays
                               : 0;
-                          final duration = plan.debutPrevue != null && plan.finPrevue != null
-                              ? plan.finPrevue!.difference(plan.debutPrevue!).inDays + 1
-                              : 1;
+                          final duration =
+                              plan.debutPrevue != null && plan.finPrevue != null
+                                  ? plan.finPrevue!
+                                          .difference(plan.debutPrevue!)
+                                          .inDays +
+                                      1
+                                  : 1;
 
                           return SizedBox(
                             height: rowHeight,
@@ -272,15 +315,19 @@ class _PlanificationViewState extends State<PlanificationView> {
                                 SizedBox(
                                   width: infoColumnWidth,
                                   child: Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 8),
+                                    padding:
+                                        EdgeInsets.symmetric(horizontal: 8),
                                     child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
                                       children: [
                                         Flexible(
                                           child: Text(
                                             '${plan.commandes.isNotEmpty ? plan.commandes.first.client : 'No client'}',
-                                            style: TextStyle(fontWeight: FontWeight.bold),
+                                            style: TextStyle(
+                                                fontWeight: FontWeight.bold),
                                             overflow: TextOverflow.ellipsis,
                                           ),
                                         ),
@@ -309,24 +356,33 @@ class _PlanificationViewState extends State<PlanificationView> {
                                       children: [
                                         // Background grid
                                         Row(
-                                          children: List.generate(days, (index) => Container(
-                                            width: dayWidth,
-                                            decoration: BoxDecoration(
-                                              border: Border(right: BorderSide(color: Colors.grey.shade100)),
-                                            ),
-                                          )),
+                                          children: List.generate(
+                                              days,
+                                              (index) => Container(
+                                                    width: dayWidth,
+                                                    decoration: BoxDecoration(
+                                                      border: Border(
+                                                          right: BorderSide(
+                                                              color: Colors.grey
+                                                                  .shade100)),
+                                                    ),
+                                                  )),
                                         ),
                                         // Gantt bar
-                                        if (plan.debutPrevue != null && plan.finPrevue != null)
+                                        if (plan.debutPrevue != null &&
+                                            plan.finPrevue != null)
                                           Positioned(
                                             left: startOffset * dayWidth,
                                             child: Container(
                                               width: duration * dayWidth,
                                               height: 40,
-                                              margin: EdgeInsets.symmetric(vertical: 15),
+                                              margin: EdgeInsets.symmetric(
+                                                  vertical: 15),
                                               decoration: BoxDecoration(
-                                                color: _getStatusColor(plan.statut),
-                                                borderRadius: BorderRadius.circular(4),
+                                                color: _getStatusColor(
+                                                    plan.statut),
+                                                borderRadius:
+                                                    BorderRadius.circular(4),
                                                 boxShadow: [
                                                   BoxShadow(
                                                     color: Colors.black12,
@@ -366,12 +422,17 @@ class _PlanificationViewState extends State<PlanificationView> {
       ],
     );
   }
+
   Color _getStatusColor(String statut) {
     switch (statut) {
-      case "en attente": return Colors.orange;
-      case "en cours": return Colors.blue;
-      case "terminée": return Colors.green;
-      default: return Colors.grey;
+      case "en attente":
+        return Colors.orange;
+      case "en cours":
+        return Colors.blue;
+      case "terminée":
+        return Colors.green;
+      default:
+        return Colors.grey;
     }
   }
 
@@ -385,7 +446,8 @@ class _PlanificationViewState extends State<PlanificationView> {
           const SizedBox(width: 5),
           Text(
             statut.toUpperCase(),
-            style: TextStyle(color: statutColor, fontWeight: FontWeight.bold, fontSize: 12),
+            style: TextStyle(
+                color: statutColor, fontWeight: FontWeight.bold, fontSize: 12),
           ),
         ],
       ),

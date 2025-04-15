@@ -495,6 +495,7 @@ class _StockModeleViewState extends State<StockModeleView> {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         actions: [
           Container(
             margin: EdgeInsets.only(right: 16),

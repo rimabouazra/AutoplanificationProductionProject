@@ -3,8 +3,14 @@ import 'package:frontend/providers/MachineProvider.dart';
 import 'package:frontend/providers/ProduitProvider.dart';
 import 'package:frontend/providers/matiereProvider.dart';
 import 'package:frontend/providers/salleProvider.dart';
+import 'package:frontend/views/ListeProduitsPage.dart';
 import 'package:frontend/views/LoginPage.dart';
+import 'package:frontend/views/PlanificationView.dart';
 import 'package:frontend/views/RegisterPage.dart';
+import 'package:frontend/views/SalleListPage.dart';
+import 'package:frontend/views/StockModeleView.dart';
+import 'package:frontend/views/UsersView.dart';
+import 'package:frontend/views/matiereView.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'providers/CommandeProvider.dart';
@@ -26,8 +32,7 @@ void main() {
         ChangeNotifierProvider(create: (context) => SalleProvider()),
         ChangeNotifierProvider(create: (context) => MatiereProvider()),
         ChangeNotifierProvider(create: (context) => MachineProvider()),
-
-        ChangeNotifierProvider(create: (context) => ProduitProvider()), 
+        ChangeNotifierProvider(create: (context) => ProduitProvider()),
         ChangeNotifierProvider(
           create: (context) => PlanificationProvider(
             Provider.of<CommandeProvider>(context, listen: false),
@@ -61,6 +66,12 @@ class MyApp extends StatelessWidget {
         '/login': (context) => LoginPage(),
         '/register': (context) => RegisterPage(),
         '/adminHome': (context) => AdminHomePage(),
+        '/produits': (context) => ProduitsPage(),
+        '/stockModele': (context) => StockModeleView(),
+        '/salles': (context) => SalleListPage(),
+        '/matiere': (context) => MatiereView(),
+        '/planification': (context) => PlanificationView(),
+        '/users': (context) => UsersView(),
       },
       home: HomePage(),
     );
