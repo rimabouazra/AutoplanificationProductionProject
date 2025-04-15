@@ -1,5 +1,6 @@
 const bcrypt = require("bcryptjs");
 const User = require("../models/User");
+const { generateToken } = require('../middlewares/auth');
 const jwt = require("jsonwebtoken");
 // Ajouter un utilisateur
 exports.ajouterUtilisateur = async (req, res) => {
@@ -91,8 +92,8 @@ exports.login = async (req, res) => {
         const { email, motDePasse } = req.body;
 
         const utilisateur = await User.findOne({ email });
-        if (!utilisateur) {
-            return res.status(400).json({ message: "Utilisateur non trouvé." });
+        if (!utilisateur|| utilisateur.status !== 'approved') {
+            return res.status(400).json({ message: "Identifiants invalides ou compte non approuvé." });
         }
 
         const passwordMatch = await bcrypt.compare(motDePasse, utilisateur.motDePasse);

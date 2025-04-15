@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/services/auth_service.dart';
+import 'package:frontend/views/LoginPage.dart';
 import '../providers/modeleProvider.dart';
 import 'AddCommandePage.dart';
 import 'package:provider/provider.dart';
@@ -67,23 +69,25 @@ class _CommandePageState extends State<CommandePage> {
       return matchesFilter && matchesSearch;
     }).toList();
   }
-  Map<String, int> calculateQuantities(List<CommandeModele> modeles) {
-  int totalDemandee = 0;
-  int totalCalculee = 0;
-  int totalReelle = 0;
 
-  for (var modele in modeles) {
-    totalDemandee += modele.quantite;
-    totalCalculee += modele.quantiteCalculee;
-    totalReelle += modele.quantiteReelle;
+  Map<String, int> calculateQuantities(List<CommandeModele> modeles) {
+    int totalDemandee = 0;
+    int totalCalculee = 0;
+    int totalReelle = 0;
+
+    for (var modele in modeles) {
+      totalDemandee += modele.quantite;
+      totalCalculee += modele.quantiteCalculee;
+      totalReelle += modele.quantiteReelle;
+    }
+
+    return {
+      'totalDemandee': totalDemandee,
+      'totalCalculee': totalCalculee,
+      'totalReelle': totalReelle,
+    };
   }
 
-  return {
-    'totalDemandee': totalDemandee,
-    'totalCalculee': totalCalculee,
-    'totalReelle': totalReelle,
-  };
-}
   void deleteCommande(String id) {
     showDialog(
       context: context,
@@ -524,11 +528,44 @@ class _CommandePageState extends State<CommandePage> {
       MaterialPageRoute(builder: (context) => AddCommandePage()),
     );
   }
-
+  void _confirmLogout(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text("Confirmer la déconnexion"),
+      content: Text("Voulez-vous vraiment vous déconnecter ?"),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text("Annuler"),
+        ),
+        TextButton(
+          onPressed: () async {
+            await AuthService.logout();
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (context) => LoginPage()),
+              (Route<dynamic> route) => false,
+            );
+          },
+          child: Text("Déconnexion", style: TextStyle(color: Colors.red)),
+        ),
+      ],
+    ),
+  );
+}
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Color(0xFFF4F6F7), // Couleur de fond
+      appBar: AppBar(
+        automaticallyImplyLeading: false,
+        actions: [
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: () => _confirmLogout(context),
+          ),
+        ],
+      ),
       body: Row(
         children: [
           Expanded(
@@ -565,7 +602,7 @@ class _CommandePageState extends State<CommandePage> {
           BoxShadow(
             color: Colors.black12,
             blurRadius: 8,
-            offset: Offset(0, 4), 
+            offset: Offset(0, 4),
           ),
         ],
       ),
@@ -573,17 +610,13 @@ class _CommandePageState extends State<CommandePage> {
         controller: searchController,
         decoration: InputDecoration(
           hintText: "Rechercher une commande",
-          hintStyle: TextStyle(
-              color: Color(0xFF7F8C8D)), 
-          prefixIcon:
-              Icon(Icons.search, color: Color(0xFF7F8C8D)),
+          hintStyle: TextStyle(color: Color(0xFF7F8C8D)),
+          prefixIcon: Icon(Icons.search, color: Color(0xFF7F8C8D)),
           border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(
-              vertical: 14, horizontal: 16),
+          contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(25),
-            borderSide: BorderSide(
-                color: Color(0xFF1ABC9C)), 
+            borderSide: BorderSide(color: Color(0xFF1ABC9C)),
           ),
         ),
         onChanged: (value) => setState(() {}),
@@ -762,7 +795,7 @@ class _CommandePageState extends State<CommandePage> {
                                         color: Color(
                                             0xFF2C3E50)))), // Couleur de texte
                           ],
-                          
+
                           rows: commande.modeles.map((commandeModele) {
                             final modeleNom = Provider.of<ModeleProvider>(
                                         context,

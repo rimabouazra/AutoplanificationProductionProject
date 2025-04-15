@@ -14,6 +14,85 @@ import '../models/client.dart';
 class ApiService {
   static const String baseUrl = "http://localhost:5000/api";
 
+  Future<Map<String, dynamic>> loginUser(String email, String password) async {
+    try {
+      print('Tentative de connexion avec email: $email');
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/login'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'email': email,
+          'motDePasse': password,
+        }),
+      );
+      print('Statut: ${response.statusCode}');
+      print('Réponse brute: ${response.body}');
+
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 200) {
+        return {
+          'success': true,
+          'token': data['token'],
+          'utilisateur': data['utilisateur'] ??
+              data['user'] // Selon ce que retourne réellement l'API
+        };
+      } else {
+        final error = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': error['message'] ?? 'Erreur inconnue'
+        };
+      }
+    } catch (e) {
+      print('Erreur lors de la connexion: $e');
+      return {'success': false, 'message': 'Erreur de connexion réseau'};
+    }
+  }
+
+  Future<Map<String, dynamic>?> register(
+      String username, String email, String password) async {
+    try {
+      print('Tentative d\'inscription: $username, $email');
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/users/add'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'nom': username,
+          'email': email,
+          'motDePasse': password,
+        }),
+      );
+
+      print('Statut: ${response.statusCode}');
+      print('Réponse brute: ${response.body}');
+
+       final data = jsonDecode(response.body);
+    
+    if (response.statusCode == 201) {
+      return {
+        'success': true,
+        'user': data 
+      };
+    } else {
+        final error = jsonDecode(response.body);
+        return {
+          'success': false,
+          'message': error['message'] ?? 'Erreur inconnue'
+        };
+      }
+    } catch (e) {
+      print('Erreur d\'inscription: $e');
+      return {'success': false, 'message': 'Erreur de connexion réseau'};
+    }
+  }
+
   static Future<List<Machine>> getMachines() async {
     final response = await http.get(Uri.parse('$baseUrl/machines'));
     if (response.statusCode == 200) {
@@ -581,83 +660,6 @@ class ApiService {
     }
   }
 
-  Future<Map<String, dynamic>> loginUser(String email, String password) async {
-    try {
-      print('Tentative de connexion avec email: $email');
-
-      final response = await http.post(
-        Uri.parse('$baseUrl/users/login'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'email': email,
-          'motDePasse': password,
-        }),
-      );
-      print('Statut: ${response.statusCode}');
-      print('Réponse brute: ${response.body}');
-
-      final data = jsonDecode(response.body);
-
-      if (response.statusCode == 200) {
-        return {
-          'token': data['token'],
-          'utilisateur': data['utilisateur'] ??
-              data['user'] // Selon ce que retourne réellement l'API
-        };
-      } else {
-        final error = jsonDecode(response.body);
-        return {
-          'success': false,
-          'message': error['message'] ?? 'Erreur inconnue'
-        };
-      }
-    } catch (e) {
-      print('Erreur lors de la connexion: $e');
-      return {'success': false, 'message': 'Erreur de connexion réseau'};
-    }
-  }
-
-  Future<Map<String, dynamic>?> register(
-      String username, String email, String password) async {
-    try {
-      print('Tentative d\'inscription: $username, $email');
-
-      final response = await http.post(
-        Uri.parse('$baseUrl/users/add'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'nom': username,
-          'email': email,
-          'motDePasse': password,
-        }),
-      );
-
-      print('Statut: ${response.statusCode}');
-      print('Réponse brute: ${response.body}');
-
-       final data = jsonDecode(response.body);
-    
-    if (response.statusCode == 201) {
-      return {
-        'success': true,
-        'user': data 
-      };
-    } else {
-        final error = jsonDecode(response.body);
-        return {
-          'success': false,
-          'message': error['message'] ?? 'Erreur inconnue'
-        };
-      }
-    } catch (e) {
-      print('Erreur d\'inscription: $e');
-      return {'success': false, 'message': 'Erreur de connexion réseau'};
-    }
-  }
 
 
   static Future<bool> approveUser(String id, String role) async {

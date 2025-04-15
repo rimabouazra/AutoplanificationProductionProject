@@ -1,8 +1,18 @@
 const Salle = require("../models/Salle");
 const Machine = require("../models/Machine");
 
+// Middleware de vérification de rôle
+const checkRole = (requiredRoles) => {
+    return (req, res, next) => {
+      if (!req.user || !requiredRoles.includes(req.user.role)) {
+        return res.status(403).json({ message: "Accès refusé" });
+      }
+      next();
+    };
+  };
 //Créer une nouvelle salle
-exports.creerSalle = async (req, res) => {
+exports.creerSalle =[
+    checkRole(['admin', 'manager']),async (req, res) => {
     try {
         const { nom, type } = req.body;
         const nouvelleSalle = new Salle({ nom, type });
@@ -11,10 +21,11 @@ exports.creerSalle = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: "Erreur lors de la création de la salle", error });
     }
-};
+}];
 
 //Modifier le nom d'une salle
-exports.modifierSalle = async (req, res) => {
+exports.modifierSalle = [
+    checkRole(['admin', 'manager']), async (req, res) => {
     try {
         const { id } = req.params;
         const { nom, type } = req.body;
@@ -24,10 +35,11 @@ exports.modifierSalle = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: "Erreur lors de la modification de la salle", error });
     }
-};
+}];
 
 // Supprimer une salle
-exports.supprimerSalle = async (req, res) => {
+exports.supprimerSalle = [
+    checkRole(['admin', 'manager']),async (req, res) => {
     try {
         const { id } = req.params;
         await Salle.findByIdAndDelete(id);
@@ -35,7 +47,7 @@ exports.supprimerSalle = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: "Erreur lors de la suppression de la salle", error });
     }
-};
+}];
 
 // Récupérer toutes les salles
 exports.listerToutesLesSalles = async (req, res) => {
@@ -76,7 +88,8 @@ exports.getAllSalles = async (req, res) => {
 
 
 //Ajouter une machine à une salle
-exports.ajouterMachine = async (req, res) => {
+exports.ajouterMachine = [
+    checkRole(['admin', 'manager']), async (req, res) => {
     try {
         const { salleId } = req.params;
         const { nom, modelesCompatibles } = req.body;
@@ -94,7 +107,7 @@ exports.ajouterMachine = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: "Erreur lors de l'ajout de la machine", error });
     }
-};
+}];
 
 // Modifier une machine
 exports.modifierMachine = async (req, res) => {

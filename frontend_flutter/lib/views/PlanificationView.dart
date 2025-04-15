@@ -35,7 +35,8 @@ class _PlanificationViewState extends State<PlanificationView> {
   @override
   void initState() {
     super.initState();
-    Provider.of<PlanificationProvider>(context, listen: false).fetchPlanifications();
+    Provider.of<PlanificationProvider>(context, listen: false)
+        .fetchPlanifications();
     _selectedSalleType = 'blanc';
 
   }

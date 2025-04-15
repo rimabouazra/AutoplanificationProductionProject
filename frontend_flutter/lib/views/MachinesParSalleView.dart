@@ -3,7 +3,7 @@ import 'package:frontend/models/modele.dart';
 import 'package:frontend/views/AjouterModeleAdmin.dart';
 import '../models/machine.dart';
 import '../services/api_service.dart';
-
+import 'package:shared_preferences/shared_preferences.dart';
 class MachinesParSalleView extends StatefulWidget {
   final String salleId;
   const MachinesParSalleView({Key? key, required this.salleId})
@@ -15,7 +15,10 @@ class MachinesParSalleView extends StatefulWidget {
 
 class _MachinesParSalleViewState extends State<MachinesParSalleView> {
   List<dynamic> machines = [];
-
+  Future<String?> _getUserRole() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('role');
+  }
   @override
   void initState() {
     super.initState();
@@ -25,7 +28,7 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
   Future<void> fetchMachinesParSalle() async {
     try {
       var data = await ApiService.fetchMachinesParSalle(widget.salleId);
-      print("Données reçues de l'API : $data"); // Debug
+      //print("Données reçues de l'API : $data"); // Debug
       setState(() {
         machines = data;
       });
@@ -330,49 +333,62 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text("Machines par Salle",
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        centerTitle: true,
-        backgroundColor: Color.fromARGB(255, 163, 228, 215),
-        elevation: 4,
-        iconTheme: IconThemeData(color: Colors.white),
-      ),
-      body: machines.isEmpty
-          ? Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(10.0),
-              child: GridView.builder(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 1.0,
+    
+   return FutureBuilder<String?>(
+      future: _getUserRole(),
+      builder: (context, snapshot) {
+        if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
+        
+        final role = snapshot.data!;
+        final isAdminOrManager = role == 'admin' || role == 'manager';
+        final canEditMachine = isAdminOrManager || role == 'responsable_modele';
+
+        return Scaffold(
+          appBar: AppBar(
+            title: Text("Machines par Salle", style: TextStyle(fontWeight: FontWeight.bold)),
+            centerTitle: true,
+            backgroundColor: Color.fromARGB(255, 163, 228, 215),
+            elevation: 4,
+            iconTheme: IconThemeData(color: Colors.white),
+          ),
+          body: machines.isEmpty
+              ? Center(child: CircularProgressIndicator())
+              : Padding(
+                  padding: const EdgeInsets.all(10.0),
+                  child: GridView.builder(
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1.0,
+                    ),
+                    itemCount: machines.length,
+                    itemBuilder: (context, index) {
+                      var machine = machines[index];
+                      return _buildMachineCard(machine, canEditMachine, isAdminOrManager);
+                    },
+                  ),
                 ),
-                itemCount: machines.length,
-                itemBuilder: (context, index) {
-                  var machine = machines[index];
-                  return _buildMachineCard(machine);
-                },
-              ),
-            ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _showAddMachineDialog,
-        backgroundColor: Color(0xFF1ABC9C),
-        child: Icon(Icons.add, color: Colors.white),
-        tooltip: "Ajouter une machine",
-      ),
+          floatingActionButton: isAdminOrManager
+              ? FloatingActionButton(
+                  onPressed: _showAddMachineDialog,
+                  backgroundColor: Color(0xFF1ABC9C),
+                  child: Icon(Icons.add, color: Colors.white),
+                  tooltip: "Ajouter une machine",
+                )
+              : null,
+        );
+      },
     );
   }
 
-  Widget _buildMachineCard(dynamic machine) {
+  Widget _buildMachineCard(dynamic machine, bool canEdit, bool canDelete) {
     return Card(
       elevation: 6,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => _showEditMachineDialog(machine),
+        onTap: canEdit ? () => _showEditMachineDialog(machine) : null,
         child: Padding(
           padding: const EdgeInsets.all(12.0),
           child: Column(
@@ -390,19 +406,22 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
                 textAlign: TextAlign.center,
               ),
               SizedBox(height: 8),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.edit, color: Colors.blueAccent),
-                    onPressed: () => _showEditMachineDialog(machine),
-                  ),
-                  IconButton(
-                    icon: Icon(Icons.delete, color: Colors.redAccent),
-                    onPressed: () => _confirmDeleteMachine(machine),
-                  ),
-                ],
-              ),
+              if (canEdit || canDelete)
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (canEdit)
+                      IconButton(
+                        icon: Icon(Icons.edit, color: Colors.blueAccent),
+                        onPressed: () => _showEditMachineDialog(machine),
+                      ),
+                    if (canDelete)
+                      IconButton(
+                        icon: Icon(Icons.delete, color: Colors.redAccent),
+                        onPressed: () => _confirmDeleteMachine(machine),
+                      ),
+                  ],
+                ),
             ],
           ),
         ),

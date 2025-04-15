@@ -2,7 +2,17 @@ const Machine = require("../models/Machine");
 const Modele = require("../models/Modele");
 const Salle = require("../models/Salle");  
 
-exports.ajouterMachine = async (req, res) => {
+// Middleware de vérification de rôle
+const checkRole = (requiredRoles) => {
+    return (req, res, next) => {
+      if (!req.user || !requiredRoles.includes(req.user.role)) {
+        return res.status(403).json({ message: "Accès refusé" });
+      }
+      next();
+    };
+  };
+exports.ajouterMachine = [
+    checkRole(['admin', 'manager']),async (req, res) => {
     try {
         console.log("Requête reçue pour ajouter une machine :", req.body);
         const { nom, etat, salle, modele, taille } = req.body;
@@ -24,7 +34,7 @@ exports.ajouterMachine = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: "Erreur lors de l'ajout de la machine", error });
     }
-};
+}];
 
 
 exports.getMachines = async (req, res) => {
@@ -72,7 +82,8 @@ exports.getMachinesBySalle = async (req, res) => {
 
 
 
-exports.updateMachine = async (req, res) => {
+exports.updateMachine = [
+    checkRole(['admin', 'manager', 'responsable_modele']),async (req, res) => {
     try {
         const { nom, etat, salle, modele, taille } = req.body;
 
@@ -99,9 +110,10 @@ exports.updateMachine = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: "Erreur lors de la mise à jour de la machine", error });
     }
-};
+}];
 
-exports.deleteMachine = async (req, res) => {
+exports.deleteMachine = [
+    checkRole(['admin', 'manager']),async (req, res) => {
     try {
         const machine = await Machine.findByIdAndDelete(req.params.id);
         if (!machine) {
@@ -118,4 +130,4 @@ exports.deleteMachine = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: "Erreur lors de la suppression de la machine", error });
     }
-};
+}];
