@@ -8,21 +8,35 @@ const jwtConfig = {
 
 // Middleware d'authentification
 exports.authenticateToken = (req, res, next) => {
+  console.log('Environment JWT_SECRET:', process.env.JWT_SECRET); // Debug
   const authHeader = req.headers['authorization'];
   const token = authHeader && authHeader.split(' ')[1];
-
+  console.log('Token reçu:', token); // Debug
   if (!token) return res.sendStatus(401);
+  // Debug: Vérifiez que le secret est bien disponible
+  if (!process.env.JWT_SECRET) {
+    console.error('ERREUR CRITIQUE: JWT_SECRET non défini');
+    return res.status(500).json({ message: "Erreur de configuration serveur" });
+  }
 
   jwt.verify(token, process.env.JWT_SECRET, async (err, decoded) => {
-    if (err) return res.sendStatus(403);
-    
+    if (err) {
+      console.error('Erreur de vérification JWT:', err); // Debug
+      console.error('Secret utilisé:', process.env.JWT_SECRET); // Debug
+      return res.sendStatus(403);
+    }
+    console.log('Décodé JWT:', decoded);
     try {
-      const user = await User.findById(decoded.id).select('-motDePasse');
-      if (!user) return res.sendStatus(403);
+      const user = await User.findById(decoded.id).select('-motDePasse');      console.log('Utilisateur trouvé:', user); // Debug
+      if (!user) {
+        console.error('Utilisateur non trouvé pour ID:', decoded._id);//Debug
+        return res.sendStatus(403);
+      }
       
       req.user = user;
       next();
     } catch (error) {
+      console.error('Erreur:', error); // Debug
       res.status(500).json({ message: "Erreur serveur" });
     }
   });

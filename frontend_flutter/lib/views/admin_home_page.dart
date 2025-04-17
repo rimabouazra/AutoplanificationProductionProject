@@ -5,6 +5,7 @@ import 'matiereView.dart';
 import 'StockView.dart';
 import 'PlanificationView.dart';
 import 'UsersView.dart';
+import 'StatistiquesView.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 class AdminHomePage extends StatefulWidget {
   const AdminHomePage({Key? key}) : super(key: key);
@@ -35,7 +36,7 @@ class _AdminHomePageState extends State<AdminHomePage> {
   }
   List<Widget> _buildPages(String? role) {
     List<Widget> pages = [
-      Center(child: Text('Statistique en développement')),
+      StatistiquesView(),
       PlanificationView(),
     ];
 
@@ -45,12 +46,14 @@ class _AdminHomePageState extends State<AdminHomePage> {
         StockView(),
         CommandePage(),
         SalleListPage(),
+        StatistiquesView()
       ]);
     } else if (role == 'manager') {
       pages.addAll([
         StockView(),
         CommandePage(),
         SalleListPage(),
+        StatistiquesView()
       ]);
     } else if (role == 'responsable_modele') {
       pages.addAll([

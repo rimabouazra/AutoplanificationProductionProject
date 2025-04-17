@@ -1,10 +1,13 @@
+const dotenv = require("dotenv");
+const path = require('path');
+
 const express = require("express");
 const mongoose = require("mongoose");
-const dotenv = require("dotenv");
 const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
-
+const envPath = path.resolve(__dirname, '.env');
+const result = dotenv.config({ path: envPath });
 // Routes
 const commandeRoutes = require("./routes/commandeRoutes");
 const salleRoutes = require("./routes/salleRoutes");
@@ -16,7 +19,7 @@ const planificationRoutes = require("./routes/planificationRoutes");
 const clientRoutes = require("./routes/clientRoutes");
 const UserRoutes = require("./routes/userRoutes");
 
-dotenv.config();
+//dotenv.config();
 
 const app = express();
 
@@ -24,6 +27,15 @@ const app = express();
 app.use(helmet());
 app.use(express.json());
 app.use(cors());
+//TEST
+if (result.error) {
+  console.error('Erreur de chargement du .env:', result.error);
+} else {
+  console.log('Configuration .env chargée:', {
+    JWT_SECRET: process.env.JWT_SECRET ? 'défini' : 'non défini',
+    MONGO_URI: process.env.MONGO_URI ? 'défini' : 'non défini'
+  });
+} 
 
 // Rate limiter pour auth uniquement
 const authLimiter = rateLimit({

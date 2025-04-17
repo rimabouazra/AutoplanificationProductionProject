@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const salleController = require("../controllers/salleController");
+const { authenticateToken } = require("../middlewares/auth");
 
 router.get("/", salleController.getAllSalles);
 

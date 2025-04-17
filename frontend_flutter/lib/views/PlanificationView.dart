@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/services/auth_service.dart';
+import 'package:frontend/views/LoginPage.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../models/planification.dart';
@@ -32,28 +34,66 @@ class _PlanificationViewState extends State<PlanificationView> {
     _verticalScrollController.dispose();
     super.dispose();
   }
+
   @override
   void initState() {
     super.initState();
     Provider.of<PlanificationProvider>(context, listen: false)
         .fetchPlanifications();
     _selectedSalleType = 'blanc';
-
   }
 
-
+  void _confirmLogout(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Confirmer la déconnexion"),
+        content: Text("Voulez-vous vraiment vous déconnecter ?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Annuler"),
+          ),
+          TextButton(
+            onPressed: () async {
+              await AuthService.logout();
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => LoginPage()),
+                (Route<dynamic> route) => false,
+              );
+            },
+            child: Text("Déconnexion", style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Planifications", style: TextStyle(fontWeight: FontWeight.bold)),
+        automaticallyImplyLeading: false,
+        title: const Text("Planifications",
+            style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.teal,
         centerTitle: true,
         elevation: 4,
         actions: [
-
-
+          IconButton(
+            icon: Icon(Icons.logout),
+            onPressed: () => _confirmLogout(context),
+          ),
+          IconButton(
+            icon: Icon(Icons.today),
+            onPressed: () {
+              setState(() {
+                _startDate = null;
+                _endDate = null;
+              });
+            },
+            tooltip: 'Reset date range',
+          ),
         ],
       ),
       body: Consumer<PlanificationProvider>(
@@ -100,7 +140,8 @@ class _PlanificationViewState extends State<PlanificationView> {
     _endDate = maxDate.add(Duration(days: 1));
   }
 
-  Widget _buildDateRangeSelector(BuildContext context, PlanificationProvider provider) {
+  Widget _buildDateRangeSelector(
+      BuildContext context, PlanificationProvider provider) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Row(
@@ -155,10 +196,13 @@ class _PlanificationViewState extends State<PlanificationView> {
     );
   }
 
-  Future<void> _selectDate(BuildContext context, {required bool isStartDate}) async {
+  Future<void> _selectDate(BuildContext context,
+      {required bool isStartDate}) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: isStartDate ? _startDate ?? DateTime.now() : _endDate ?? DateTime.now(),
+      initialDate: isStartDate
+          ? _startDate ?? DateTime.now()
+          : _endDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
@@ -172,8 +216,6 @@ class _PlanificationViewState extends State<PlanificationView> {
       });
     }
   }
-
-
 
   Widget _buildGanttChart(PlanificationProvider provider) {
     if (_startDate == null || _endDate == null) {
@@ -193,7 +235,10 @@ class _PlanificationViewState extends State<PlanificationView> {
       headers = List.generate(timeSlots, (index) => '${_startHour + index}h');
     } else if (_selectedViewMode == 'semaine') {
       timeSlots = 7;
-      headers = List.generate(7, (index) => DateFormat('EEE').format(_startDate!.add(Duration(days: index))));
+      headers = List.generate(
+          7,
+          (index) =>
+              DateFormat('EEE').format(_startDate!.add(Duration(days: index))));
     } else if (_selectedViewMode == 'mois') {
       timeSlots = DateTime(_endDate!.year, _endDate!.month + 1, 0).day;
       headers = List.generate(timeSlots, (index) => '${index + 1}');
@@ -221,13 +266,17 @@ class _PlanificationViewState extends State<PlanificationView> {
                     SizedBox(
                       width: infoColumnWidth,
                       child: Center(
-                        child: Text('Planification', style: TextStyle(fontWeight: FontWeight.bold)),
+                        child: Text('Planification',
+                            style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
                     ),
                     ...headers.map((h) => SizedBox(
-                      width: timeSlotWidth,
-                      child: Center(child: Text(h, style: TextStyle(fontWeight: FontWeight.bold))),
-                    )),
+                          width: timeSlotWidth,
+                          child: Center(
+                              child: Text(h,
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold))),
+                        )),
                   ],
                 ),
               ),
@@ -255,21 +304,31 @@ class _PlanificationViewState extends State<PlanificationView> {
                     padding: EdgeInsets.all(8),
                     child: Column(
                       children: provider.planifications
-                          .where((p) => p.machines.isNotEmpty && p.machines.first.salle.type == _selectedSalleType)
+                          .where((p) =>
+                              p.machines.isNotEmpty &&
+                              p.machines.first.salle.type == _selectedSalleType)
                           .map((plan) {
                         int startSlot = 0;
                         int duration = 1;
 
                         if (_selectedViewMode == 'journée') {
-                          final startHour = plan.debutPrevue?.hour ?? _startHour;
+                          final startHour =
+                              plan.debutPrevue?.hour ?? _startHour;
                           final endHour = plan.finPrevue?.hour ?? startHour + 1;
                           startSlot = startHour - _startHour;
                           duration = (endHour - startHour).clamp(1, timeSlots);
-                        } else if (_selectedViewMode == 'semaine' || _selectedViewMode == 'mois') {
-                          startSlot = plan.debutPrevue != null ? plan.debutPrevue!.difference(_startDate!).inDays : 0;
-                          duration = plan.finPrevue != null && plan.debutPrevue != null
-                              ? plan.finPrevue!.difference(plan.debutPrevue!).inDays + 1
-                              : 1;
+                        } else if (_selectedViewMode == 'semaine' ||
+                            _selectedViewMode == 'mois') {
+                          startSlot = plan.debutPrevue != null
+                              ? plan.debutPrevue!.difference(_startDate!).inDays
+                              : 0;
+                          duration =
+                              plan.finPrevue != null && plan.debutPrevue != null
+                                  ? plan.finPrevue!
+                                          .difference(plan.debutPrevue!)
+                                          .inDays +
+                                      1
+                                  : 1;
                         }
 
                         return SizedBox(
@@ -283,11 +342,23 @@ class _PlanificationViewState extends State<PlanificationView> {
                                   padding: EdgeInsets.symmetric(horizontal: 8),
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
-                                      Flexible(child: Text(plan.commandes.isNotEmpty ? plan.commandes.first.client.name : 'No client')),
-                                      Flexible(child: Text(plan.machines.isNotEmpty ? plan.machines.first.nom : 'No machine', style: TextStyle(fontSize: 12))),
-                                      Flexible(child: Text('Salle: ${plan.machines.first.salle.nom}', style: TextStyle(fontSize: 12))),
+                                      Flexible(
+                                          child: Text(plan.commandes.isNotEmpty
+                                              ? plan.commandes.first.client.name
+                                              : 'No client')),
+                                      Flexible(
+                                          child: Text(
+                                              plan.machines.isNotEmpty
+                                                  ? plan.machines.first.nom
+                                                  : 'No machine',
+                                              style: TextStyle(fontSize: 12))),
+                                      Flexible(
+                                          child: Text(
+                                              'Salle: ${plan.machines.first.salle.nom}',
+                                              style: TextStyle(fontSize: 12))),
                                       _buildStatut(plan.statut),
                                     ],
                                   ),
@@ -302,25 +373,43 @@ class _PlanificationViewState extends State<PlanificationView> {
                                     width: totalContentWidth,
                                     child: Stack(
                                       children: [
-                                        Row(children: List.generate(timeSlots, (index) => Container(
-                                          width: timeSlotWidth,
-                                          decoration: BoxDecoration(border: Border(right: BorderSide(color: Colors.grey.shade200))),
-                                        ))),
+                                        Row(
+                                            children: List.generate(
+                                                timeSlots,
+                                                (index) => Container(
+                                                      width: timeSlotWidth,
+                                                      decoration: BoxDecoration(
+                                                          border: Border(
+                                                              right: BorderSide(
+                                                                  color: Colors
+                                                                      .grey
+                                                                      .shade200))),
+                                                    ))),
                                         Positioned(
                                           left: startSlot * timeSlotWidth,
                                           child: Container(
                                             width: duration * timeSlotWidth,
                                             height: 40,
-                                            margin: EdgeInsets.symmetric(vertical: 15),
+                                            margin: EdgeInsets.symmetric(
+                                                vertical: 15),
                                             decoration: BoxDecoration(
-                                              color: _getStatusColor(plan.statut),
-                                              borderRadius: BorderRadius.circular(4),
-                                              boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 2)],
+                                              color:
+                                                  _getStatusColor(plan.statut),
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                              boxShadow: [
+                                                BoxShadow(
+                                                    color: Colors.black12,
+                                                    blurRadius: 2)
+                                              ],
                                             ),
                                             child: Center(
                                               child: Text(
                                                 '${_formatTime(plan.debutPrevue)} - ${_formatTime(plan.finPrevue)}',
-                                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 12),
+                                                style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: 12),
                                               ),
                                             ),
                                           ),
@@ -347,10 +436,14 @@ class _PlanificationViewState extends State<PlanificationView> {
 
   Color _getStatusColor(String statut) {
     switch (statut) {
-      case "en attente": return Colors.orange;
-      case "en cours": return Colors.blue;
-      case "terminée": return Colors.green;
-      default: return Colors.grey;
+      case "en attente":
+        return Colors.orange;
+      case "en cours":
+        return Colors.blue;
+      case "terminée":
+        return Colors.green;
+      default:
+        return Colors.grey;
     }
   }
 
@@ -364,7 +457,8 @@ class _PlanificationViewState extends State<PlanificationView> {
           const SizedBox(width: 5),
           Text(
             statut.toUpperCase(),
-            style: TextStyle(color: statutColor, fontWeight: FontWeight.bold, fontSize: 12),
+            style: TextStyle(
+                color: statutColor, fontWeight: FontWeight.bold, fontSize: 12),
           ),
         ],
       ),

@@ -1,14 +1,12 @@
 const Salle = require("../models/Salle");
 const Machine = require("../models/Machine");
-
+const { authenticateToken, authorizeRoles } = require('../middlewares/auth'); 
 // Middleware de vérification de rôle
 const checkRole = (requiredRoles) => {
-    return (req, res, next) => {
-      if (!req.user || !requiredRoles.includes(req.user.role)) {
-        return res.status(403).json({ message: "Accès refusé" });
-      }
-      next();
-    };
+    return [
+        authenticateToken, // Ajoutez d'abord l'authentification
+        authorizeRoles(...requiredRoles) // Puis vérifiez le rôle
+      ]
   };
 //Créer une nouvelle salle
 exports.creerSalle =[
