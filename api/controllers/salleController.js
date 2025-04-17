@@ -61,7 +61,7 @@ exports.listerToutesLesSalles = async (req, res) => {
 exports.getAllSalles = async (req, res) => {
     try {
         const salles = await Salle.find().populate("machines");
-        console.log("Salles trouvées:", JSON.stringify(salles, null, 2)); // 🔍 Debug: Vérifier les salles et leurs machines
+       // console.log("Salles trouvées:", JSON.stringify(salles, null, 2)); // 🔍 Debug: Vérifier les salles et leurs machines
 
         // Vérifier le vrai nombre de machines dans la base
         for (const salle of salles) {

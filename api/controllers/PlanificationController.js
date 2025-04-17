@@ -15,8 +15,9 @@ exports.autoPlanifierCommande = async (req, res) => {
       return res.status(400).json({ message: "CommandeId is missing" });
     }
 
-    const commande = await Commande.findById(commandeId).populate("modeles");
-    if (!commande) {
+const commande = await Commande.findById(commandeId).populate({
+  path: 'modeles.modele',
+});    if (!commande) {
       return res.status(404).json({ message: "Commande non trouvée", id: commandeId });
     }
 
@@ -64,7 +65,8 @@ exports.autoPlanifierCommande = async (req, res) => {
         totalHeures += heures;
       } else {
         return res.status(400).json({
-          message: `Aucune machine disponible trouvée pour le modèle ${modele.nomModele}`
+          message: `Aucune machine disponible trouvée pour le modèle ${modele.modele.nom}`
+
         });
       }
     }

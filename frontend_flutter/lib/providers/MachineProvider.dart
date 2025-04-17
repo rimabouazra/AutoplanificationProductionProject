@@ -10,16 +10,16 @@ class MachineProvider with ChangeNotifier {
 
   Future<void> fetchMachinesBySalle(String salleId) async {
     final url = 'http://localhost:5000/api/machines/parSalle/$salleId';
-    print("🔍 URL requête: $url");
+   // print("🔍 URL requête: $url");
 
     try {
       final response = await http.get(Uri.parse(url));
-      print("Code réponse: ${response.statusCode}");
-      print("Réponse: ${response.body}");
+      //print("Code réponse: ${response.statusCode}");
+      //print("Réponse: ${response.body}");
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print("Machines reçues: $data");
+       // print("Machines reçues: $data");
 
         _machines = (data as List).map((machine) {
           return Machine.fromJson(machine);
