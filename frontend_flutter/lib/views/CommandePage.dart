@@ -138,7 +138,8 @@ class _CommandePageState extends State<CommandePage> {
                   style: pw.TextStyle(
                       fontSize: 24, fontWeight: pw.FontWeight.bold)),
               pw.SizedBox(height: 20),
-              pw.Text('Client: ${commande.client}'),
+              pw.Text('Client: ${commande.client.name}'),
+
               pw.Text('Conditionnement: ${commande.conditionnement}'),
               pw.Text(
                   'Salle Affectée: ${commande.salleAffectee ?? 'Non assignée'}'),

@@ -332,17 +332,17 @@ class ApiService {
   static Future<List<dynamic>> fetchMachinesParSalle(String salleId) async {
     final url =
         'http://localhost:5000/api/machines/parSalle/$salleId'; // Ajout de salleId
-    print("🔍 Requête envoyée à: $url"); // Debug URL
+   // print("🔍 Requête envoyée à: $url"); // Debug URL
 
     try {
       final response = await http.get(Uri.parse(url));
 
-      print("Réponse API: ${response.statusCode}"); // Code de réponse
-      print("Données brutes: ${response.body}"); // Debug JSON
+      //print("Réponse API: ${response.statusCode}"); // Code de réponse
+     // print("Données brutes: ${response.body}"); // Debug JSON
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        print("Données reçues: $data"); // Vérification de la structure
+       // print("Données reçues: $data"); // Vérification de la structure
         return data; // Retourne directement la liste des machines
       } else {
         print("Erreur API: ${response.body}");
@@ -382,7 +382,7 @@ class ApiService {
       headers: {'Content-Type': 'application/json'},
       body: json.encode(matiere.toJson()),
     );
-    print("Réponse API : ${response.statusCode} - ${response.body}");
+   // print("Réponse API : ${response.statusCode} - ${response.body}");
     if (response.statusCode == 201) {
       return json.decode(response.body);
     } else {
@@ -513,16 +513,16 @@ class ApiService {
 
   Future<Modele?> getModeleParNom(String nomModele) async {
     try {
-      print("Début de getModeleParNom avec nomModele: $nomModele");
+     // print("Début de getModeleParNom avec nomModele: $nomModele");
 
       String? modeleId = await getModeleId(nomModele);
-      print("Résultat de getModeleId: $modeleId");
+     // print("Résultat de getModeleId: $modeleId");
       if (modeleId == null) {
         print("Erreur: Aucun ID trouvé pour le modèle '$nomModele'");
         return null;
       }
       String? modeleNom = await getModeleNom(modeleId);
-      print("Résultat de getModeleNom: $modeleNom");
+     // print("Résultat de getModeleNom: $modeleNom");
       if (modeleNom == null) {
         print("Erreur: Aucun nom trouvé pour le modèle ID '$modeleId'");
         return null;
@@ -550,7 +550,7 @@ class ApiService {
 
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
-        print("Réponse du modèle : $data");
+       // print("Réponse du modèle : $data");
 
         if (data["_id"] != null) {
           String? modeleId = data["_id"].toString();
