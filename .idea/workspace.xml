@@ -7,12 +7,6 @@
     <list default="true" id="f1b1f5c6-b780-4356-ad10-8b85adb9bdf5" name="Changes" comment="ajouter schema client">
       <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/controllers/PlanificationController.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/controllers/PlanificationController.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/controllers/salleController.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/controllers/salleController.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/main.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/providers/MachineProvider.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/providers/MachineProvider.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/services/api_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/services/api_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/CommandePage.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/CommandePage.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
