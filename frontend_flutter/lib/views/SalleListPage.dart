@@ -41,9 +41,13 @@ class _SalleListPageState extends State<SalleListPage> {
 
   // Ajouter une salle
   Future<void> ajouterSalle(String nom, String type) async {
+    final token = await AuthService.getToken();
     final response = await http.post(
       Uri.parse('http://localhost:5000/api/salles'),
-      headers: {"Content-Type": "application/json"},
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
       body: jsonEncode({"nom": nom, "type": type}),
     );
 
@@ -58,9 +62,13 @@ class _SalleListPageState extends State<SalleListPage> {
   // Modifier une salle
   Future<void> modifierSalle(
       String id, String nouveauNom, String nouveauType) async {
+        final token = await AuthService.getToken();
     final response = await http.put(
       Uri.parse('http://localhost:5000/api/salles/$id'),
-      headers: {"Content-Type": "application/json"},
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
       body: jsonEncode({
         "nom": nouveauNom,
         "type": nouveauType,
@@ -77,15 +85,35 @@ class _SalleListPageState extends State<SalleListPage> {
 
   // Supprimer une salle
   Future<void> supprimerSalle(String id) async {
-    final response =
-        await http.delete(Uri.parse('http://localhost:5000/api/salles/$id'));
+  try {
+    print('🔍 Tentative de suppression de salle $id');
+    final token = await AuthService.getToken();
+    print('🔑 Token récupéré: ${token != null ? "présent" : "absent"}');
+    
+    if (token == null) {
+      throw Exception('Utilisateur non authentifié');
+    }
+
+    final response = await http.delete(
+      Uri.parse('http://localhost:5000/api/salles/$id'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+    );
+
+    print('🔄 Réponse du serveur: ${response.statusCode} - ${response.body}');
 
     if (response.statusCode == 200) {
-      fetchSalles(); // Rafraîchir la liste après la suppression
+      fetchSalles();
     } else {
-      throw Exception('Erreur lors de la suppression de la salle');
+      throw Exception('Erreur lors de la suppression de la salle: ${response.body}');
     }
+  } catch (e) {
+    print('🔥 Erreur dans supprimerSalle: $e');
+    throw e;
   }
+}
 
   // Afficher le dialogue pour ajouter/modifier une salle
   void afficherDialogueSalle(
@@ -171,13 +199,23 @@ class _SalleListPageState extends State<SalleListPage> {
               child: const Text("Annuler"),
             ),
             ElevatedButton(
-              onPressed: () {
-                supprimerSalle(id);
+            onPressed: () async {
+              try {
+                await supprimerSalle(id);
                 Navigator.pop(context);
-              },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text("Supprimer"),
-            ),
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Salle supprimée avec succès')),
+                );
+              } catch (e) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Erreur: ${e.toString()}')),
+                );
+              }
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text("Supprimer"),
+          ),
           ],
         );
       },

@@ -37,13 +37,22 @@ exports.modifierSalle = [
 
 // Supprimer une salle
 exports.supprimerSalle = [
-    checkRole(['admin', 'manager']),async (req, res) => {
+    checkRole(['admin', 'manager']), async (req, res) => {
     try {
         const { id } = req.params;
-        await Salle.findByIdAndDelete(id);
-        res.json({ message: "Salle supprimée avec succès" });
+                await Machine.deleteMany({ salle: id });
+                const result = await Salle.findByIdAndDelete(id);
+        
+        if (!result) {
+            return res.status(404).json({ message: "Salle non trouvée" });
+        }
+        res.json({ message: "Salle et machines associées supprimées avec succès" });
     } catch (error) {
-        res.status(500).json({ message: "Erreur lors de la suppression de la salle", error });
+        console.error("Erreur détaillée:", error);
+        res.status(500).json({ 
+            message: "Erreur lors de la suppression de la salle", 
+            error: error.message 
+        });
     }
 }];
 

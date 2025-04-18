@@ -9,10 +9,19 @@ const jwtConfig = {
 // Middleware d'authentification
 exports.authenticateToken = (req, res, next) => {
   console.log('Environment JWT_SECRET:', process.env.JWT_SECRET); // Debug
-  const authHeader = req.headers['authorization'];
+  console.log('Headers reçus:', req.headers); // DEBUG
+  const authHeader = req.headers['authorization'] || 
+  req.headers['Authorization'] ||
+  req.get('authorization') || 
+  req.get('Authorization');
+  console.log('🔍 Raw headers:', req.headers);
+  console.log('Header Authorization complet:', authHeader);//Debug
   const token = authHeader && authHeader.split(' ')[1];
   console.log('Token reçu:', token); // Debug
-  if (!token) return res.sendStatus(401);
+  if (!token) {
+    console.log('Aucun token trouvé dans les headers');
+    return res.sendStatus(401);
+  }
   // Debug: Vérifiez que le secret est bien disponible
   if (!process.env.JWT_SECRET) {
     console.error('ERREUR CRITIQUE: JWT_SECRET non défini');

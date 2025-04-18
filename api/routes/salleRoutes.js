@@ -5,13 +5,13 @@ const { authenticateToken } = require("../middlewares/auth");
 
 router.get("/", salleController.getAllSalles);
 
-router.post("/", salleController.creerSalle);
+router.post("/",  authenticateToken,salleController.creerSalle);
 router.put("/:id", salleController.modifierSalle);
-router.delete("/:id", salleController.supprimerSalle);
+router.delete("/:id",  authenticateToken,salleController.supprimerSalle);
 
-router.post("/:salleId/machine", salleController.ajouterMachine);
+router.post("/:salleId/machine",  authenticateToken,salleController.ajouterMachine);
 router.put("/machine/:id", salleController.modifierMachine);
-router.delete("/:salleId/machine/:machineId", salleController.supprimerMachine);
+router.delete("/:salleId/machine/:machineId", authenticateToken,salleController.supprimerMachine);
 router.get("/:salleId/machines", salleController.listerMachinesSalle);
 
 module.exports = router;

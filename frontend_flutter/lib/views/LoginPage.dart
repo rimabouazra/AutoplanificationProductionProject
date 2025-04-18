@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frontend/services/api_service.dart';
+import 'package:frontend/services/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
@@ -38,7 +39,11 @@ class _LoginPageState extends State<LoginPage> {
         if (role == null) {
           throw Exception('Role non défini dans la réponse');
         }
-
+        await AuthService.saveUserData(
+      result['token'],
+      utilisateur['_id'],
+      utilisateur['role']?.toString().toLowerCase() ?? ''
+    );
         final SharedPreferences prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', result['token']);
         await prefs.setString('role', role);

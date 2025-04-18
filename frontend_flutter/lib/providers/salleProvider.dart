@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/services/auth_service.dart';
 import '../services/api_service.dart';
 
 class SalleProvider with ChangeNotifier {
   List<dynamic> _salles = [];
 
   List<dynamic> get salles => _salles;
-
 
   Future<void> fetchSalles() async {
     try {
@@ -38,11 +38,24 @@ class SalleProvider with ChangeNotifier {
 
   // Supprimer une salle
   Future<void> supprimerSalle(String id) async {
-    try {
-      await ApiService.supprimerSalle(id);
-      await fetchSalles();
-    } catch (e) {
-      print("Erreur lors de la suppression de la salle : $e");
+  try {
+    print('🟡 Tentative de suppression de la salle $id');
+    final token = await AuthService.getToken();
+    print('🟡 Token actuel: $token');
+    if (token == null) {
+      throw Exception("Non authentifié - Token manquant");
     }
+    final success = await ApiService.supprimerSalle(id);
+    
+    if (!success) {
+      throw Exception("La suppression a retourné false");
+    }
+    
+    print('🟢 Suppression réussie, rafraîchissement des données');
+    await fetchSalles();
+  } catch (e) {
+    print('🔴 Erreur détaillée dans supprimerSalle: $e');
+    throw Exception("Erreur lors de la suppression de la salle: ${e.toString()}");
   }
+}
 }
