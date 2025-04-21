@@ -191,3 +191,52 @@ exports.deleteCommande = async (req, res) => {
         res.status(500).json({ message: "Erreur lors de la suppression de la commande", error });
     }
 };
+exports.updateCommandeEtat = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { etat } = req.body;
+
+    const commande = await Commande.findByIdAndUpdate(
+      id,
+      { etat },
+      { new: true }
+    );
+
+    if (!commande) {
+      return res.status(404).json({ message: "Commande non trouvée" });
+    }
+
+    res.status(200).json(commande);
+  } catch (error) {
+    res.status(500).json({ message: "Erreur serveur", error: error.message });
+  }
+};
+exports.updateQuantiteReelle = async (req, res) => {
+  const { commandeId, modeleId } = req.params;
+  const { quantiteReelle } = req.body;
+
+  try {
+    console.log('commandeId:', commandeId);
+    const commande = await Commande.findById(commandeId);
+    console.log('commande:', commande);
+    if (!commande) {
+      return res.status(404).json({ message: 'Commande introuvable' });
+    }
+
+    const modele = commande.modeles.find(
+      (m) => m.modele?.toString() === modeleId
+    );
+    if (!modele) {
+      return res.status(404).json({ message: 'Modèle introuvable dans la commande' });
+    }
+
+    modele.quantiteReelle = quantiteReelle;
+
+    await commande.save();
+
+    res.status(200).json({ message: 'Quantité réelle mise à jour' });
+  } catch (error) {
+    console.error('Erreur lors de la mise à jour de la quantité réelle :', error);
+    res.status(500).json({ message: 'Erreur serveur', error });
+  }
+};

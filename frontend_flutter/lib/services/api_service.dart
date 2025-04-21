@@ -757,4 +757,16 @@ class ApiService {
       throw Exception('Failed to add client');
     }
   }
+  Future<void> updateQuantiteReelle(String commandeId, String modeleId, int quantiteReelle) async {
+    final response = await http.patch(
+      Uri.parse('$baseUrl/commandes/$commandeId/modele/$modeleId'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'quantiteReelle': quantiteReelle}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Échec de la mise à jour de la quantité réelle');
+    }
+  }
+
 }

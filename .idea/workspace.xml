@@ -5,17 +5,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f1b1f5c6-b780-4356-ad10-8b85adb9bdf5" name="Changes" comment="ajouter schema client">
-      <change beforePath="$PROJECT_DIR$/api/controllers/machineController.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/controllers/machineController.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/controllers/salleController.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/controllers/salleController.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/middlewares/auth.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/middlewares/auth.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/routes/machineRoutes.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/routes/machineRoutes.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/routes/salleRoutes.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/routes/salleRoutes.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/controllers/commandeController.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/controllers/commandeController.js" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/routes/commandeRoutes.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/routes/commandeRoutes.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/api/server.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/server.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/providers/salleProvider.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/providers/salleProvider.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/providers/CommandeProvider.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/providers/CommandeProvider.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/services/api_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/services/api_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/services/auth_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/services/auth_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/LoginPage.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/LoginPage.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/SalleListPage.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/SalleListPage.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/CommandePage.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/CommandePage.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/PlanificationView.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/PlanificationView.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -64,7 +61,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "Merging main",
+    "git-widget-placeholder": "main",
     "io.flutter.reload.alreadyRun": "true",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/mayar/Desktop/PFE/AutoplanificationProductionProject/frontend_flutter",

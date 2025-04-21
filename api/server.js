@@ -28,16 +28,16 @@ app.use(helmet());
 app.use(express.json());
 app.use(cors({
   origin: '*', // Remplacer
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS','PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'authorization'],
   credentials: true,
   exposedHeaders: ['Authorization'] // Important pour les requêtes cross-origin
 }));
 
 app.use((req, res, next) => {
-  console.log('🔍 Incoming headers:', req.headers);
-  console.log('🔍 Request method:', req.method);
-  console.log('🔍 Request URL:', req.originalUrl);
+  //console.log('🔍 Incoming headers:', req.headers);
+  //console.log('🔍 Request method:', req.method);
+  //console.log('🔍 Request URL:', req.originalUrl);
   next();
 });
 //TEST

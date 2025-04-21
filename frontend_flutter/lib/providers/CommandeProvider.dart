@@ -145,7 +145,29 @@ class CommandeProvider with ChangeNotifier {
       return null;
     }
   }
+  Future<bool> updateCommandeEtat(String commandeId, String newEtat) async {
+    try {
+      final response = await http.put(
+        Uri.parse("$_baseUrl/$commandeId/etat"),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({"etat": newEtat}),
+      );
 
+      if (response.statusCode == 200) {
+        // Update the local state
+        final index = _commandes.indexWhere((cmd) => cmd.id == commandeId);
+        if (index != -1) {
+          _commandes[index].etat = newEtat;
+          notifyListeners();
+        }
+        return true;
+      }
+      return false;
+    } catch (error) {
+      print("Erreur updateCommandeEtat: $error");
+      return false;
+    }
+  }
 
 
 

@@ -350,6 +350,7 @@ class _PlanificationViewState extends State<PlanificationView> {
                                       Flexible(
                                           child: Text(plan.commandes.isNotEmpty
                                               ? plan.commandes.first.client.name
+
                                               : 'No client')),
                                       Flexible(
                                           child: Text(
