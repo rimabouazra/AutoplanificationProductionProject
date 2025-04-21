@@ -3,8 +3,89 @@ const Commande = require("../models/Commande");
 const Salle = require("../models/Salle");
 const Machine = require("../models/Machine");
 const Matiere = require("../models/matiere");
-
 const Modele = require("../models/Modele");
+
+
+exports.mettreAJourCommandesEnCours = async (req, res) => {
+  try {
+    const now = new Date();
+
+    // Récupérer toutes les planifications en cours
+    const planifs = await Planification.find({
+      debutPrevue: { $lte: now },
+      finPrevue: { $gt: now },
+      statut: { $ne: "terminée" }
+    }).populate('commandes');
+
+    let commandesMiseAJour = [];
+
+    for (const planif of planifs) {
+      for (const commande of planif.commandes) {
+        if (commande.etat !== "en moulage") {
+          commande.etat = "en moulage";
+          await commande.save();
+          commandesMiseAJour.push(commande._id);
+        }
+      }
+    }
+
+    res.status(200).json({
+      message: "Commandes en cours mises à jour en 'en moulage'",
+      commandesMiseAJour
+    });
+
+  } catch (error) {
+    console.error("Erreur mise à jour commandes en cours :", error);
+    res.status(500).json({ message: "Erreur", error: error.message });
+  }
+};
+
+exports.mettreAJourMachinesDisponibles = async (req, res) => {
+  try {
+    const now = new Date();
+
+    // Trouver les planifications terminées mais pas encore marquées comme "terminée"
+    const planifs = await Planification.find({
+      finPrevue: { $lte: now },
+      statut: { $ne: "terminée" }
+    }).populate('machines').populate('commandes');
+
+    let updatedMachinesCount = 0;
+    let commandesTerminees = [];
+
+    for (const planif of planifs) {
+      // Libérer les machines
+      for (const machine of planif.machines) {
+        machine.etat = "disponible";
+        await machine.save();
+        updatedMachinesCount++;
+      }
+
+      // Marquer les commandes comme terminées
+      for (const commande of planif.commandes) {
+        commande.etat = "en coupe";
+        await commande.save();
+        commandesTerminees.push(commande._id);
+
+      }
+
+      // Marquer la planification comme terminée
+      planif.statut = "terminée";
+      await planif.save();
+    }
+
+    res.status(200).json({
+      message: `Mise à jour complétée`,
+      planificationsTraitées: planifs.length,
+      machinesLibérées: updatedMachinesCount,
+      commandesTerminees: commandesTerminees
+    });
+
+  } catch (error) {
+    console.error("Erreur mise à jour planifications :", error);
+    res.status(500).json({ message: "Erreur lors de la mise à jour", error: error.message });
+  }
+};
 
 exports.autoPlanifierCommande = async (req, res) => {
   try {
