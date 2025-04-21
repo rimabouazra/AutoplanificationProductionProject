@@ -6,10 +6,22 @@ class AuthService {
   static const _storage = FlutterSecureStorage();
   static final _apiService = ApiService();
 
-  static Future<void> saveUserData(String token, String userId, String role) async {
-    await _storage.write(key: 'token', value: token);
-    await _storage.write(key: 'userId', value: userId);
-    await _storage.write(key: 'role', value: role);
+   static Future<void> saveUserData(String token, String userId, String role) async {
+    try {
+      await _storage.write(key: 'token', value: token);
+      await _storage.write(key: 'userId', value: userId);
+      await _storage.write(key: 'role', value: role);
+      
+      // Vérification que les données sont bien stockées
+      final savedToken = await _storage.read(key: 'token');
+      if (savedToken != token) {
+        throw Exception('Échec de la sauvegarde du token');
+      }
+      print('✅ Données utilisateur sauvegardées avec succès');
+    } catch (e) {
+      print('❌ Erreur critique dans saveUserData: $e');
+      throw Exception('Échec de la sauvegarde des données utilisateur');
+    }
   }
 
   static Future<void> clearUserData() async {
@@ -19,8 +31,20 @@ class AuthService {
   }
 
   static Future<String?> getToken() async {
-    return await _storage.read(key: 'token');
+  try {
+    final token = await _storage.read(key: 'token');
+    print('Token récupéré du stockage: ${token != null ? "OK" : "NULL"}');
+    if (token != null) {
+      print('Longueur du token: ${token.length}');
+      print('Préfixe du token: ${token.substring(0, 10)}...');
+    }
+    return token;
+  } catch (e) {
+    print('Erreur lors de la récupération du token: $e');
+    return null;
   }
+}
+
 
   static Future<String?> getUserId() async {
     return await _storage.read(key: 'userId');

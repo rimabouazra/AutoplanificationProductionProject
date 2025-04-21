@@ -1,6 +1,8 @@
 import 'dart:convert';
 import 'package:frontend/models/matiere.dart';
+import 'package:frontend/services/auth_service.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/machine.dart';
 import '../models/modele.dart';
 import '../models/produits.dart';
@@ -9,7 +11,6 @@ import '../models/user.dart';
 import '../models/planification.dart';
 import '../models/commande.dart';
 import '../models/client.dart';
-
 
 class ApiService {
   static const String baseUrl = "http://localhost:5000/api";
@@ -73,14 +74,11 @@ class ApiService {
       print('Statut: ${response.statusCode}');
       print('Réponse brute: ${response.body}');
 
-       final data = jsonDecode(response.body);
-    
-    if (response.statusCode == 201) {
-      return {
-        'success': true,
-        'user': data 
-      };
-    } else {
+      final data = jsonDecode(response.body);
+
+      if (response.statusCode == 201) {
+        return {'success': true, 'user': data};
+      } else {
         final error = jsonDecode(response.body);
         return {
           'success': false,
@@ -108,9 +106,14 @@ class ApiService {
       required String salleId,
       String? modele,
       String? taille}) async {
+    final token = await AuthService.getToken();
+    print('Token utilisé pour la requête: ${token?.substring(0, 10)}...');
     final response = await http.post(
       Uri.parse('$baseUrl/machines/add'),
-      headers: {"Content-Type": "application/json"},
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
       body: jsonEncode({
         "nom": nom,
         "salle": salleId,
@@ -119,6 +122,8 @@ class ApiService {
         "etat": "disponible",
       }),
     );
+    print('Réponse API - Status: ${response.statusCode}');
+    print('Réponse API - Body: ${response.body}');
     if (response.statusCode != 201) {
       throw Exception(
           "Erreur lors de l'ajout de la machine : ${response.body}");
@@ -126,15 +131,25 @@ class ApiService {
   }
 
   static Future<void> updateMachine(String id, String nom, String etat) async {
+    final token = await AuthService.getToken();
     await http.put(
       Uri.parse("$baseUrl/machines/$id"),
-      headers: {"Content-Type": "application/json"},
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
       body: jsonEncode({"nom": nom, "etat": etat}),
     );
   }
 
   static Future<void> deleteMachine(String id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/machines/$id'));
+    final token = await AuthService.getToken();
+    final response = await http.delete(
+      Uri.parse('$baseUrl/machines/$id'),
+      headers: {
+        "Authorization": "Bearer $token",
+      },
+    );
 
     if (response.statusCode != 200) {
       throw Exception(
@@ -202,17 +217,57 @@ class ApiService {
   }
 
   static Future<bool> ajouterSalle(String nom, String type) async {
+    final token = await AuthService.getToken();
     final response = await http.post(
       Uri.parse('$baseUrl/salles'),
-      headers: {"Content-Type": "application/json"},
+      headers: {
+        'Authorization': 'Bearer $token',
+        "Content-Type": "application/json"
+      },
       body: jsonEncode({"nom": nom, "type": type}),
     );
     return response.statusCode == 201;
   }
 
   static Future<bool> supprimerSalle(String id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/salles/$id'));
-    return response.statusCode == 200;
+    try {
+      final token = await AuthService.getToken();
+      print('🔑 Token utilisé: $token');
+      if (token == null) {
+        // Essayez de récupérer le token depuis SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        final fallbackToken = prefs.getString('token');
+        print('🔍 Token de fallback: $fallbackToken');
+
+        if (fallbackToken == null) {
+          throw Exception('Aucun token disponible');
+        }
+        // Réessayez avec le token de fallback
+        return supprimerSalle(id); // Rappel récursif
+      }
+
+      final url = Uri.parse('$baseUrl/salles/$id');
+      final request = http.Request("DELETE", url);
+      request.headers.addAll({
+        'authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+      });
+
+      final streamedResponse = await request.send();
+      final response = await http.Response.fromStream(streamedResponse);
+
+      print('🔍 Status code: ${response.statusCode}');
+      print('🔍 Response body: ${response.body}');
+
+      if (response.statusCode == 200) return true;
+
+      final errorData = json.decode(response.body);
+      throw Exception(errorData['message'] ?? 'Échec de la suppression');
+    } catch (e) {
+      print('🔥 Erreur lors de la suppression: $e');
+      return false;
+    }
   }
 
   static Future<bool> modifierSalle(String id, String nom) async {
@@ -269,6 +324,7 @@ class ApiService {
       throw Exception("Erreur lors de la récupération des planifications");
     }
   }
+
   static Future<bool> autoPlanifierCommande(String commandeId) async {
     final url = Uri.parse('$baseUrl/planifications/auto');
 
@@ -285,7 +341,8 @@ class ApiService {
         print('Planification réussie');
         return true;
       } else {
-        print('Erreur lors de la planification automatique : ${response.statusCode}');
+        print(
+            'Erreur lors de la planification automatique : ${response.statusCode}');
         print('Body: ${response.body}');
         return false;
       }
@@ -332,17 +389,17 @@ class ApiService {
   static Future<List<dynamic>> fetchMachinesParSalle(String salleId) async {
     final url =
         'http://localhost:5000/api/machines/parSalle/$salleId'; // Ajout de salleId
-   // print("🔍 Requête envoyée à: $url"); // Debug URL
+    // print("🔍 Requête envoyée à: $url"); // Debug URL
 
     try {
       final response = await http.get(Uri.parse(url));
 
       //print("Réponse API: ${response.statusCode}"); // Code de réponse
-     // print("Données brutes: ${response.body}"); // Debug JSON
+      // print("Données brutes: ${response.body}"); // Debug JSON
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-       // print("Données reçues: $data"); // Vérification de la structure
+        // print("Données reçues: $data"); // Vérification de la structure
         return data; // Retourne directement la liste des machines
       } else {
         print("Erreur API: ${response.body}");
@@ -382,7 +439,7 @@ class ApiService {
       headers: {'Content-Type': 'application/json'},
       body: json.encode(matiere.toJson()),
     );
-   // print("Réponse API : ${response.statusCode} - ${response.body}");
+    // print("Réponse API : ${response.statusCode} - ${response.body}");
     if (response.statusCode == 201) {
       return json.decode(response.body);
     } else {
@@ -513,16 +570,16 @@ class ApiService {
 
   Future<Modele?> getModeleParNom(String nomModele) async {
     try {
-     // print("Début de getModeleParNom avec nomModele: $nomModele");
+      // print("Début de getModeleParNom avec nomModele: $nomModele");
 
       String? modeleId = await getModeleId(nomModele);
-     // print("Résultat de getModeleId: $modeleId");
+      // print("Résultat de getModeleId: $modeleId");
       if (modeleId == null) {
         print("Erreur: Aucun ID trouvé pour le modèle '$nomModele'");
         return null;
       }
       String? modeleNom = await getModeleNom(modeleId);
-     // print("Résultat de getModeleNom: $modeleNom");
+      // print("Résultat de getModeleNom: $modeleNom");
       if (modeleNom == null) {
         print("Erreur: Aucun nom trouvé pour le modèle ID '$modeleId'");
         return null;
@@ -550,7 +607,7 @@ class ApiService {
 
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
-       // print("Réponse du modèle : $data");
+        // print("Réponse du modèle : $data");
 
         if (data["_id"] != null) {
           String? modeleId = data["_id"].toString();
@@ -659,8 +716,6 @@ class ApiService {
           "Erreur lors de la suppression de la taille : ${response.body}");
     }
   }
-
-
 
   static Future<bool> approveUser(String id, String role) async {
     final response = await http.post(

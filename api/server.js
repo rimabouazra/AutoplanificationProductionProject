@@ -26,7 +26,20 @@ const app = express();
 // Middleware
 app.use(helmet());
 app.use(express.json());
-app.use(cors());
+app.use(cors({
+  origin: '*', // Remplacer
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'authorization'],
+  credentials: true,
+  exposedHeaders: ['Authorization'] // Important pour les requêtes cross-origin
+}));
+
+app.use((req, res, next) => {
+  console.log('🔍 Incoming headers:', req.headers);
+  console.log('🔍 Request method:', req.method);
+  console.log('🔍 Request URL:', req.originalUrl);
+  next();
+});
 //TEST
 if (result.error) {
   console.error('Erreur de chargement du .env:', result.error);

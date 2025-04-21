@@ -1,23 +1,14 @@
 const express = require("express");
 const router = express.Router();
 const MachineController = require("../controllers/machineController");
+const auth = require("../middlewares/auth");
 
-// Route pour ajouter une machine
-router.post("/add", MachineController.ajouterMachine);
+router.post("/add", auth.authenticateToken,MachineController.ajouterMachine);
 
-// Route pour récupérer toutes les machines
 router.get("/", MachineController.getMachines);
-
-// Route pour récupérer une machine par ID
 router.get("/:id", MachineController.getMachineById);
-
 router.get("/parSalle/:salleId", MachineController.getMachinesBySalle);
-
-
-// Route pour modifier une machine
-router.put("/:id", MachineController.updateMachine);
-
-// Route pour supprimer une machine
-router.delete("/:id", MachineController.deleteMachine);
+router.put("/:id", auth.authenticateToken,MachineController.updateMachine);
+router.delete("/:id",auth.authenticateToken, MachineController.deleteMachine);
 
 module.exports = router;
