@@ -799,7 +799,7 @@ class _CommandePageState extends State<CommandePage> {
                         children: [
                           Expanded(
                             child: Text(
-                              " Client: ${commande.client}",
+                              " Client: ${commande.client.name}",
                               style: TextStyle(color: Color(0xFF7F8C8D)),
                             ),
                           ),

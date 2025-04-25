@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import '../models/commande.dart';
 import '../providers/client_provider.dart';
+import '../services/api_service.dart';
 class CommandeProvider with ChangeNotifier {
   final String _baseUrl = "http://localhost:5000/api/commandes";
 
@@ -177,13 +178,16 @@ class CommandeProvider with ChangeNotifier {
       Uri.parse("$_baseUrl/add"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
-        "client": commande.client,
+        "client": {
+          "name": commande.client.name,
+        },
         "modeles": commande.modeles.map((modele) => modele.toJson()).toList(),
         "conditionnement": commande.conditionnement,
         "delais": commande.delais?.toIso8601String(),
         "etat": commande.etat,
       }),
     );
+
 
     print("Statut HTTP: ${response.statusCode}");
     print("Réponse: ${response.body}");
@@ -199,19 +203,29 @@ class CommandeProvider with ChangeNotifier {
   }
 
 
+
   Future<void> fetchCommandes() async {
     try {
       final response = await http.get(Uri.parse(_baseUrl));
+
       if (response.statusCode == 200) {
-        Iterable data = jsonDecode(response.body);
-        _commandes = data.map((e) => Commande.fromJson(e)).toList();
+        final List<dynamic> data = json.decode(response.body);
+
+
+        _commandes = data.map((e) {
+          final c = Commande.fromJson(e);
+          return c;
+        }).toList();
+
         notifyListeners();
       } else {
         print("Erreur HTTP: ${response.statusCode}");
+        print("Corps de la réponse : ${response.body}");
       }
-    } catch (error) {
-      print("Erreur lors de la récupération des commandes: $error");
+    } catch (error, stacktrace) {
+      print('Erreur lors de la récupération des commandes: $error');
     }
+
   }
   List<String> getClients() {
     return _commandes.map((c) => c.client.name).toSet().toList();

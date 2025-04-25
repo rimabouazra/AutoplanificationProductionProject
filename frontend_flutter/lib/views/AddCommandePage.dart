@@ -6,7 +6,10 @@ import 'package:intl/intl.dart';
 import '../models/client.dart';
 import '../models/commande.dart';
 import '../providers/CommandeProvider.dart';
+import '../providers/PlanificationProvider .dart';
 import '../providers/client_provider.dart';
+import '../services/api_service.dart';
+import 'PlanificationConfirmationDialog.dart';
 
 class AddCommandePage extends StatefulWidget {
   @override
@@ -85,7 +88,7 @@ void initState() {
           decoration: InputDecoration(
             labelText: "Client",
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-            prefixIcon: Icon(Icons.person, color: Colors.teal),
+            prefixIcon: Icon(Icons.person, color: Colors.lightBlue),
           ),
         );
       },
@@ -113,7 +116,7 @@ void initState() {
         decoration: InputDecoration(
           labelText: "Nom du Modèle",
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-          prefixIcon: Icon(Icons.category, color: Colors.teal),
+          prefixIcon: Icon(Icons.category, color: Colors.lightBlue),
         ),
       );
     },
@@ -139,7 +142,7 @@ Widget _buildTailleField() {
         decoration: InputDecoration(
           labelText: "Taille",
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-          prefixIcon: Icon(Icons.straighten, color: Colors.teal),
+          prefixIcon: Icon(Icons.straighten, color: Colors.lightBlue),
         ),
       );
     },
@@ -161,17 +164,16 @@ Widget _buildTailleField() {
   }
 
   Widget _buildTextField(
-      TextEditingController controller, String label, IconData icon,
-      {bool isNumber = false, bool isOptional = false}) {
+      TextEditingController controller, String label, IconData icon, {bool isNumber = false, bool isOptional = false}) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: TextFormField(
         controller: controller,
         keyboardType: isNumber ? TextInputType.number : TextInputType.text,
         decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: Colors.teal),
+          prefixIcon: Icon(icon, color: Colors.lightBlue),
           labelText: label,
-          labelStyle: const TextStyle(color: Colors.teal),
+          labelStyle: const TextStyle(color: Colors.lightBlue),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
           filled: true,
           fillColor: Colors.white,
@@ -210,19 +212,40 @@ Widget _buildTailleField() {
     });
   }
 
+  // Add this method to _AddCommandePageState
+  Future<void> _showPlanificationConfirmation(String commandeId) async {
+    final planifProvider = Provider.of<PlanificationProvider>(context, listen: false);
+
+    // Get the preview of the planification
+    final preview = await ApiService.getPlanificationPreview(commandeId);
+
+    if (preview != null) {
+      showDialog(
+        context: context,
+        builder: (context) => PlanificationConfirmationDialog(
+          planification: preview,
+          commandeId: commandeId,
+        ),
+      );
+    } else {
+      Fluttertoast.showToast(msg: "Erreur lors de la génération de la planification");
+    }
+  }
+
+// Modify the _submitCommande method
   Future<void> _submitCommande() async {
+    print("debut SubmitCommande in AddCommandePage");
+
     if (!_formKey.currentState!.validate() ||
         selectedDate == null ||
         modeles.isEmpty) {
       Fluttertoast.showToast(
-          msg:
-              "Veuillez remplir tous les champs et ajouter au moins un modèle.");
+          msg: "Veuillez remplir tous les champs et ajouter au moins un modèle.");
       return;
     }
 
     setState(() => isLoading = true);
-    final commandeProvider =
-        Provider.of<CommandeProvider>(context, listen: false);
+    final commandeProvider = Provider.of<CommandeProvider>(context, listen: false);
 
     List<CommandeModele> modelesWithId = [];
 
@@ -244,25 +267,38 @@ Widget _buildTailleField() {
       }
     }
 
+    final newClient = Client(id: '', name: clientController.text);
     Commande newCommande = Commande(
-      client: Client(name: clientController.text),
+      client: newClient,
       modeles: modelesWithId,
       conditionnement: conditionnementController.text,
       delais: selectedDate ?? DateTime.now(),
       etat: "en attente",
     );
 
+    if (newCommande.client.id.isEmpty) {
+      final clientProvider = Provider.of<ClientProvider>(context, listen: false);
+      newCommande.client = await clientProvider.addClient(newCommande.client.name);
+    }
+
     bool success = await commandeProvider.addCommande(newCommande);
     setState(() => isLoading = false);
 
     if (success) {
       Fluttertoast.showToast(msg: "Commande ajoutée avec succès !");
-      Navigator.pop(context);
+
+      // Get the latest commande ID (this might need adjustment based on your API)
+      await commandeProvider.fetchCommandes();
+      final latestCommandes = commandeProvider.commandes;
+
+      if (latestCommandes.isNotEmpty) {
+        final latestCommande = latestCommandes.last;
+        await _showPlanificationConfirmation(latestCommande.id!);
+      }
     } else {
       Fluttertoast.showToast(msg: "Erreur lors de l'ajout de la commande.");
     }
   }
-
   @override
   Widget build(BuildContext context) {
     final clientProvider = Provider.of<ClientProvider>(context);
@@ -270,12 +306,12 @@ Widget _buildTailleField() {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        backgroundColor: Colors.teal.shade50,
+        backgroundColor: Colors.lightBlue.shade50,
         appBar: AppBar(
           title: const Text("Ajouter une Commande",
               style:
                   TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-          backgroundColor: Colors.teal,
+          backgroundColor: Colors.lightBlue[400],
           centerTitle: true,
           elevation: 0,
         ),
@@ -309,7 +345,7 @@ Widget _buildTailleField() {
                               : "Date: ${DateFormat('dd/MM/yyyy', 'fr_FR').format(selectedDate!)}",
                         ),
                         trailing: const Icon(Icons.calendar_today,
-                            color: Colors.teal),
+                            color: Colors.lightBlue),
                         onTap: () => _selectDate(context),
                       ),
                       const SizedBox(height: 20),
@@ -334,7 +370,7 @@ Widget _buildTailleField() {
                           )),
                       const SizedBox(height: 20),
                       isLoading
-                          ? const CircularProgressIndicator(color: Colors.teal)
+                          ? const CircularProgressIndicator(color: Colors.lightBlue)
                           : Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
@@ -347,7 +383,7 @@ Widget _buildTailleField() {
                                 ElevatedButton(
                                   onPressed: _submitCommande,
                                   style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.teal.shade300),
+                                      backgroundColor: Colors.lightBlue.shade300),
                                   child: const Text("Ajouter"),
                                 ),
                               ],
@@ -367,9 +403,8 @@ Widget _buildTailleField() {
     return Column(
       children: [
         _buildModeleField(),
-_buildTailleField(),
-        _buildTextField(quantiteController, "Quantité", Icons.numbers,
-            isNumber: true),
+        _buildTailleField(),
+        _buildTextField(quantiteController, "Quantité", Icons.numbers, isNumber: true),
         _buildTextField(couleurController, "Couleur", Icons.colorize),
         const SizedBox(height: 10),
         ElevatedButton.icon(

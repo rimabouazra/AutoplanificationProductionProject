@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+
 import 'package:flutter/painting.dart';
 import 'client.dart';
 
@@ -88,25 +91,37 @@ class Commande {
   });
 
   factory Commande.fromJson(Map<String, dynamic> json) {
+    // Handle client parsing with proper type conversion
+    final clientData = json['client'];
+    final Client client;
+
+    if (clientData is String) {
+      // If client is just an ID (unlikely based on your JSON)
+      client = Client(id: clientData, name: '');
+    } else if (clientData is Map<String, dynamic>) {
+      // Normal case - full client object
+      client = Client(
+        id: clientData['_id']?.toString() ?? '', // Ensure string conversion
+        name: clientData['name']?.toString() ?? '',
+      );
+    } else {
+      throw FormatException('Invalid client data in commande: $clientData');
+    }
+
     return Commande(
-      id: json['_id'],
-      client: json['client'] is Map<String, dynamic>
-          ? Client.fromJson(json['client'])
-          : Client(name: json['client'].toString()),
+      id: json['_id']?.toString(), // Ensure string conversion
+      client: client,
       modeles: (json['modeles'] as List<dynamic>?)
-              ?.map((item) => CommandeModele.fromJson(item))
-              .toList() ??
-          [],
-      conditionnement: json['conditionnement'] ?? '',
-      delais: json['delais'] != null ? DateTime.tryParse(json['delais']) : null,
-      etat: json['etat'] ?? '',
-      createdAt: json['createdAt'] != null
-          ? DateTime.tryParse(json['createdAt'])
-          : null,
-      updatedAt: json['updatedAt'] != null
-          ? DateTime.tryParse(json['updatedAt'])
-          : null,
-      salleAffectee: json['salleAffectee'],
+          ?.map((item) => CommandeModele.fromJson(item))
+          .toList() ?? [],
+      conditionnement: json['conditionnement']?.toString(),
+      delais: json['delais'] != null ? DateTime.tryParse(json['delais'].toString()) : null,
+      etat: json['etat']?.toString() ?? '',
+      createdAt: json['createdAt'] != null ? DateTime.tryParse(json['createdAt'].toString()) : null,
+      updatedAt: json['updatedAt'] != null ? DateTime.tryParse(json['updatedAt'].toString()) : null,
+      salleAffectee: json['salleAffectee'] is String
+          ? json['salleAffectee'] as String
+          : json['salleAffectee']?['_id']?.toString(),
       machinesAffectees: (json['machinesAffectees'] as List<dynamic>?)
           ?.map((e) => e.toString())
           .toList(),
@@ -116,7 +131,7 @@ class Commande {
   Map<String, dynamic> toJson() {
     return {
       '_id': id,
-      'client': client.name,
+      'client': client.toJson(),
       'modeles': modeles.map((m) => m.toJson()).toList(),
       'conditionnement': conditionnement,
       'delais': delais?.toIso8601String(),

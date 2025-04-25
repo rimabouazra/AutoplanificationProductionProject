@@ -8,16 +8,16 @@ const jwtConfig = {
 
 // Middleware d'authentification
 exports.authenticateToken = (req, res, next) => {
-  console.log('Environment JWT_SECRET:', process.env.JWT_SECRET); // Debug
-  console.log('Headers reçus:', req.headers); // DEBUG
+  //console.log('Environment JWT_SECRET:', process.env.JWT_SECRET); // Debug
+  //console.log('Headers reçus:', req.headers); // DEBUG
   const authHeader = req.headers['authorization'] || 
   req.headers['Authorization'] ||
   req.get('authorization') || 
   req.get('Authorization');
-  console.log('🔍 Raw headers:', req.headers);
-  console.log('Header Authorization complet:', authHeader);//Debug
+  //console.log('🔍 Raw headers:', req.headers);
+  //console.log('Header Authorization complet:', authHeader);//Debug
   const token = authHeader && authHeader.split(' ')[1];
-  console.log('Token reçu:', token); // Debug
+  //console.log('Token reçu:', token); // Debug
   if (!token) {
     console.log('Aucun token trouvé dans les headers');
     return res.sendStatus(401);
@@ -34,7 +34,7 @@ exports.authenticateToken = (req, res, next) => {
       console.error('Secret utilisé:', process.env.JWT_SECRET); // Debug
       return res.sendStatus(403);
     }
-    console.log('Décodé JWT:', decoded);
+    //console.log('Décodé JWT:', decoded);
     try {
       const user = await User.findById(decoded.id).select('-motDePasse');      console.log('Utilisateur trouvé:', user); // Debug
       if (!user) {

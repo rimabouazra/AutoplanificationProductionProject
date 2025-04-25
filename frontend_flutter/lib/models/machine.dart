@@ -20,7 +20,7 @@ class Machine {
 
   factory Machine.fromJson(Map<String, dynamic> json) {
     return Machine(
-      id: json['_id'],
+      id: json['_id'] as String,
       nom: json['nom'],
       etat: json['etat'],
       salle: Salle.fromJson(json['salle']),

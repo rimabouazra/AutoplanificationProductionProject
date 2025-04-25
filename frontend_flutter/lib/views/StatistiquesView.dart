@@ -505,7 +505,7 @@ Future<void> _exportToPDF() async {
 
   PdfColor _getPdfStatusColor(String status) {
     switch (status) {
-      case "Terminé": return PdfColors.green;
+      case "terminé": return PdfColors.green;
       case "En attente": return PdfColors.red;
       case "En cours": return PdfColors.orange;
       default: return PdfColors.grey;

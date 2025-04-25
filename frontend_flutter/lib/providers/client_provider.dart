@@ -12,6 +12,7 @@ class ClientProvider with ChangeNotifier {
     notifyListeners();
   }
 
+
   Future<Client> addClient(String name) async {
     final client = await ApiService.addClient(name);
     _clients.add(client);
