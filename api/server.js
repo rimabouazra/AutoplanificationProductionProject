@@ -34,12 +34,12 @@ app.use(cors({
   exposedHeaders: ['Authorization'] // Important pour les requêtes cross-origin
 }));
 
-app.use((req, res, next) => {
-  console.log('🔍 Incoming headers:', req.headers);
-  console.log('🔍 Request method:', req.method);
-  console.log('🔍 Request URL:', req.originalUrl);
-  next();
-});
+//app.use((req, res, next) => {
+  //console.log('🔍 Incoming headers:', req.headers);
+  //console.log('🔍 Request method:', req.method);
+  //console.log('🔍 Request URL:', req.originalUrl);
+  //next();
+//});
 //TEST
 if (result.error) {
   console.error('Erreur de chargement du .env:', result.error);
