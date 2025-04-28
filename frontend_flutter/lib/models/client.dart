@@ -1,16 +1,22 @@
 class Client {
-  final String name;
+  String id;  // Changed from String? to String
+  String name;
 
-  Client({ required this.name});
+  Client({
+    required this.id,  // Now required
+    required this.name,
+  });
 
   factory Client.fromJson(Map<String, dynamic> json) {
     return Client(
-      name: json['name'],
+      id: json['_id'].toString(),  // Force string conversion
+      name: json['name'].toString(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
+      '_id': id,
       'name': name,
     };
   }

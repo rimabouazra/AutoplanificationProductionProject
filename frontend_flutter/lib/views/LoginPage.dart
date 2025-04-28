@@ -116,7 +116,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   SizedBox(height: 30),
                   Text(
-                    'Connexion',
+                    'Welcome Back!',
                     style: TextStyle(
                       color: Colors.white.withOpacity(0.9),
                       fontSize: 28,

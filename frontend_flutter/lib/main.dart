@@ -12,7 +12,6 @@ import 'package:frontend/providers/modeleProvider.dart';
 import 'package:frontend/providers/client_provider.dart';
 import 'views/admin_home_page.dart';
 import 'views/HomePage.dart';
-
 import 'package:frontend/providers/PlanificationProvider .dart';
 import 'package:frontend/providers/userProvider.dart';
 
@@ -48,7 +47,7 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      title: 'Admin Space',
+      title: "Projet d'auto-planification",
       theme: ThemeData(primarySwatch: Colors.deepPurple),
       supportedLocales: [
         Locale('en', 'US'), // Support for English

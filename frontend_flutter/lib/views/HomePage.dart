@@ -262,7 +262,7 @@ Widget _buildDiscoverMoreButton() {
             children: [
               Icon(Icons.phone, color: Colors.white, size: 20),
               SizedBox(width: 8),
-              Text("123-456-7890", style: TextStyle(color: Colors.white70)),
+              Text("216 73 49 05 00", style: TextStyle(color: Colors.white70)),
             ],
           ),
           SizedBox(height: 10),

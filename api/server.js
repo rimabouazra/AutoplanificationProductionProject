@@ -1,6 +1,9 @@
 const dotenv = require("dotenv");
 const path = require('path');
 
+const cron = require('node-cron');
+const axios = require('axios');
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -28,18 +31,18 @@ app.use(helmet());
 app.use(express.json());
 app.use(cors({
   origin: '*', // Remplacer
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS','PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'authorization'],
   credentials: true,
   exposedHeaders: ['Authorization'] // Important pour les requêtes cross-origin
 }));
 
-//app.use((req, res, next) => {
+app.use((req, res, next) => {
   //console.log('🔍 Incoming headers:', req.headers);
   //console.log('🔍 Request method:', req.method);
   //console.log('🔍 Request URL:', req.originalUrl);
-  //next();
-//});
+  next();
+});
 //TEST
 if (result.error) {
   console.error('Erreur de chargement du .env:', result.error);
@@ -69,9 +72,32 @@ app.use("/api/matieres", matiereRoutes);
 app.use("/api/produits", produitsRoutes);
 app.use("/api/planifications", planificationRoutes);
 app.use("/api/Users", UserRoutes);
+app.use("/api/clients", clientRoutes);
+
 
 app.get("/", (req, res) => {
   res.send("API Running...");
+});
+
+const BASE_URL = 'http://localhost:5000/api';
+// Tâche pour mettre à jour les commandes en cours toutes les minutes
+cron.schedule('*/15 * * * *', async () => {
+  try {
+    console.log('Cronjob: Mise à jour des commandes en cours...');
+    await axios.post(`${BASE_URL}/planifications/mettre-a-jour-commandes`);
+    console.log('Commandes en cours mises à jour.');
+  } catch (error) {
+    console.error('Erreur mise à jour commandes en cours :', error.response?.data || error.message);
+  }});
+// Tâche pour mettre à jour les machines disponibles toutes les minutes
+cron.schedule('* * * * *', async () => {
+  try {
+    console.log('Cronjob: Mise à jour des machines disponibles...');
+    await axios.post(`${BASE_URL}/planifications/mettre-a-jour-machines`);
+    console.log('Machines libérées.');
+  } catch (error) {
+    console.error('Erreur mise à jour machines :', error.response?.data || error.message);
+  }
 });
 
 const uri = "mongodb+srv://mayarabouazra:O3DXC206BrDTWUr0@clustercoque.vhlic.mongodb.net/?retryWrites=true&w=majority&appName=clusterCoque";

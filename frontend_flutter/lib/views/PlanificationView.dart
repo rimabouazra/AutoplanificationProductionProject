@@ -19,16 +19,12 @@ class _PlanificationViewState extends State<PlanificationView> {
   int _startHour = 7;
   int _endHour = 17;
 
-  ScrollController _horizontalScrollController = ScrollController();
-  // Add these to your state class
   final _headerHorizontalScrollController = ScrollController();
   final _contentHorizontalScrollController = ScrollController();
   final _verticalScrollController = ScrollController();
 
   @override
   void dispose() {
-    _horizontalScrollController.dispose();
-
     _headerHorizontalScrollController.dispose();
     _contentHorizontalScrollController.dispose();
     _verticalScrollController.dispose();
@@ -38,8 +34,7 @@ class _PlanificationViewState extends State<PlanificationView> {
   @override
   void initState() {
     super.initState();
-    Provider.of<PlanificationProvider>(context, listen: false)
-        .fetchPlanifications();
+    Provider.of<PlanificationProvider>(context, listen: false).fetchPlanifications();
     _selectedSalleType = 'blanc';
   }
 
@@ -59,7 +54,7 @@ class _PlanificationViewState extends State<PlanificationView> {
               await AuthService.logout();
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (context) => LoginPage()),
-                (Route<dynamic> route) => false,
+                    (Route<dynamic> route) => false,
               );
             },
             child: Text("Déconnexion", style: TextStyle(color: Colors.red)),
@@ -74,9 +69,8 @@ class _PlanificationViewState extends State<PlanificationView> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text("Planifications",
-            style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.teal,
+        title: const Text("Planifications", style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.lightBlue[50],
         centerTitle: true,
         elevation: 4,
         actions: [
@@ -92,7 +86,7 @@ class _PlanificationViewState extends State<PlanificationView> {
                 _endDate = null;
               });
             },
-            tooltip: 'Reset date range',
+            tooltip: 'Réinitialiser la plage de dates',
           ),
         ],
       ),
@@ -102,7 +96,6 @@ class _PlanificationViewState extends State<PlanificationView> {
             return const Center(child: Text("Aucune planification disponible"));
           }
 
-          // Calculate date range if not set
           if (_startDate == null || _endDate == null) {
             _calculateDateRange(provider.planifications);
           }
@@ -110,9 +103,7 @@ class _PlanificationViewState extends State<PlanificationView> {
           return Column(
             children: [
               _buildDateRangeSelector(context, provider),
-              Expanded(
-                child: _buildGanttChart(provider),
-              ),
+              Expanded(child: _buildGanttChart(provider)),
             ],
           );
         },
@@ -135,74 +126,83 @@ class _PlanificationViewState extends State<PlanificationView> {
       }
     }
 
-    // Add some padding to the date range
     _startDate = minDate.subtract(Duration(days: 1));
     _endDate = maxDate.add(Duration(days: 1));
   }
 
-  Widget _buildDateRangeSelector(
-      BuildContext context, PlanificationProvider provider) {
+  Widget _buildDateRangeSelector(BuildContext context, PlanificationProvider provider) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-        children: [
-          TextButton.icon(
-            icon: Icon(Icons.calendar_today, size: 16),
-            label: Text(_startDate != null
-                ? DateFormat('dd/MM/yyyy').format(_startDate!)
-                : 'Select start date'),
-            onPressed: () => _selectDate(context, isStartDate: true),
-          ),
-          Text('à'),
-          TextButton.icon(
-            icon: Icon(Icons.calendar_today, size: 16),
-            label: Text(_endDate != null
-                ? DateFormat('dd/MM/yyyy').format(_endDate!)
-                : 'Select end date'),
-            onPressed: () => _selectDate(context, isStartDate: false),
-          ),
-          DropdownButton<String>(
-            value: _selectedSalleType,
-            hint: Text("Type de salle"),
-            items: ['noir', 'blanc'].map((type) {
-              return DropdownMenuItem<String>(
-                value: type,
-                child: Text(type[0].toUpperCase() + type.substring(1)),
-              );
-            }).toList(),
-            onChanged: (value) {
-              setState(() {
-                _selectedSalleType = value;
-              });
-            },
-          ),
-          DropdownButton<String>(
-            value: _selectedViewMode,
-            items: ['journée', 'semaine', 'mois'].map((mode) {
-              return DropdownMenuItem<String>(
-                value: mode,
-                child: Text(mode[0].toUpperCase() + mode.substring(1)),
-              );
-            }).toList(),
-            onChanged: (value) {
-              setState(() {
-                _selectedViewMode = value!;
-              });
-            },
-          ),
-        ],
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            TextButton.icon(
+              icon: Icon(Icons.calendar_today, size: 16),
+              label: Text(_startDate != null
+                  ? DateFormat('dd/MM/yyyy').format(_startDate!)
+                  : 'Date début'),
+              onPressed: () => _selectDate(context, isStartDate: true),
+            ),
+            const SizedBox(width: 8),
+            Text('à'),
+            const SizedBox(width: 8),
+            TextButton.icon(
+              icon: Icon(Icons.calendar_today, size: 16),
+              label: Text(_endDate != null
+                  ? DateFormat('dd/MM/yyyy').format(_endDate!)
+                  : 'Date fin'),
+              onPressed: () => _selectDate(context, isStartDate: false),
+            ),
+            const SizedBox(width: 8),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 130),
+              child: DropdownButton<String>(
+                isExpanded: true,
+                value: _selectedSalleType,
+                hint: Text("Type de salle"),
+                items: ['noir', 'blanc'].map((type) {
+                  return DropdownMenuItem<String>(
+                    value: type,
+                    child: Text(type[0].toUpperCase() + type.substring(1)),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedSalleType = value;
+                  });
+                },
+              ),
+            ),
+            const SizedBox(width: 8),
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 130),
+              child: DropdownButton<String>(
+                isExpanded: true,
+                value: _selectedViewMode,
+                items: ['journée', 'semaine', 'mois'].map((mode) {
+                  return DropdownMenuItem<String>(
+                    value: mode,
+                    child: Text(mode[0].toUpperCase() + mode.substring(1)),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedViewMode = value!;
+                  });
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Future<void> _selectDate(BuildContext context,
-      {required bool isStartDate}) async {
+  Future<void> _selectDate(BuildContext context, {required bool isStartDate}) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: isStartDate
-          ? _startDate ?? DateTime.now()
-          : _endDate ?? DateTime.now(),
+      initialDate: isStartDate ? _startDate ?? DateTime.now() : _endDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
@@ -237,7 +237,7 @@ class _PlanificationViewState extends State<PlanificationView> {
       timeSlots = 7;
       headers = List.generate(
           7,
-          (index) =>
+              (index) =>
               DateFormat('EEE').format(_startDate!.add(Duration(days: index))));
     } else if (_selectedViewMode == 'mois') {
       timeSlots = DateTime(_endDate!.year, _endDate!.month + 1, 0).day;
@@ -270,13 +270,15 @@ class _PlanificationViewState extends State<PlanificationView> {
                             style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
                     ),
-                    ...headers.map((h) => SizedBox(
-                          width: timeSlotWidth,
-                          child: Center(
-                              child: Text(h,
-                                  style:
-                                      TextStyle(fontWeight: FontWeight.bold))),
-                        )),
+                    ...headers.map((h) => Flexible(
+                      child: SizedBox(
+                        width: timeSlotWidth,
+                        child: Center(
+                            child: Text(h,
+                                style:
+                                TextStyle(fontWeight: FontWeight.bold))),
+                      ),
+                    )),
                   ],
                 ),
               ),
@@ -305,8 +307,8 @@ class _PlanificationViewState extends State<PlanificationView> {
                     child: Column(
                       children: provider.planifications
                           .where((p) =>
-                              p.machines.isNotEmpty &&
-                              p.machines.first.salle.type == _selectedSalleType)
+                      p.machines.isNotEmpty &&
+                          p.machines.first.salle.type == _selectedSalleType)
                           .map((plan) {
                         int startSlot = 0;
                         int duration = 1;
@@ -323,12 +325,12 @@ class _PlanificationViewState extends State<PlanificationView> {
                               ? plan.debutPrevue!.difference(_startDate!).inDays
                               : 0;
                           duration =
-                              plan.finPrevue != null && plan.debutPrevue != null
-                                  ? plan.finPrevue!
-                                          .difference(plan.debutPrevue!)
-                                          .inDays +
-                                      1
-                                  : 1;
+                          plan.finPrevue != null && plan.debutPrevue != null
+                              ? plan.finPrevue!
+                              .difference(plan.debutPrevue!)
+                              .inDays +
+                              1
+                              : 1;
                         }
 
                         return SizedBox(
@@ -343,11 +345,12 @@ class _PlanificationViewState extends State<PlanificationView> {
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    CrossAxisAlignment.start,
                                     children: [
                                       Flexible(
                                           child: Text(plan.commandes.isNotEmpty
                                               ? plan.commandes.first.client.name
+
                                               : 'No client')),
                                       Flexible(
                                           child: Text(
@@ -376,15 +379,15 @@ class _PlanificationViewState extends State<PlanificationView> {
                                         Row(
                                             children: List.generate(
                                                 timeSlots,
-                                                (index) => Container(
-                                                      width: timeSlotWidth,
-                                                      decoration: BoxDecoration(
-                                                          border: Border(
-                                                              right: BorderSide(
-                                                                  color: Colors
-                                                                      .grey
-                                                                      .shade200))),
-                                                    ))),
+                                                    (index) => Container(
+                                                  width: timeSlotWidth,
+                                                  decoration: BoxDecoration(
+                                                      border: Border(
+                                                          right: BorderSide(
+                                                              color: Colors
+                                                                  .grey
+                                                                  .shade200))),
+                                                ))),
                                         Positioned(
                                           left: startSlot * timeSlotWidth,
                                           child: Container(
@@ -394,9 +397,9 @@ class _PlanificationViewState extends State<PlanificationView> {
                                                 vertical: 15),
                                             decoration: BoxDecoration(
                                               color:
-                                                  _getStatusColor(plan.statut),
+                                              _getStatusColor(plan.statut),
                                               borderRadius:
-                                                  BorderRadius.circular(4),
+                                              BorderRadius.circular(4),
                                               boxShadow: [
                                                 BoxShadow(
                                                     color: Colors.black12,
@@ -433,7 +436,6 @@ class _PlanificationViewState extends State<PlanificationView> {
       ],
     );
   }
-
   Color _getStatusColor(String statut) {
     switch (statut) {
       case "en attente":
@@ -446,26 +448,24 @@ class _PlanificationViewState extends State<PlanificationView> {
         return Colors.grey;
     }
   }
-
-  Widget _buildStatut(String statut) {
-    Color statutColor = _getStatusColor(statut);
-    return Padding(
-      padding: const EdgeInsets.only(top: 4),
-      child: Row(
-        children: [
-          Icon(Icons.circle, color: statutColor, size: 12),
-          const SizedBox(width: 5),
-          Text(
-            statut.toUpperCase(),
-            style: TextStyle(
-                color: statutColor, fontWeight: FontWeight.bold, fontSize: 12),
-          ),
-        ],
-      ),
-    );
-  }
-
   String _formatTime(DateTime? date) {
     return date != null ? DateFormat('HH:mm').format(date) : "--:--";
   }
 }
+
+
+  Widget _buildStatut(String statut) {
+    return Container(
+      margin: const EdgeInsets.only(top: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+      decoration: BoxDecoration(
+        color: Colors.teal.shade100,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        statut,
+        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+      ),
+    );
+  }
+

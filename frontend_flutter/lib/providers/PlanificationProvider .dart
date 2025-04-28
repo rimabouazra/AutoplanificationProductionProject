@@ -1,3 +1,5 @@
+import 'dart:js_interop';
+
 import 'package:flutter/material.dart';
 import 'package:frontend/models/salle.dart';
 import 'package:frontend/providers/CommandeProvider.dart';
@@ -34,7 +36,6 @@ class PlanificationProvider with ChangeNotifier {
   Future<void> fetchPlanifications() async {
     try {
       final response = await ApiService.getPlanifications();
-
       if (response is List<Planification>) {
         print("La réponse est bien une liste avec ${response.length} éléments.");
         _planifications = response; // Directement assignée

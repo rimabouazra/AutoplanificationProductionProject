@@ -15,7 +15,7 @@ class Salle {
 
   factory Salle.fromJson(Map<String, dynamic> json) {
     return Salle(
-      id: json['_id'],
+      id: json['_id'] as String,
       nom: json['nom'],
       type: json['type'],
       machines: json['machines'] != null

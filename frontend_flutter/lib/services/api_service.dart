@@ -312,13 +312,13 @@ class ApiService {
     return response.statusCode == 200;
   }
 
-  // Récupérer toutes les Planifications
+
   static Future<List<Planification>> getPlanifications() async {
     final response = await http.get(Uri.parse('$baseUrl/planifications/'));
-    print("Réponse brute de l'API: ${response.body}"); // Log de débogage
+    //print("Réponse brute de l'API fetch plan: ${response.body}"); // Log de débogage
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
-      print("Données JSON décodées: $jsonData"); // Log de débogage
+      //print("Données JSON décodées: $jsonData"); // Log de débogage
       return jsonData.map((json) => Planification.fromJson(json)).toList();
     } else {
       throw Exception("Erreur lors de la récupération des planifications");
@@ -334,6 +334,7 @@ class ApiService {
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "commandeId": commandeId,
+
         }),
       );
 
@@ -350,6 +351,30 @@ class ApiService {
       print('Exception: $e');
       return false;
     }
+  }
+
+  static Future<Planification?> getPlanificationPreview(String commandeId) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/planifications/auto'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'commandeId': commandeId, 'preview': true}),
+    );
+
+    if (response.statusCode == 200) {
+      return Planification.fromJson(jsonDecode(response.body));
+    } else {
+      print("Erreur preview planification : ${response.body}");
+      return null;
+    }
+  }
+
+  static Future<bool> confirmerPlanification(Planification planif) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/planifications/confirmer'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(planif.toJson()),
+    );
+    return response.statusCode == 201;
   }
 
   static Future<bool> addPlanification(Planification planification) async {
@@ -757,4 +782,16 @@ class ApiService {
       throw Exception('Failed to add client');
     }
   }
+  Future<void> updateQuantiteReelle(String commandeId, String modeleId, int quantiteReelle) async {
+    final response = await http.patch(
+      Uri.parse('$baseUrl/commandes/$commandeId/modele/$modeleId'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'quantiteReelle': quantiteReelle}),
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Échec de la mise à jour de la quantité réelle');
+    }
+  }
+
 }
