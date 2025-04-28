@@ -479,11 +479,12 @@ class ApiService {
     }
   }
 
-  static Future<Matiere?> updateMatiere(String id, double newQuantite) async {
+  static Future<Matiere?> updateMatiere(String id, double newQuantite, {String? action}) async {
     final response = await http.put(
       Uri.parse('$baseUrl/matieres/update/$id'),
       headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"quantite": newQuantite}),
+      body: jsonEncode({"quantite": newQuantite,
+      if (action != null) "action": action,}),
     );
 
     if (response.statusCode == 200) {
