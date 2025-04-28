@@ -1,6 +1,9 @@
 const dotenv = require("dotenv");
 const path = require('path');
 
+const cron = require('node-cron');
+const axios = require('axios');
+
 const express = require("express");
 const mongoose = require("mongoose");
 const cors = require("cors");
@@ -74,6 +77,27 @@ app.use("/api/clients", clientRoutes);
 
 app.get("/", (req, res) => {
   res.send("API Running...");
+});
+
+const BASE_URL = 'http://localhost:5000/api';
+// Tâche pour mettre à jour les commandes en cours toutes les minutes
+cron.schedule('*/15 * * * *', async () => {
+  try {
+    console.log('Cronjob: Mise à jour des commandes en cours...');
+    await axios.post(`${BASE_URL}/planifications/mettre-a-jour-commandes`);
+    console.log('Commandes en cours mises à jour.');
+  } catch (error) {
+    console.error('Erreur mise à jour commandes en cours :', error.response?.data || error.message);
+  }});
+// Tâche pour mettre à jour les machines disponibles toutes les minutes
+cron.schedule('* * * * *', async () => {
+  try {
+    console.log('Cronjob: Mise à jour des machines disponibles...');
+    await axios.post(`${BASE_URL}/planifications/mettre-a-jour-machines`);
+    console.log('Machines libérées.');
+  } catch (error) {
+    console.error('Erreur mise à jour machines :', error.response?.data || error.message);
+  }
 });
 
 const uri = "mongodb+srv://mayarabouazra:O3DXC206BrDTWUr0@clustercoque.vhlic.mongodb.net/?retryWrites=true&w=majority&appName=clusterCoque";

@@ -212,27 +212,40 @@ Widget _buildTailleField() {
     });
   }
 
-  // Add this method to _AddCommandePageState
   Future<void> _showPlanificationConfirmation(String commandeId) async {
     final planifProvider = Provider.of<PlanificationProvider>(context, listen: false);
 
-    // Get the preview of the planification
-    final preview = await ApiService.getPlanificationPreview(commandeId);
+    try {
+      final preview = await ApiService.getPlanificationPreview(commandeId);
 
-    if (preview != null) {
-      showDialog(
-        context: context,
-        builder: (context) => PlanificationConfirmationDialog(
-          planification: preview,
-          commandeId: commandeId,
-        ),
-      );
-    } else {
-      Fluttertoast.showToast(msg: "Erreur lors de la génération de la planification");
+      if (preview != null) {
+        bool? confirmed = await showDialog<bool>(
+          context: context,
+          builder: (context) => PlanificationConfirmationDialog(
+            planification: preview,
+            commandeId: commandeId,
+          ),
+        );
+
+        if (confirmed == true) {
+          bool success = await ApiService.confirmerPlanification(preview);
+          if (success) {
+            Fluttertoast.showToast(msg: "Planification confirmée avec succès !");
+          } else {
+            Fluttertoast.showToast(msg: "Erreur lors de la confirmation de la planification.");
+          }
+        } else {
+          Fluttertoast.showToast(msg: "Planification annulée par l'utilisateur.");
+        }
+      } else {
+        Fluttertoast.showToast(msg: "Erreur lors de la génération de la planification");
+      }
+    } catch (e) {
+      Fluttertoast.showToast(msg: "Erreur interne : $e");
     }
   }
 
-// Modify the _submitCommande method
+// TO DO : Modify the _submitCommande method
   Future<void> _submitCommande() async {
     print("debut SubmitCommande in AddCommandePage");
 

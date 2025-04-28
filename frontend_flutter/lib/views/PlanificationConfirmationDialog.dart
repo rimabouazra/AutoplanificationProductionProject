@@ -118,12 +118,20 @@ class _PlanificationConfirmationDialogState extends State<PlanificationConfirmat
         ),
       ),
       actions: [
+        // Bouton Annuler
         TextButton(
-          onPressed: () => Navigator.of(context).pop(),
+          onPressed: () {
+            Navigator.of(context).pop(false); // L'utilisateur a annulé
+          },
           child: Text("Annuler"),
         ),
+        // Bouton Confirmer
         ElevatedButton(
-          onPressed: _isLoading ? null : _confirmPlanification,
+          onPressed: _isLoading ? null : () async {
+            // Appel de la fonction pour confirmer la planification
+            await _confirmPlanification();
+            Navigator.of(context).pop(true); // L'utilisateur a confirmé
+          },
           child: _isLoading
               ? CircularProgressIndicator()
               : Text("Confirmer"),
@@ -131,4 +139,5 @@ class _PlanificationConfirmationDialogState extends State<PlanificationConfirmat
       ],
     );
   }
+
 }
