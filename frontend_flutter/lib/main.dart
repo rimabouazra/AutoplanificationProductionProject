@@ -15,6 +15,8 @@ import 'views/HomePage.dart';
 import 'package:frontend/providers/PlanificationProvider .dart';
 import 'package:frontend/providers/userProvider.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 void main() {
   runApp(
     MultiProvider(
@@ -26,10 +28,8 @@ void main() {
         ChangeNotifierProvider(create: (context) => SalleProvider()),
         ChangeNotifierProvider(create: (context) => MatiereProvider()),
         ChangeNotifierProvider(create: (context) => MachineProvider()),
-
         ChangeNotifierProvider(create: (context) => ProduitProvider()),
         ChangeNotifierProvider(create: (context) => ClientProvider()),
-
         ChangeNotifierProvider(
           create: (context) => PlanificationProvider(
             Provider.of<CommandeProvider>(context, listen: false),
@@ -46,18 +46,18 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      navigatorKey: navigatorKey, // ✅ Assign the navigatorKey here
       debugShowCheckedModeBanner: false,
       title: "Projet d'auto-planification",
       theme: ThemeData(primarySwatch: Colors.deepPurple),
       supportedLocales: [
-        Locale('en', 'US'), // Support for English
-        Locale('fr', 'FR'), // Support for French
+        Locale('en', 'US'),
+        Locale('fr', 'FR'),
       ],
       localizationsDelegates: [
-        GlobalMaterialLocalizations.delegate, // Add localization delegate
-        GlobalWidgetsLocalizations.delegate, // Add widget localization delegate
-        GlobalCupertinoLocalizations
-            .delegate, // Add Cupertino localization delegate
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
       ],
       routes: {
         '/login': (context) => LoginPage(),

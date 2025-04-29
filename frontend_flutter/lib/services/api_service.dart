@@ -354,28 +354,65 @@ class ApiService {
   }
 
   static Future<Planification?> getPlanificationPreview(String commandeId) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/planifications/auto'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({'commandeId': commandeId, 'preview': true}),
-    );
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/planifications/auto'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'commandeId': commandeId, 'preview': true}),
+      );
 
-    if (response.statusCode == 200) {
-      return Planification.fromJson(jsonDecode(response.body));
-    } else {
-      print("Erreur preview planification : ${response.body}");
+      print(" getPlanificationPreview response status: ${response.statusCode}");
+      print(" getPlanificationPreview raw body: ${response.body}");
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        print(" Decoded JSON data: $data");
+
+        if (data is Map<String, dynamic>) {
+          if (data.containsKey('commandes') && data.containsKey('machines')) {
+            print(" Valid Planification data found. Proceeding to parse...");
+            return Planification.fromJson(data);
+          } else if (data.containsKey('message')) {
+            print(" Message only received: ${data['message']}");
+            return null;
+          } else {
+            print(" Unexpected JSON format: $data");
+            return null;
+          }
+        } else {
+          print(" JSON is not a Map<String, dynamic>: $data");
+          return null;
+        }
+      } else {
+        print(" Bad HTTP response (${response.statusCode}): ${response.body}");
+        return null;
+      }
+    } catch (e, stackTrace) {
+      print(" Exception in getPlanificationPreview: $e");
+      print(" StackTrace: $stackTrace");
       return null;
     }
   }
 
   static Future<bool> confirmerPlanification(Planification planif) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/planifications/confirmer'),
+      Uri.parse('$baseUrl/planifications/confirm'),
       headers: {'Content-Type': 'application/json'},
-      body: jsonEncode(planif.toJson()),
+      body: jsonEncode({
+        'planification': planif.toJson(),
+      }),
     );
-    return response.statusCode == 201;
+    print('📩 Status confirmation: ${response.statusCode}');
+    print('📩 Body confirmation: ${response.body}');
+    if (response.statusCode == 200 || response.statusCode == 201) {
+      print('📩 Body confirmation: ${response.body}');
+      return true;
+    } else {
+      print('❌ Erreur confirmation: ${response.body}');
+      return false;
+    }
   }
+
 
   static Future<bool> addPlanification(Planification planification) async {
     final response = await http.post(

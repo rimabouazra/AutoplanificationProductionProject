@@ -64,7 +64,7 @@ exports.mettreAJourMachinesDisponibles = async (req, res) => {
       }
 
       for (const commande of planif.commandes) {
-        commande.etat = "en coupe";
+        commande.etat = "en presse";
         await commande.save();
         commandesTerminees.push(commande._id);
       }
@@ -155,7 +155,7 @@ exports.autoPlanifierCommande = async (req, res) => {
     const planificationProposee = {
       commandes: [commande._id],
       machines: machinesAssignees,
-      salle: machinesAssignees.length > 0 ? machines.find(m => m._id.equals(machinesAssignees[0])).salle._id : null,
+      salle: machinesAssignees.length > 0 ? machines.find(m => m._id.equals(machinesAssignees[0])).salle._id : "machine non disponibles",
       debutPrevue: debut,
       finPrevue: fin,
       statut: "en attente"
@@ -194,37 +194,48 @@ exports.autoPlanifierCommande = async (req, res) => {
 
 exports.confirmerPlanification = async (req, res) => {
   try {
-    const { planification } = req.body; // planification = planificationProposee reçue du client
+    const { planification } = req.body;
 
-    if (!planification) {
-      return res.status(400).json({ message: "Planification manquante" });
+    // Find and update the existing planification
+    const updatedPlanif = await Planification.findByIdAndUpdate(
+      planification._id,
+      {
+        statut: "confirmée",
+        debutPrevue: planification.debutPrevue,
+        finPrevue: planification.finPrevue
+      },
+      { new: true }
+    )
+    .populate({
+      path: 'commandes',
+      populate: { path: 'client' }
+    })
+    .populate({
+      path: "machines",
+      populate: ["salle", "modele"]
+    });
+
+    if (!updatedPlanif) {
+      return res.status(404).json({ message: "Planification non trouvée" });
     }
 
-    const nouvellePlanification = new Planification(planification);
-    await nouvellePlanification.save();
+    // Update commande status
+    await Commande.updateMany(
+      { _id: { $in: planification.commandes } },
+      { $set: { etat: "En moulage" } }
+    );
 
-    // Mise à jour de la commande liée
-    const commande = await Commande.findById(planification.commandes[0]);
-    if (commande) {
-      commande.salleAffectee = planification.salle;
-      commande.machinesAffectees = planification.machines;
-      await commande.save();
-    }
-
-    // Mettre les machines en état "occupee"
-    for (const machineId of planification.machines) {
-      const machine = await Machine.findById(machineId);
-      if (machine) {
-        machine.etat = "occupee";
-        await machine.save();
-      }
-    }
-
-    return res.status(201).json(nouvellePlanification);
+    res.status(200).json({
+      message: "Planification confirmée avec succès",
+      planification: updatedPlanif
+    });
 
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Erreur lors de la confirmation de la planification", error: err.message });
+    res.status(500).json({
+      message: "Erreur lors de la confirmation",
+      error: err.message
+    });
   }
 };
 

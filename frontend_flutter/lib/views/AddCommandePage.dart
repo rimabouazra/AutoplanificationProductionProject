@@ -10,6 +10,7 @@ import '../providers/PlanificationProvider .dart';
 import '../providers/client_provider.dart';
 import '../services/api_service.dart';
 import 'PlanificationConfirmationDialog.dart';
+import 'admin_home_page.dart';
 
 class AddCommandePage extends StatefulWidget {
   @override
@@ -219,6 +220,11 @@ Widget _buildTailleField() {
       final preview = await ApiService.getPlanificationPreview(commandeId);
 
       if (preview != null) {
+        if (preview.commandes.isEmpty || preview.machines.isEmpty) {
+          Fluttertoast.showToast(msg: "⚠️ Planification incomplète reçue.");
+          return;
+        }
+
         bool? confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => PlanificationConfirmationDialog(
@@ -228,17 +234,25 @@ Widget _buildTailleField() {
         );
 
         if (confirmed == true) {
-          bool success = await ApiService.confirmerPlanification(preview);
+          final success = await ApiService.confirmerPlanification(preview);
           if (success) {
-            Fluttertoast.showToast(msg: "Planification confirmée avec succès !");
+            Fluttertoast.showToast(msg: "✅ Planification confirmée !");
+
+            await planifProvider.fetchPlanifications();
+
+            // Naviguer vers AdminHomePage
+            Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(builder: (_) => AdminHomePage()),
+                  (route) => false,
+            );
           } else {
-            Fluttertoast.showToast(msg: "Erreur lors de la confirmation de la planification.");
+            Fluttertoast.showToast(msg: " Erreur lors de la confirmation.");
           }
         } else {
-          Fluttertoast.showToast(msg: "Planification annulée par l'utilisateur.");
+          Fluttertoast.showToast(msg: "ℹ Planification annulée.");
         }
       } else {
-        Fluttertoast.showToast(msg: "Erreur lors de la génération de la planification");
+        Fluttertoast.showToast(msg: "Aucune planification disponible.");
       }
     } catch (e) {
       Fluttertoast.showToast(msg: "Erreur interne : $e");

@@ -25,13 +25,15 @@ class CommandeModele {
 
   factory CommandeModele.fromJson(Map<String, dynamic> json) {
     return CommandeModele(
-      modele: json['modele'],
-      nomModele: json['nomModele'] ?? '',
-      taille: json['taille'],
-      couleur: json['couleur'],
+      modele: json['modele'] is String
+          ? json['modele']
+          : (json['modele'] is Map<String, dynamic> ? json['modele']['_id'].toString() : ''),
+      nomModele: json['modele'] is Map<String, dynamic>
+          ? json['modele']['nom'] ?? ""
+          : "", // Si besoin récupérer aussi le nom du modèle
+      taille: json['taille'] ?? '',
+      couleur: json['couleur'] ?? '',
       quantite: json['quantite'] ?? 0,
-      quantiteCalculee: json['quantiteCalculee'] ?? 0,
-      quantiteReelle: json['quantiteReelle'] ?? 0,
     );
   }
 

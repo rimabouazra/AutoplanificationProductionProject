@@ -5,14 +5,13 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f1b1f5c6-b780-4356-ad10-8b85adb9bdf5" name="Changes" comment="ajouter schema client">
+      <change afterPath="$PROJECT_DIR$/frontend_flutter/devtools_options.yaml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/api/controllers/PlanificationController.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/controllers/PlanificationController.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/node_modules/.package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/api/node_modules/.package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/api/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/api/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/routes/planificationRoutes.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/routes/planificationRoutes.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/server.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/server.js" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/main.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/models/commande.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/models/commande.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/models/planification.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/models/planification.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/services/api_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/services/api_service.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/AddCommandePage.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/AddCommandePage.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/PlanificationConfirmationDialog.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/PlanificationConfirmationDialog.dart" afterDir="false" />
     </list>
