@@ -5,15 +5,9 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="f1b1f5c6-b780-4356-ad10-8b85adb9bdf5" name="Changes" comment="ajouter schema client">
-      <change afterPath="$PROJECT_DIR$/frontend_flutter/devtools_options.yaml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/controllers/PlanificationController.js" beforeDir="false" afterPath="$PROJECT_DIR$/api/controllers/PlanificationController.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/main.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/main.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/models/commande.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/models/commande.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/models/planification.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/models/planification.dart" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/frontend_flutter/assets/diadUC Sprint2.jpg" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/services/api_service.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/services/api_service.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/AddCommandePage.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/AddCommandePage.dart" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/PlanificationConfirmationDialog.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/PlanificationConfirmationDialog.dart" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/HomePage.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/HomePage.dart" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -62,7 +56,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "dart.analysis.tool.window.visible": "false",
-    "git-widget-placeholder": "main",
+    "git-widget-placeholder": "Merging main",
     "io.flutter.reload.alreadyRun": "true",
     "kotlin-language-version-configured": "true",
     "last_opened_file_path": "C:/Users/mayar/Desktop/PFE/AutoplanificationProductionProject/frontend_flutter",
