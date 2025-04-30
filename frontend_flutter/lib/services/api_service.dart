@@ -312,7 +312,6 @@ class ApiService {
     return response.statusCode == 200;
   }
 
-
   static Future<List<Planification>> getPlanifications() async {
     final response = await http.get(Uri.parse('$baseUrl/planifications/'));
     //print("Réponse brute de l'API fetch plan: ${response.body}"); // Log de débogage
@@ -334,7 +333,6 @@ class ApiService {
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "commandeId": commandeId,
-
         }),
       );
 
@@ -353,7 +351,8 @@ class ApiService {
     }
   }
 
-  static Future<Planification?> getPlanificationPreview(String commandeId) async {
+  static Future<Planification?> getPlanificationPreview(
+      String commandeId) async {
     try {
       final response = await http.post(
         Uri.parse('$baseUrl/planifications/auto'),
@@ -412,7 +411,6 @@ class ApiService {
       return false;
     }
   }
-
 
   static Future<bool> addPlanification(Planification planification) async {
     final response = await http.post(
@@ -516,12 +514,15 @@ class ApiService {
     }
   }
 
-  static Future<Matiere?> updateMatiere(String id, double newQuantite, {String? action}) async {
+  static Future<Matiere?> updateMatiere(String id, double newQuantite,
+      {String? action}) async {
     final response = await http.put(
       Uri.parse('$baseUrl/matieres/update/$id'),
       headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"quantite": newQuantite,
-      if (action != null) "action": action,}),
+      body: jsonEncode({
+        "quantite": newQuantite,
+        if (action != null) "action": action,
+      }),
     );
 
     if (response.statusCode == 200) {
@@ -820,7 +821,9 @@ class ApiService {
       throw Exception('Failed to add client');
     }
   }
-  Future<void> updateQuantiteReelle(String commandeId, String modeleId, int quantiteReelle) async {
+
+  Future<void> updateQuantiteReelle(
+      String commandeId, String modeleId, int quantiteReelle) async {
     final response = await http.patch(
       Uri.parse('$baseUrl/commandes/$commandeId/modele/$modeleId'),
       headers: {'Content-Type': 'application/json'},
@@ -831,5 +834,4 @@ class ApiService {
       throw Exception('Échec de la mise à jour de la quantité réelle');
     }
   }
-
 }
