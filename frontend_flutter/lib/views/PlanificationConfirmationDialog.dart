@@ -27,6 +27,7 @@ class _PlanificationConfirmationDialogState extends State<PlanificationConfirmat
   late DateTime _endDate;
   bool _isLoading = false;
 
+
   @override
   void initState() {
     super.initState();
@@ -77,7 +78,7 @@ class _PlanificationConfirmationDialogState extends State<PlanificationConfirmat
   }
 
   Future<void> _selectStartDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+    final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: _startDate,
       firstDate: DateTime.now(),
@@ -93,13 +94,28 @@ class _PlanificationConfirmationDialogState extends State<PlanificationConfirmat
         child: child!,
       ),
     );
-    if (picked != null) {
-      setState(() => _startDate = picked);
+
+    if (pickedDate != null) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_startDate),
+      );
+
+      if (pickedTime != null) {
+        final newDateTime = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+        setState(() => _startDate = newDateTime);
+      }
     }
   }
 
   Future<void> _selectEndDate(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+    final DateTime? pickedDate = await showDatePicker(
       context: context,
       initialDate: _endDate,
       firstDate: _startDate,
@@ -115,14 +131,28 @@ class _PlanificationConfirmationDialogState extends State<PlanificationConfirmat
         child: child!,
       ),
     );
-    if (picked != null) {
-      setState(() => _endDate = picked);
+
+    if (pickedDate != null) {
+      final TimeOfDay? pickedTime = await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.fromDateTime(_endDate),
+      );
+
+      if (pickedTime != null) {
+        final newDateTime = DateTime(
+          pickedDate.year,
+          pickedDate.month,
+          pickedDate.day,
+          pickedTime.hour,
+          pickedTime.minute,
+        );
+        setState(() => _endDate = newDateTime);
+      }
     }
   }
-
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
+    final dateFormat = DateFormat('dd/MM/yyyy à  HH:mm');
     final theme = Theme.of(context);
 
     return Dialog(
@@ -239,7 +269,7 @@ class _PlanificationConfirmationDialogState extends State<PlanificationConfirmat
                     foregroundColor: Colors.blue[800],
                     padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                   ),
-                  child: const Text("Annuler"),
+                  child: const Text("Annuler modifications"),
                 ),
                 const SizedBox(width: 12),
 
