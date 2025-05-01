@@ -1,9 +1,12 @@
 import 'machine.dart';
 import 'commande.dart';
+import 'salle.dart';
 class Planification {
   String id;
   List<Commande> commandes;
   List<Machine> machines;
+  Salle? salle; // ✅ ajout de salle
+
   DateTime? debutPrevue;
   DateTime? finPrevue;
   String statut;
@@ -12,6 +15,8 @@ class Planification {
     required this.id,
     required this.commandes,
     required this.machines,
+    this.salle,
+
     this.debutPrevue,
     this.finPrevue,
     required this.statut,
@@ -47,6 +52,9 @@ class Planification {
         throw Exception("Invalid machine data in planification");
       }
     }).toList(),
+      salle: json["salle"] != null && json["salle"] is Map<String, dynamic>
+          ? Salle.fromJson(json["salle"])
+          : null,
       debutPrevue: DateTime.parse(json["debutPrevue"]),
       finPrevue: DateTime.parse(json["finPrevue"]),
       statut: json["statut"],
@@ -58,7 +66,8 @@ class Planification {
     return {
       '_id': id,
       'commandes': commandes.map((c) => c.id).toList(),  // juste les IDs des commandes
-      'machines': machines.map((m) => m.id).toList(),    // juste les IDs des machines
+      'machines': machines.map((m) => m.id).toList(),
+      'salle': salle?.id,
       'debutPrevue': debutPrevue?.toIso8601String(),
       'finPrevue': finPrevue?.toIso8601String(),
       'statut': statut,

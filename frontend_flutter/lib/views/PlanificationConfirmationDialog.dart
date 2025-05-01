@@ -311,7 +311,7 @@ class _PlanificationConfirmationDialogState extends State<PlanificationConfirmat
   }
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat('dd/MM/yyyy à  HH:mm');
+    final dateFormat = DateFormat(' le dd/MM/yyyy à  HH:mm');
     final theme = Theme.of(context);
     
 return Dialog(
@@ -375,7 +375,7 @@ return Dialog(
                           ),
                         const SizedBox(height: 8),
                         Text(
-                          "Machines affectées: ${widget.planification.machines.length}",
+                          "Machines affectées: ${widget.planification.machines.first.nom}",
                           style: theme.textTheme.bodyMedium?.copyWith(
                             color: Colors.blue[900],
                           ),
