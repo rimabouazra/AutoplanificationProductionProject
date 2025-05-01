@@ -212,44 +212,45 @@ Widget _buildTailleField() {
       ));
     });
   }
-
   Future<void> _showPlanificationConfirmation(String commandeId) async {
     final planifProvider = Provider.of<PlanificationProvider>(context, listen: false);
 
     try {
-      final preview = await ApiService.getPlanificationPreview(commandeId);
+      final previews = await ApiService.getPlanificationPreview(commandeId);
 
-      if (preview != null) {
-        if (preview.commandes.isEmpty || preview.machines.isEmpty) {
-          Fluttertoast.showToast(msg: "⚠️ Planification incomplète reçue.");
+      if (previews != null && previews.isNotEmpty) {
+        bool isValid = previews.every((p) => p.commandes.isNotEmpty && p.machines.isNotEmpty);
+
+        if (!isValid) {
+          Fluttertoast.showToast(msg: "⚠️ Une ou plusieurs planifications sont incomplètes.");
           return;
         }
 
         bool? confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => PlanificationConfirmationDialog(
-            planification: preview,
+            planifications: previews,
             commandeId: commandeId,
           ),
         );
 
         if (confirmed == true) {
-          final success = await ApiService.confirmerPlanification(preview);
-          if (success) {
-            Fluttertoast.showToast(msg: "✅ Planification confirmée !");
+          // Envoyer toutes les planifications en une seule requête
+          bool success = await ApiService.confirmerPlanification(previews);
 
+          if (success) {
+            Fluttertoast.showToast(msg: "✅ Toutes les planifications ont été confirmées !");
             await planifProvider.fetchPlanifications();
 
-            // Naviguer vers AdminHomePage
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (_) => AdminHomePage()),
                   (route) => false,
             );
           } else {
-            Fluttertoast.showToast(msg: " Erreur lors de la confirmation.");
+            Fluttertoast.showToast(msg: "❌ Erreur lors de la confirmation.");
           }
         } else {
-          Fluttertoast.showToast(msg: "ℹ Planification annulée.");
+          Fluttertoast.showToast(msg: "ℹ️ Planification annulée.");
         }
       } else {
         Fluttertoast.showToast(msg: "Aucune planification disponible.");

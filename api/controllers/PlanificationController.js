@@ -205,7 +205,24 @@ exports.confirmPlanification = async (req, res) => {
     if (!planifications || !Array.isArray(planifications)) {
       return res.status(400).json({ message: "Les planifications sont requises sous forme de tableau" });
     }
+     for (const plan of planifications) {
+          if (!plan || !plan._id) {
+            console.error("Invalid planification object:", plan);
+            continue; // or return error if you prefer
+          }
 
+          // Your existing update logic here
+          const updated = await Planification.findByIdAndUpdate(
+            plan._id,
+            { $set: { statut: "confirmée" } },
+            { new: true }
+          );
+
+          if (!updated) {
+            console.error("Planification not found:", plan._id);
+            continue;
+          }
+     }
     const confirmed = [];
 
     for (const plan of planifications) {
