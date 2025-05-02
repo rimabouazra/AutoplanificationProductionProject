@@ -1,5 +1,9 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:frontend/models/commande.dart';
+import 'package:http/http.dart' as http;
+import 'package:intl/intl.dart';
 import '../models/matiere.dart';
 import '../services/api_service.dart';
 
@@ -74,6 +78,20 @@ Future<List<Historique>> fetchHistorique(String id) async {
     }
   } catch (e) {
     print("Erreur lors du chargement de l'historique : $e");
+    return [];
+  }
+}
+Future<List<Matiere>> getMatieresByDate(DateTime date) async {
+  try {
+    final dateStr = DateFormat('yyyy-MM-dd').format(date);
+    final response = await http.get(Uri.parse("http://localhost:5000/api/matieres?date=$dateStr"));
+    if (response.statusCode == 200) {
+      List<dynamic> data = json.decode(response.body);
+      return data.map((json) => Matiere.fromJson(json)).toList();
+    }
+    return [];
+  } catch (e) {
+    print("Erreur getMatieresByDate: $e");
     return [];
   }
 }

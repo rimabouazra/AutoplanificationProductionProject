@@ -193,7 +193,6 @@ class CommandeProvider with ChangeNotifier {
     print("Réponse: ${response.body}");
 
     if (response.statusCode == 201) {
-      // Add the new commande to the local list directly
       _commandes.add(commande);
       notifyListeners(); // Notify listeners to update the UI
       return true;
@@ -202,7 +201,19 @@ class CommandeProvider with ChangeNotifier {
     }
   }
 
-
+  Future<List<Commande>> getCommandesByEtat(String etat) async {
+  try {
+    final response = await http.get(Uri.parse("$_baseUrl?etat=$etat"));
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((e) => Commande.fromJson(e)).toList();
+    }
+    return [];
+  } catch (error) {
+    print("Erreur getCommandesByEtat: $error");
+    return [];
+  }
+}
 
   Future<void> fetchCommandes() async {
     try {

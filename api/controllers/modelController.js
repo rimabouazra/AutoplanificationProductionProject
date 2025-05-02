@@ -3,39 +3,32 @@ const Matiere = require("../models/matiere");
 
 exports.addModele = async (req, res) => {
     try {
-        const { nom, matiereId, tailles, bases, taillesBases, consommation } = req.body;
+        const { nom, tailles, base, consommation, taillesBases } = req.body;
 
-        let matiere = null;
-        if (matiereId) {
-            matiere = await Matiere.findById(matiereId);
-            if (!matiere) {
-                return res.status(404).json({ message: "Matière non trouvée" });
+        // Vérifier si la base existe
+        let baseModel = null;
+        if (base) {
+            baseModel = await Modele.findOne({ nom: base });
+            if (!baseModel) {
+                return res.status(404).json({ message: "Base non trouvée" });
             }
         }
 
-        let baseReferences = [];
-        let taillesBasesFormatted = [];
-
-        if (bases && bases.length > 0) {
-            baseReferences = await Modele.find({ _id: { $in: bases } });
-            if (baseReferences.length !== bases.length) {
-                return res.status(404).json({ message: "Une ou plusieurs bases n'existent pas" });
-            }
-
-            // Utiliser les taillesBases fournies ou créer des associations par défaut
-            taillesBasesFormatted = taillesBases || bases.map((baseId, index) => ({
-                baseId: baseId,
-                tailles: tailles.map((_, i) => baseReferences[index].tailles[i] || "?")
-            }));
-        }
+        // Formater les taillesBases
+        const formattedTaillesBases = taillesBases.map(tb => ({
+            baseId: baseModel._id,
+            tailles: tb.tailles
+        }));
 
         const newModele = new Modele({
             nom,
-            matiere: matiereId || null,
             tailles,
-            bases,
-            taillesBases: taillesBasesFormatted,
-            consommation: consommation || []
+            bases: baseModel ? [baseModel._id] : [],
+            taillesBases: formattedTaillesBases,
+            consommation: consommation || tailles.map(taille => ({
+                taille: taille,
+                quantite: 0
+            }))
         });
 
         await newModele.save();

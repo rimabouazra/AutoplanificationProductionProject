@@ -186,6 +186,7 @@ class ApiService {
           'taillesBases': taillesBases.map((tb) => tb.toJson()).toList(),
       }),
     );
+    print("Réponse de l'API: ${response.statusCode} - ${response.body}");
     if (response.statusCode != 201) {
       throw Exception("Échec de l'ajout du modèle");
     }
@@ -711,14 +712,28 @@ class ApiService {
     }
   }
 
-  static Future<void> deleteModele(String id) async {
+static Future<void> deleteModele(String id) async {
+  try {
     final response = await http.delete(
-      Uri.parse("$baseUrl/modeles/$id"),
+      Uri.parse("$baseUrl/modeles/delete/$id"),
+      headers: {"Content-Type": "application/json"},
     );
-    if (response.statusCode != 200) {
-      throw Exception("Échec de la suppression du modèle");
+    if (response.statusCode == 200) {
+      return; // Suppression réussie
+    } else if (response.statusCode >= 400 && response.statusCode < 500) {
+      try {
+        final errorData = jsonDecode(response.body);
+        throw Exception(errorData['message'] ?? "Échec de la suppression du modèle");
+      } catch (_) {
+        throw Exception("Échec de la suppression: ${response.body}");
+      }
+    } else {
+      throw Exception("Erreur serveur: ${response.statusCode}");
     }
+  } catch (e) {
+    throw Exception("Erreur de connexion: $e");
   }
+}
 
   static Future<bool> updateConsommation(
       String modeleId, String taille, double quantite) async {

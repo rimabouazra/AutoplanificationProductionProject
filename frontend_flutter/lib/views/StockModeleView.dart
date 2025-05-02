@@ -239,137 +239,149 @@ class _StockModeleViewState extends State<StockModeleView> {
       },
     );
   }
+void _showAssociationDialog(
+  BuildContext context,
+  ModeleProvider modeleProvider,
+  String nom,
+  List<String> tailles,
+  String baseNom,
+  String consommationText,
+) {
+  final baseModel = modeleProvider.modeles.firstWhere(
+    (m) => m.nom == baseNom,
+    orElse: () => Modele(id: '', nom: '', tailles: [], consommation: []),
+  );
 
-  void _showAssociationDialog(
-    BuildContext context,
-    ModeleProvider modeleProvider,
-    String nom,
-    List<String> tailles,
-    String baseNom,
-    String consommationText,
-  ) {
-    final baseModel = modeleProvider.modeles.firstWhere(
-      (m) => m.nom == baseNom,
-      orElse: () => Modele(id: '', nom: '', tailles: [], consommation: []),
-    );
+  // Créer les associations par défaut (index par index)
+  List<Map<String, dynamic>> associations =
+      tailles.asMap().entries.map((entry) {
+    int index = entry.key;
+    String tailleModele = entry.value;
+    String tailleBase =
+        index < baseModel.tailles.length ? baseModel.tailles[index] : "N/A";
 
-    // Créer les associations par défaut (index par index)
-    List<Map<String, dynamic>> associations =
-        tailles.asMap().entries.map((entry) {
-      int index = entry.key;
-      String tailleModele = entry.value;
-      String tailleBase =
-          index < baseModel.tailles.length ? baseModel.tailles[index] : "N/A";
+    return {
+      'tailleModele': tailleModele,
+      'tailleBase': tailleBase,
+    };
+  }).toList();
 
-      return {
-        'tailleModele': tailleModele,
-        'tailleBase': tailleBase,
-      };
-    }).toList();
-
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: Text('Valider les associations de tailles'),
-              content: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                        'Vérifiez les associations entre les tailles du modèle et celles de la base "$baseNom"'),
-                    SizedBox(height: 16),
-                    ...associations.map((association) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: Row(
-                          children: [
-                            Expanded(
-                              child: Text('${association['tailleModele']} →'),
-                            ),
-                            SizedBox(width: 10),
-                            Expanded(
-                              child: DropdownButtonFormField<String>(
-                                value: association['tailleBase'],
-                                onChanged: (String? newValue) {
-                                  setState(() {
-                                    association['tailleBase'] = newValue;
-                                  });
-                                },
-                                items: [
-                                  ...baseModel.tailles.map((baseTaille) {
-                                    return DropdownMenuItem(
-                                      value: baseTaille,
-                                      child: Text(baseTaille),
-                                    );
-                                  }).toList(),
-                                  DropdownMenuItem(
-                                    value: "N/A",
-                                    child: Text('Non associé',
-                                        style: TextStyle(color: Colors.grey)),
-                                  ),
-                                ],
-                                decoration: InputDecoration(
-                                  border: OutlineInputBorder(),
-                                  contentPadding:
-                                      EdgeInsets.symmetric(horizontal: 10),
+  showDialog(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: Text('Valider les associations de tailles'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                      'Vérifiez les associations entre les tailles du modèle et celles de la base "$baseNom"'),
+                  SizedBox(height: 16),
+                  ...associations.map((association) {
+                    return Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8.0),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text('${association['tailleModele']} →'),
+                          ),
+                          SizedBox(width: 10),
+                          Expanded(
+                            child: DropdownButtonFormField<String>(
+                              value: association['tailleBase'],
+                              onChanged: (String? newValue) {
+                                setState(() {
+                                  association['tailleBase'] = newValue;
+                                });
+                              },
+                              items: [
+                                ...baseModel.tailles.map((baseTaille) {
+                                  return DropdownMenuItem(
+                                    value: baseTaille,
+                                    child: Text(baseTaille),
+                                  );
+                                }).toList(),
+                                DropdownMenuItem(
+                                  value: "N/A",
+                                  child: Text('Non associé',
+                                      style: TextStyle(color: Colors.grey)),
                                 ),
+                              ],
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(),
+                                contentPadding:
+                                    EdgeInsets.symmetric(horizontal: 10),
                               ),
                             ),
-                          ],
-                        ),
-                      );
-                    }).toList(),
-                  ],
-                ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                ],
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('Annuler'),
-                ),
-                TextButton(
-                  onPressed: () async {
-                    // Préparer les taillesBases pour l'API
-                    List<TailleBase> taillesBases = [];
-                    for (var assoc in associations) {
-                      if (assoc['tailleBase'] != "N/A") {
-                        taillesBases.add(TailleBase(
-                          baseId: baseModel.id,
-                          tailles: [assoc['tailleBase']!],
-                        ));
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Annuler'),
+              ),
+              TextButton(
+                onPressed: () async {
+                  // Préparer les taillesBases pour l'API
+                  List<TailleBase> taillesBases = [];
+                  Map<String, List<String>> baseTaillesMap = {};
+                  
+                  for (var assoc in associations) {
+                    if (assoc['tailleBase'] != "N/A") {
+                      if (!baseTaillesMap.containsKey(baseModel.id)) {
+                        baseTaillesMap[baseModel.id] = [];
                       }
+                      baseTaillesMap[baseModel.id]!.add(assoc['tailleBase']!);
                     }
+                  }
 
-                    // Préparer les consommations
-                    List<Consommation> consommations = [];
-                    if (consommationText.isNotEmpty) {
-                      double consommationValue =
-                          double.tryParse(consommationText) ?? 0.0;
-                      consommations = tailles
-                          .map((taille) => Consommation(
-                              taille: taille, quantity: consommationValue))
-                          .toList();
-                    }
+                  // Convertir la map en liste de TailleBase
+                  baseTaillesMap.forEach((baseId, tailles) {
+                    taillesBases.add(TailleBase(
+                      baseId: baseId,
+                      tailles: tailles,
+                    ));
+                  });
 
-                    await modeleProvider.addModele(
-                        nom, tailles, baseNom, consommations, taillesBases);
+                  // Préparer les consommations
+                  List<Consommation> consommations = [];
+                  if (consommationText.isNotEmpty) {
+                    double consommationValue =
+                        double.tryParse(consommationText) ?? 0.0;
+                    consommations = tailles
+                        .map((taille) => Consommation(
+                            taille: taille, quantity: consommationValue))
+                        .toList();
+                  }
 
-                    _nomController.clear();
-                    _taillesController.clear();
-                    Navigator.of(context).popUntil((route) => route.isFirst);
-                  },
-                  child: Text('Confirmer'),
-                ),
-              ],
-            );
-          },
-        );
-      },
-    );
-  }
+                  await modeleProvider.addModele(
+                      nom, tailles, baseNom, consommations, taillesBases);
+
+                  _nomController.clear();
+                  _taillesController.clear();
+                  // Fermer d'abord le dialogue d'association
+                    Navigator.pop(context); 
+                    // Puis fermer le dialogue d'ajout de modèle
+                    Navigator.pop(context); 
+                },
+                child: Text('Confirmer'),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
 
   void _editModeleDialog(Modele modele) {
     final modeleProvider = Provider.of<ModeleProvider>(context, listen: false);
@@ -420,13 +432,6 @@ class _StockModeleViewState extends State<StockModeleView> {
             TextButton(
               onPressed: () async {
                 String nom = _nomController.text;
-                //List<String> tailles = _taillesController.text.split(',');
-                //double consommationValue =
-                //double.tryParse(_consommationController.text) ?? 0.0;
-                //List<Consommation> consommations = tailles
-                //.map((taille) => Consommation(
-                //taille: taille, quantity: consommationValue))
-                //.toList();
                 await modeleProvider.updateModele(modele.id, nom,
                     modele.tailles, _selectedBase, modele.consommation);
                 Navigator.pop(context);
@@ -439,10 +444,38 @@ class _StockModeleViewState extends State<StockModeleView> {
     );
   }
 
-  void _deleteModele(String id) async {
-    final modeleProvider = Provider.of<ModeleProvider>(context, listen: false);
-    await modeleProvider.deleteModele(id);
+void _deleteModele(String id) async {
+  final confirmed = await showDialog<bool>(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text('Confirmer la suppression'),
+      content: Text('Voulez-vous vraiment supprimer ce modèle?'),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context, false),
+          child: Text('Annuler'),
+        ),
+        TextButton(
+          onPressed: () => Navigator.pop(context, true),
+          child: Text('Supprimer'),
+        ),
+      ],
+    ),
+  );
+
+  if (confirmed == true) {
+    try {
+      await Provider.of<ModeleProvider>(context, listen: false).deleteModele(id);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Modèle supprimé avec succès')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors de la suppression: ${e.toString()}')),
+      );
+    }
   }
+}
 
   void _showEditConsommationDialog(Modele modele, String taille) {
     final consommation = modele.consommation.firstWhere(

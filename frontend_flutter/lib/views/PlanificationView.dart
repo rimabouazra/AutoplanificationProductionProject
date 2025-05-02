@@ -16,6 +16,7 @@ class _PlanificationViewState extends State<PlanificationView> {
   DateTime? _endDate;
   String? _selectedSalleType;
   String _selectedViewMode = 'journée';
+  String _selectedStatus = 'tous';
   int _startHour = 7;
   int _endHour = 17;
 
@@ -34,8 +35,23 @@ class _PlanificationViewState extends State<PlanificationView> {
   @override
   void initState() {
     super.initState();
-    Provider.of<PlanificationProvider>(context, listen: false).fetchPlanifications();
+    Provider.of<PlanificationProvider>(context, listen: false)
+        .fetchPlanifications();
     _selectedSalleType = 'blanc';
+    _headerHorizontalScrollController.addListener(() {
+      if (_contentHorizontalScrollController.offset !=
+          _headerHorizontalScrollController.offset) {
+        _contentHorizontalScrollController
+            .jumpTo(_headerHorizontalScrollController.offset);
+      }
+    });
+    _contentHorizontalScrollController.addListener(() {
+      if (_headerHorizontalScrollController.offset !=
+          _contentHorizontalScrollController.offset) {
+        _headerHorizontalScrollController
+            .jumpTo(_contentHorizontalScrollController.offset);
+      }
+    });
   }
 
   void _confirmLogout(BuildContext context) {
@@ -54,7 +70,7 @@ class _PlanificationViewState extends State<PlanificationView> {
               await AuthService.logout();
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (context) => LoginPage()),
-                    (Route<dynamic> route) => false,
+                (Route<dynamic> route) => false,
               );
             },
             child: Text("Déconnexion", style: TextStyle(color: Colors.red)),
@@ -69,7 +85,8 @@ class _PlanificationViewState extends State<PlanificationView> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text("Planifications", style: TextStyle(fontWeight: FontWeight.bold)),
+        title: const Text("Planifications",
+            style: TextStyle(fontWeight: FontWeight.bold)),
         backgroundColor: Colors.lightBlue[50],
         centerTitle: true,
         elevation: 4,
@@ -100,10 +117,22 @@ class _PlanificationViewState extends State<PlanificationView> {
             _calculateDateRange(provider.planifications);
           }
 
+          // Filtrage des planifications
+          final filteredPlans = provider.planifications.where((p) {
+            final date = p.debutPrevue;
+            final statusMatch = _selectedStatus == 'tous' || p.statut == _selectedStatus;
+            return date != null &&
+                   (_startDate == null || !date.isBefore(_startDate!)) &&
+                   (_endDate == null || !date.isAfter(_endDate!)) &&
+                   p.machines.isNotEmpty &&
+                   p.machines.first.salle.type == _selectedSalleType &&
+                   statusMatch;
+          }).toList();
+
           return Column(
             children: [
               _buildDateRangeSelector(context, provider),
-              Expanded(child: _buildGanttChart(provider)),
+              Expanded(child: _buildGanttChart(filteredPlans)),
             ],
           );
         },
@@ -130,7 +159,8 @@ class _PlanificationViewState extends State<PlanificationView> {
     _endDate = maxDate.add(Duration(days: 1));
   }
 
-  Widget _buildDateRangeSelector(BuildContext context, PlanificationProvider provider) {
+  Widget _buildDateRangeSelector(
+      BuildContext context, PlanificationProvider provider) {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: SingleChildScrollView(
@@ -193,16 +223,69 @@ class _PlanificationViewState extends State<PlanificationView> {
                 },
               ),
             ),
+            const SizedBox(width: 8),
+            if (_selectedViewMode == 'journée') ...[
+              ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: 80),
+                child: DropdownButton<int>(
+                  value: _startHour,
+                  onChanged: (value) {
+                    setState(() => _startHour = value!);
+                  },
+                  items: List.generate(24, (index) => index).map((hour) =>
+                    DropdownMenuItem(value: hour, child: Text('$hour h'))
+                  ).toList(),
+                  hint: Text("Début"),
+                ),
+              ),
+              SizedBox(width: 8),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: 80),
+                child: DropdownButton<int>(
+                  value: _endHour,
+                  onChanged: (value) {
+                    setState(() => _endHour = value!);
+                  },
+                  items: List.generate(24, (index) => index).map((hour) =>
+                    DropdownMenuItem(value: hour, child: Text('$hour h'))
+                  ).toList(),
+                  hint: Text("Fin"),
+                ),
+              ),
+              SizedBox(width: 8),
+            ],
+            ConstrainedBox(
+              constraints: BoxConstraints(maxWidth: 130),
+              child: DropdownButton<String>(
+                isExpanded: true,
+                value: _selectedStatus,
+                hint: Text("Filtrer par état"),
+                items: ["tous", "en attente", "en cours", "terminée"].map((status) {
+                  return DropdownMenuItem<String>(
+                    value: status,
+                    child: Text(status[0].toUpperCase() + status.substring(1)),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedStatus = value!;
+                  });
+                },
+              ),
+            ),
           ],
         ),
       ),
     );
   }
 
-  Future<void> _selectDate(BuildContext context, {required bool isStartDate}) async {
+  Future<void> _selectDate(BuildContext context,
+      {required bool isStartDate}) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: isStartDate ? _startDate ?? DateTime.now() : _endDate ?? DateTime.now(),
+      initialDate: isStartDate
+          ? _startDate ?? DateTime.now()
+          : _endDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
@@ -217,7 +300,7 @@ class _PlanificationViewState extends State<PlanificationView> {
     }
   }
 
-  Widget _buildGanttChart(PlanificationProvider provider) {
+  Widget _buildGanttChart(List<Planification> planifications) {
     if (_startDate == null || _endDate == null) {
       return Center(child: CircularProgressIndicator());
     }
@@ -237,7 +320,7 @@ class _PlanificationViewState extends State<PlanificationView> {
       timeSlots = 7;
       headers = List.generate(
           7,
-              (index) =>
+          (index) =>
               DateFormat('EEE').format(_startDate!.add(Duration(days: index))));
     } else if (_selectedViewMode == 'mois') {
       timeSlots = DateTime(_endDate!.year, _endDate!.month + 1, 0).day;
@@ -271,14 +354,14 @@ class _PlanificationViewState extends State<PlanificationView> {
                       ),
                     ),
                     ...headers.map((h) => Flexible(
-                      child: SizedBox(
-                        width: timeSlotWidth,
-                        child: Center(
-                            child: Text(h,
-                                style:
-                                TextStyle(fontWeight: FontWeight.bold))),
-                      ),
-                    )),
+                          child: SizedBox(
+                            width: timeSlotWidth,
+                            child: Center(
+                                child: Text(h,
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.bold))),
+                          ),
+                        )),
                   ],
                 ),
               ),
@@ -305,11 +388,7 @@ class _PlanificationViewState extends State<PlanificationView> {
                     width: totalWidth,
                     padding: EdgeInsets.all(8),
                     child: Column(
-                      children: provider.planifications
-                          .where((p) =>
-                      p.machines.isNotEmpty &&
-                          p.machines.first.salle.type == _selectedSalleType)
-                          .map((plan) {
+                      children: planifications.map((plan) {
                         int startSlot = 0;
                         int duration = 1;
 
@@ -325,12 +404,12 @@ class _PlanificationViewState extends State<PlanificationView> {
                               ? plan.debutPrevue!.difference(_startDate!).inDays
                               : 0;
                           duration =
-                          plan.finPrevue != null && plan.debutPrevue != null
-                              ? plan.finPrevue!
-                              .difference(plan.debutPrevue!)
-                              .inDays +
-                              1
-                              : 1;
+                              plan.finPrevue != null && plan.debutPrevue != null
+                                  ? plan.finPrevue!
+                                          .difference(plan.debutPrevue!)
+                                          .inDays +
+                                      1
+                                  : 1;
                         }
 
                         return SizedBox(
@@ -345,12 +424,11 @@ class _PlanificationViewState extends State<PlanificationView> {
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     crossAxisAlignment:
-                                    CrossAxisAlignment.start,
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Flexible(
                                           child: Text(plan.commandes.isNotEmpty
                                               ? plan.commandes.first.client.name
-
                                               : 'No client')),
                                       Flexible(
                                           child: Text(
@@ -379,15 +457,15 @@ class _PlanificationViewState extends State<PlanificationView> {
                                         Row(
                                             children: List.generate(
                                                 timeSlots,
-                                                    (index) => Container(
-                                                  width: timeSlotWidth,
-                                                  decoration: BoxDecoration(
-                                                      border: Border(
-                                                          right: BorderSide(
-                                                              color: Colors
-                                                                  .grey
-                                                                  .shade200))),
-                                                ))),
+                                                (index) => Container(
+                                                      width: timeSlotWidth,
+                                                      decoration: BoxDecoration(
+                                                          border: Border(
+                                                              right: BorderSide(
+                                                                  color: Colors
+                                                                      .grey
+                                                                      .shade200))),
+                                                    ))),
                                         Positioned(
                                           left: startSlot * timeSlotWidth,
                                           child: Container(
@@ -397,22 +475,32 @@ class _PlanificationViewState extends State<PlanificationView> {
                                                 vertical: 15),
                                             decoration: BoxDecoration(
                                               color:
-                                              _getStatusColor(plan.statut),
+                                                  _getStatusColor(plan.statut),
                                               borderRadius:
-                                              BorderRadius.circular(4),
+                                                  BorderRadius.circular(8),
                                               boxShadow: [
                                                 BoxShadow(
-                                                    color: Colors.black12,
-                                                    blurRadius: 2)
+                                                    color: Colors.black26,
+                                                    blurRadius: 4,
+                                                    offset: Offset(2, 2))
                                               ],
                                             ),
                                             child: Center(
-                                              child: Text(
-                                                '${_formatTime(plan.debutPrevue)} - ${_formatTime(plan.finPrevue)}',
-                                                style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.bold,
-                                                    fontSize: 12),
+                                              child: Column(
+                                                mainAxisAlignment: MainAxisAlignment.center,
+                                                children: [
+                                                  Text(
+                                                    plan.commandes.isNotEmpty ? plan.commandes.first.client.name : '',
+                                                    style: TextStyle(
+                                                        fontWeight: FontWeight.bold,
+                                                        color: Colors.white),
+                                                  ),
+                                                  Text(
+                                                      '${_formatTime(plan.debutPrevue)} - ${_formatTime(plan.finPrevue)}',
+                                                      style: TextStyle(
+                                                          color: Colors.white70,
+                                                          fontSize: 12)),
+                                                ],
                                               ),
                                             ),
                                           ),
@@ -436,6 +524,7 @@ class _PlanificationViewState extends State<PlanificationView> {
       ],
     );
   }
+
   Color _getStatusColor(String statut) {
     switch (statut) {
       case "en attente":
@@ -448,24 +537,23 @@ class _PlanificationViewState extends State<PlanificationView> {
         return Colors.grey;
     }
   }
+
   String _formatTime(DateTime? date) {
     return date != null ? DateFormat('HH:mm').format(date) : "--:--";
   }
 }
 
-
-  Widget _buildStatut(String statut) {
-    return Container(
-      margin: const EdgeInsets.only(top: 4),
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-      decoration: BoxDecoration(
-        color: Colors.teal.shade100,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        statut,
-        style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
-      ),
-    );
-  }
-
+Widget _buildStatut(String statut) {
+  return Container(
+    margin: const EdgeInsets.only(top: 4),
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+    decoration: BoxDecoration(
+      color: Colors.teal.shade100,
+      borderRadius: BorderRadius.circular(12),
+    ),
+    child: Text(
+      statut,
+      style: const TextStyle(fontSize: 10, fontWeight: FontWeight.w600),
+    ),
+  );
+}
