@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:frontend/models/modele.dart';
 import 'package:frontend/providers/PlanificationProvider .dart';
-import 'package:frontend/views/PlanificationView.dart';
 import 'package:frontend/views/admin_home_page.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -10,6 +9,7 @@ import '../main.dart';
 import '../models/planification.dart';
 import '../models/matiere.dart';
 import '../models/commande.dart';
+import '../models/salle.dart';
 import '../providers/PlanificationProvider .dart';
 import '../services/api_service.dart';
 import '../views/CommandePage.dart';
@@ -31,22 +31,33 @@ class PlanificationConfirmationDialog extends StatefulWidget {
 
 class _PlanificationConfirmationDialogState
     extends State<PlanificationConfirmationDialog> {
-  late DateTime _startDate;
-  late DateTime _endDate;
   bool _isLoading = false;
   List<Matiere> _matieres = [];
   Map<String, String?> _matieresSelectionnees = {};
   Map<String, double> _quantitesConsommees = {};
-  List<String> _selectedMachines = [];
+
+  // Store selected values for each planification
+  List<Salle?> _selectedSalles = [];
+  List<List<String>> _selectedMachinesForPlanifications = [];
+  List<DateTime> _startDates = [];
+  List<DateTime> _endDates = [];
 
   @override
   void initState() {
     super.initState();
-    _startDate = widget.planifications.first.debutPrevue ?? DateTime.now();
-    _endDate = widget.planifications.first.finPrevue ??
-        DateTime.now().add(const Duration(hours: 1));
-    _selectedMachines =
-        widget.planifications.expand((p) => p.machines.map((m) => m.id)).toList();
+    // Initialize selections for each planification
+    _selectedSalles = List<Salle?>.filled(widget.planifications.length, null);
+    _selectedMachinesForPlanifications = List<List<String>>.generate(
+        widget.planifications.length,
+        (index) =>
+            widget.planifications[index].machines.map((m) => m.id).toList());
+    _startDates = widget.planifications
+        .map((p) => p.debutPrevue ?? DateTime.now())
+        .toList();
+    _endDates = widget.planifications
+        .map((p) => p.finPrevue ?? DateTime.now().add(const Duration(hours: 1)))
+        .toList();
+
     _loadMatieres();
   }
 
@@ -105,7 +116,40 @@ class _PlanificationConfirmationDialogState
   Future<void> _confirmPlanification() async {
     setState(() => _isLoading = true);
     try {
-      for (var plan in widget.planifications) {
+      // Prepare updated planifications
+      List<Planification> updatedPlanifications = [];
+
+      for (int i = 0; i < widget.planifications.length; i++) {
+        final plan = widget.planifications[i];
+
+        // Validate salle selection
+        if (_selectedSalles[i] == null) {
+          Fluttertoast.showToast(
+            msg: "Sélectionnez une salle pour toutes les planifications",
+            backgroundColor: Colors.red,
+          );
+          return;
+        }
+
+        // Validate machine selection
+        if (_selectedMachinesForPlanifications[i].isEmpty) {
+          Fluttertoast.showToast(
+            msg:
+                "Sélectionnez au moins une machine pour toutes les planifications",
+            backgroundColor: Colors.red,
+          );
+          return;
+        }
+
+        // Validate dates
+        if (_startDates[i].isAfter(_endDates[i])) {
+          Fluttertoast.showToast(
+            msg: "La date de début doit être avant la date de fin",
+            backgroundColor: Colors.red,
+          );
+          return;
+        }
+
         // Vérifications matières
         for (var commande in plan.commandes) {
           for (var modele in commande.modeles) {
@@ -120,7 +164,23 @@ class _PlanificationConfirmationDialogState
           }
         }
 
-        // Mise à jour des stocks
+        // Create updated planification
+        updatedPlanifications.add(Planification(
+          id: plan.id,
+          commandes: plan.commandes,
+          machines: plan.machines
+              .where(
+                  (m) => _selectedMachinesForPlanifications[i].contains(m.id))
+              .toList(),
+          salle: _selectedSalles[i],
+          debutPrevue: _startDates[i],
+          finPrevue: _endDates[i],
+          statut: "confirmée",
+        ));
+      }
+
+      // First update material stocks
+      for (var plan in widget.planifications) {
         for (var commande in plan.commandes) {
           for (var modele in commande.modeles) {
             final key = '${modele.nomModele}_${modele.taille}';
@@ -131,24 +191,14 @@ class _PlanificationConfirmationDialogState
                 action: "consommation");
           }
         }
+      }
 
-        // Filtrer les machines sélectionnées
-        final selectedMachines = plan.machines
-            .where((m) => _selectedMachines.contains(m.id))
-            .toList();
+      // Then confirm planifications with the backend
+      final success =
+          await ApiService.confirmerPlanification(updatedPlanifications);
 
-        final updated = Planification(
-          id: plan.id,
-          commandes: plan.commandes,
-          machines: selectedMachines,
-          salle: plan.salle,
-          debutPrevue: _startDate,
-          finPrevue: _endDate,
-          statut: "confirmée",
-        );
-
-        final success = await ApiService.confirmerPlanification(widget.planifications);
-
+      if (!success) {
+        throw Exception("Failed to confirm planifications");
       }
 
       Fluttertoast.showToast(
@@ -157,12 +207,13 @@ class _PlanificationConfirmationDialogState
         textColor: Colors.white,
       );
 
+      // Refresh data and navigate
       final planifProvider =
           Provider.of<PlanificationProvider>(context, listen: false);
       await planifProvider.fetchPlanifications();
 
       navigatorKey.currentState?.pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => PlanificationView()),
+        MaterialPageRoute(builder: (_) => AdminHomePage()),
         (route) => false,
       );
     } catch (e) {
@@ -253,52 +304,150 @@ class _PlanificationConfirmationDialogState
     );
   }
 
-  Widget _buildMachineSelector() {
-    return Container(
-      padding: const EdgeInsets.all(12),
-      margin: const EdgeInsets.only(bottom: 12),
-      decoration: BoxDecoration(
-        color: Colors.blue[50],
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: Colors.blue[200]!),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "Machines disponibles:",
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue[800],
+  Widget _buildPlanificationItem(int index, Planification planification) {
+    final theme = Theme.of(context);
+    final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Planification ${index + 1}",
+              style: theme.textTheme.titleMedium?.copyWith(
+                color: Colors.blue[800],
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+
+            // Salle Dropdown
+            DropdownButtonFormField<Salle>(
+              value: _selectedSalles[index],
+              decoration: InputDecoration(
+                labelText: "Salle",
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12),
+              ),
+              items: planification.machines
+                  .map((m) => m.salle)
+                  .toSet()
+                  .map((salle) => DropdownMenuItem<Salle>(
+                        value: salle,
+                        child: Text("${salle.nom} (${salle.type})"),
+                      ))
+                  .toList(),
+              onChanged: (Salle? newValue) {
+                setState(() {
+                  _selectedSalles[index] = newValue;
+                  _selectedMachinesForPlanifications[index] = [];
+                });
+              },
+            ),
+            const SizedBox(height: 16),
+
+            // Machines Dropdown (filtered by selected salle)
+            if (_selectedSalles[index] != null)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Machines disponibles dans ${_selectedSalles[index]!.nom}:",
+                    style: theme.textTheme.bodyMedium,
+                  ),
+                  const SizedBox(height: 8),
+                  ...planification.machines
+                      .where((m) => m.salle.id == _selectedSalles[index]!.id)
+                      .map((machine) => CheckboxListTile(
+                            title:
+                                Text("${machine.nom} (${machine.modele.nom})"),
+                            value: _selectedMachinesForPlanifications[index]
+                                .contains(machine.id),
+                            onChanged: (bool? value) {
+                              setState(() {
+                                if (value == true) {
+                                  _selectedMachinesForPlanifications[index]
+                                      .add(machine.id);
+                                } else {
+                                  _selectedMachinesForPlanifications[index]
+                                      .remove(machine.id);
+                                }
+                              });
+                            },
+                          ))
+                      .toList(),
+                ],
+              ),
+            const SizedBox(height: 16),
+
+            // Dates Section
+            Row(
+              children: [
+                Expanded(
+                  child: InkWell(
+                    onTap: () => _selectDate(context, true, index),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Début",
+                            style: theme.textTheme.bodySmall,
+                          ),
+                          Text(dateFormat.format(_startDates[index])),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-          ),
-          const SizedBox(height: 8),
-          ...widget.planifications
-              .expand((p) => p.machines)
-              .map((machine) => CheckboxListTile(
-                    title: Text("${machine.nom}"),
-                    value: _selectedMachines.contains(machine.id),
-                    onChanged: (bool? value) {
-                      setState(() {
-                        if (value == true) {
-                          _selectedMachines.add(machine.id);
-                        } else {
-                          _selectedMachines.remove(machine.id);
-                        }
-                      });
-                    },
-                    secondary: Icon(Icons.computer, color: Colors.blue[700]),
-                    controlAffinity: ListTileControlAffinity.leading,
-                  )),
-        ],
+                const SizedBox(width: 16),
+                Expanded(
+                  child: InkWell(
+                    onTap: () => _selectDate(context, false, index),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Fin",
+                            style: theme.textTheme.bodySmall,
+                          ),
+                          Text(dateFormat.format(_endDates[index])),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Future<void> _selectStartDate(BuildContext context) async {
+  Future<void> _selectDate(
+      BuildContext context, bool isStartDate, int planIndex) async {
+    final initialDate =
+        isStartDate ? _startDates[planIndex] : _endDates[planIndex];
+
     final DateTime? pickedDate = await showDatePicker(
       context: context,
-      initialDate: _startDate,
+      initialDate: initialDate,
       firstDate: DateTime.now(),
       lastDate: DateTime.now().add(const Duration(days: 365)),
     );
@@ -306,7 +455,7 @@ class _PlanificationConfirmationDialogState
     if (pickedDate != null) {
       final TimeOfDay? pickedTime = await showTimePicker(
         context: context,
-        initialTime: TimeOfDay.fromDateTime(_startDate),
+        initialTime: TimeOfDay.fromDateTime(initialDate),
       );
 
       if (pickedTime != null) {
@@ -317,41 +466,20 @@ class _PlanificationConfirmationDialogState
           pickedTime.hour,
           pickedTime.minute,
         );
-        setState(() => _startDate = newDateTime);
-      }
-    }
-  }
 
-  Future<void> _selectEndDate(BuildContext context) async {
-    final DateTime? pickedDate = await showDatePicker(
-      context: context,
-      initialDate: _endDate,
-      firstDate: _startDate,
-      lastDate: DateTime.now().add(const Duration(days: 365)),
-    );
-
-    if (pickedDate != null) {
-      final TimeOfDay? pickedTime = await showTimePicker(
-        context: context,
-        initialTime: TimeOfDay.fromDateTime(_endDate),
-      );
-
-      if (pickedTime != null) {
-        final newDateTime = DateTime(
-          pickedDate.year,
-          pickedDate.month,
-          pickedDate.day,
-          pickedTime.hour,
-          pickedTime.minute,
-        );
-        setState(() => _endDate = newDateTime);
+        setState(() {
+          if (isStartDate) {
+            _startDates[planIndex] = newDateTime;
+          } else {
+            _endDates[planIndex] = newDateTime;
+          }
+        });
       }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final dateFormat = DateFormat(' le dd/MM/yyyy à HH:mm');
     final theme = Theme.of(context);
 
     return Dialog(
@@ -389,68 +517,13 @@ class _PlanificationConfirmationDialogState
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Summary Section
-                    Card(
-                      elevation: 2,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              "Résumé de la planification",
-                              style: theme.textTheme.titleMedium?.copyWith(
-                                color: Colors.blue[800],
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            _SummaryItem(
-                              icon: Icons.person,
-                              label: "Client",
-                              value: widget.planifications.expand((p) => p.commandes)
-                                  .map((c) => c.client.name)
-                                  .toSet()
-                                  .join(', '),
-                            ),
+                    // Planification Items
+                    ...widget.planifications.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final planification = entry.value;
+                      return _buildPlanificationItem(index, planification);
+                    }).toList(),
 
-                            _SummaryItem(
-                              icon: Icons.assignment,
-                              label: "Commande",
-                              value: widget.planifications.expand((p) => p.commandes)
-                                  .map((c) => c.client.name)
-                                  .toSet()
-                                  .join(', '),
-                            ),
-                            _SummaryItem(
-                              icon: Icons.date_range,
-                              label: "Date de début",
-                              value: dateFormat.format(_startDate),
-                            ),
-                            _SummaryItem(
-                              icon: Icons.date_range,
-                              label: "Date de fin",
-                              value: dateFormat.format(_endDate),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 20),
-
-                    // Machines Section
-                    Text(
-                      "Machines affectées",
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: Colors.blue[800],
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    _buildMachineSelector(),
                     const SizedBox(height: 20),
 
                     // Materials Section
@@ -465,33 +538,8 @@ class _PlanificationConfirmationDialogState
                     ...widget.planifications.expand((p) => p.commandes).expand(
                           (commande) => commande.modeles.map(
                             (modele) => _buildMatiereSelector(modele),
-                      ),
-                    ),
-
-                    const SizedBox(height: 20),
-
-                    // Dates Section
-                    Text(
-                      "Dates de production",
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: Colors.blue[800],
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    _DatePickerCard(
-                      label: "Début prévu",
-                      date: _startDate,
-                      formatter: dateFormat,
-                      onTap: () => _selectStartDate(context),
-                    ),
-                    const SizedBox(height: 12),
-                    _DatePickerCard(
-                      label: "Fin prévue",
-                      date: _endDate,
-                      formatter: dateFormat,
-                      onTap: () => _selectEndDate(context),
-                    ),
+                          ),
+                        ),
                     const SizedBox(height: 20),
                   ],
                 ),
@@ -542,105 +590,6 @@ class _PlanificationConfirmationDialogState
                 ],
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _SummaryItem extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final String value;
-
-  const _SummaryItem({
-    required this.icon,
-    required this.label,
-    required this.value,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 20, color: Colors.blue[700]),
-          const SizedBox(width: 12),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Colors.blue[600],
-                    ),
-              ),
-              Text(
-                value,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w500,
-                    ),
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DatePickerCard extends StatelessWidget {
-  final String label;
-  final DateTime date;
-  final DateFormat formatter;
-  final VoidCallback onTap;
-
-  const _DatePickerCard({
-    required this.label,
-    required this.date,
-    required this.formatter,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(8),
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          border: Border.all(color: Colors.blue[200]!),
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: Row(
-          children: [
-            Icon(Icons.calendar_month, color: Colors.blue[700], size: 24),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    label,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.blue[600],
-                        ),
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    formatter.format(date),
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          fontWeight: FontWeight.w500,
-                        ),
-                  ),
-                ],
-              ),
-            ),
-            Icon(Icons.edit, color: Colors.blue[700], size: 20),
           ],
         ),
       ),

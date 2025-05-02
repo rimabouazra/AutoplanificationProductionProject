@@ -89,7 +89,7 @@ void initState() {
           decoration: InputDecoration(
             labelText: "Client",
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-            prefixIcon: Icon(Icons.person, color: Colors.lightBlue),
+            prefixIcon: Icon(Icons.person, color: Colors.black87),
           ),
         );
       },
@@ -117,7 +117,7 @@ void initState() {
         decoration: InputDecoration(
           labelText: "Nom du Modèle",
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-          prefixIcon: Icon(Icons.category, color: Colors.lightBlue),
+          prefixIcon: Icon(Icons.category, color: Colors.black87),
         ),
       );
     },
@@ -143,7 +143,7 @@ Widget _buildTailleField() {
         decoration: InputDecoration(
           labelText: "Taille",
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-          prefixIcon: Icon(Icons.straighten, color: Colors.lightBlue),
+          prefixIcon: Icon(Icons.straighten, color: Colors.black87),
         ),
       );
     },
@@ -172,9 +172,9 @@ Widget _buildTailleField() {
         controller: controller,
         keyboardType: isNumber ? TextInputType.number : TextInputType.text,
         decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: Colors.lightBlue),
+          prefixIcon: Icon(icon, color: Colors.black87),
           labelText: label,
-          labelStyle: const TextStyle(color: Colors.lightBlue),
+          labelStyle: const TextStyle(color: Colors.black87),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
           filled: true,
           fillColor: Colors.white,
@@ -336,10 +336,10 @@ Widget _buildTailleField() {
       child: Scaffold(
         backgroundColor: Colors.lightBlue.shade50,
         appBar: AppBar(
-          title: const Text("Ajouter une Commande",
+          title: Text("Ajouter une Commande",
               style:
-                  TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-          backgroundColor: Colors.lightBlue[400],
+                  TextStyle(fontWeight: FontWeight.bold, color: Colors.lightBlue[800])),
+          backgroundColor: Colors.lightBlue[100],
           centerTitle: true,
           elevation: 0,
         ),
@@ -373,7 +373,7 @@ Widget _buildTailleField() {
                               : "Date: ${DateFormat('dd/MM/yyyy', 'fr_FR').format(selectedDate!)}",
                         ),
                         trailing: const Icon(Icons.calendar_today,
-                            color: Colors.lightBlue),
+                            color: Colors.black87),
                         onTap: () => _selectDate(context),
                       ),
                       const SizedBox(height: 20),
@@ -398,7 +398,7 @@ Widget _buildTailleField() {
                           )),
                       const SizedBox(height: 20),
                       isLoading
-                          ? const CircularProgressIndicator(color: Colors.lightBlue)
+                          ? const CircularProgressIndicator(color: Colors.black87)
                           : Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [
