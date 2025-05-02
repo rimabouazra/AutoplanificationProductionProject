@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../models/modele.dart';
 import '../providers/modeleProvider.dart';
-import '../widgets/topNavbar.dart';
 
 class ModeleView extends StatefulWidget {
   @override

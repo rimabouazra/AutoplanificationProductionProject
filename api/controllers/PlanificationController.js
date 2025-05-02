@@ -105,8 +105,9 @@ exports.autoPlanifierCommande = async (req, res) => {
     const salles = await Salle.find();
     const machines = await Machine.find().populate("modele").populate("salle");
 
-    const machinesAssignees = [];
-    let totalHeures = 0;
+    const planifications = [];
+    const allMachinesAssignees = [];
+    const allSallesUtilisees = new Set(); // Might be multiple salles
 
     for (const modele of commande.modeles) {
       const estFoncee = ["noir", "bleu marine"].includes(modele.couleur.toLowerCase());
@@ -133,58 +134,63 @@ exports.autoPlanifierCommande = async (req, res) => {
         }
       }
 
-      if (machine) {
-        machine.etat = "occupee";
-        await machine.save();
-        machinesAssignees.push(machine._id);
-
-        const heures = (modele.quantite / 35) + 2;
-        totalHeures += heures;
-      } else {
+      if (!machine) {
         return res.status(200).json({
           message: `Aucune machine disponible pour le modèle ${modele.modele.nom}. La commande est mise en attente.`,
           statut: "en attente",
           commandeId: commande._id
         });
       }
+
+      // Calculer durée et heures nécessaires
+      const heures = (modele.quantite / 35) + 2;
+      const debut = new Date(); // TODO: could consider overlapping plans
+      const fin = new Date(debut.getTime() + heures * 60 * 60 * 1000);
+
+      machine.etat = "occupee";
+      await machine.save();
+
+      allMachinesAssignees.push(machine._id);
+      allSallesUtilisees.add(String(salleCible._id));
+
+      const planification = {
+        commandes: [commande._id],
+        machines: [machine._id],
+        salle: salleCible._id,
+        debutPrevue: debut,
+        finPrevue: fin,
+        statut: "en attente"
+      };
+
+      if (preview) {
+        const populatedCommande = await Commande.findById(commande._id)
+          .populate('client')
+          .populate('modeles.modele');
+
+        const populatedMachine = await Machine.findById(machine._id)
+          .populate('salle')
+          .populate('modele');
+
+        planifications.push({
+          ...planification,
+          commandes: [populatedCommande],
+          machines: [populatedMachine]
+        });
+      } else {
+        const nouvellePlanification = new Planification(planification);
+        await nouvellePlanification.save();
+        planifications.push(nouvellePlanification);
+      }
     }
 
-    const debut = new Date();
-    const fin = new Date(debut.getTime() + totalHeures * 60 * 60 * 1000);
-
-    const planificationProposee = {
-      commandes: [commande._id],
-      machines: machinesAssignees,
-      salle: machinesAssignees.length > 0 ? machines.find(m => m._id.equals(machinesAssignees[0])).salle._id : "machine non disponibles",
-      debutPrevue: debut,
-      finPrevue: fin,
-      statut: "en attente"
-    };
-
-    if (preview) {
-      const populatedCommandes = await Commande.find({ _id: { $in: [commande._id] } })
-        .populate('client')
-        .populate('modeles.modele');
-
-      const populatedMachines = await Machine.find({ _id: { $in: machinesAssignees } })
-        .populate('salle')
-        .populate('modele');
-
-      return res.status(200).json({
-        ...planificationProposee,
-        commandes: populatedCommandes,
-        machines: populatedMachines
-      });
-    } else {
-      const nouvellePlanification = new Planification(planificationProposee);
-      await nouvellePlanification.save();
-
-      commande.salleAffectee = planificationProposee.salle;
-      commande.machinesAffectees = machinesAssignees;
+    if (!preview) {
+      // Update the commande with all assigned machines and salles
+      commande.machinesAffectees = allMachinesAssignees;
+      commande.salleAffectee = [...allSallesUtilisees][0]; // Optional: pick first salle
       await commande.save();
-
-      return res.status(201).json(nouvellePlanification);
     }
+
+    return res.status(preview ? 200 : 201).json(planifications);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Erreur lors de la planification automatique", error: err.message });
@@ -192,50 +198,77 @@ exports.autoPlanifierCommande = async (req, res) => {
 };
 
 
-exports.confirmerPlanification = async (req, res) => {
+exports.confirmPlanification = async (req, res) => {
   try {
-    const { planification } = req.body;
+    const { planifications } = req.body;
 
-    // Find and update the existing planification
-    const updatedPlanif = await Planification.findByIdAndUpdate(
-      planification._id,
-      {
-        statut: "confirmée",
-        debutPrevue: planification.debutPrevue,
-        finPrevue: planification.finPrevue
-      },
-      { new: true }
-    )
-    .populate({
-      path: 'commandes',
-      populate: { path: 'client' }
-    })
-    .populate({
-      path: "machines",
-      populate: ["salle", "modele"]
-    });
+    if (!planifications || !Array.isArray(planifications)) {
+      return res.status(400).json({ message: "Les planifications sont requises sous forme de tableau" });
+    }
+     for (const plan of planifications) {
+          if (!plan || !plan._id) {
+            console.error("Invalid planification object:", plan);
+            continue; // or return error if you prefer
+          }
 
-    if (!updatedPlanif) {
-      return res.status(404).json({ message: "Planification non trouvée" });
+          // Your existing update logic here
+          const updated = await Planification.findByIdAndUpdate(
+            plan._id,
+            { $set: { statut: "confirmée" } },
+            { new: true }
+          );
+
+          if (!updated) {
+            console.error("Planification not found:", plan._id);
+            continue;
+          }
+     }
+    const confirmed = [];
+
+    for (const plan of planifications) {
+      // Si l'objet contient un _id, on met à jour une planification existante
+      let planification;
+      if (plan._id) {
+        planification = await Planification.findById(plan._id);
+        if (!planification) continue;
+
+        planification.machines = plan.machines.map(m => m._id || m);
+        planification.salle = plan.salle._id || plan.salle;
+        planification.debutPrevue = new Date(plan.debutPrevue);
+        planification.finPrevue = new Date(plan.finPrevue);
+        planification.statut = "planifiée";
+
+        await planification.save();
+      } else {
+        // Sinon, on crée une nouvelle planification depuis l'objet preview
+        planification = new Planification({
+          commandes: plan.commandes.map(c => c._id || c),
+          machines: plan.machines.map(m => m._id || m),
+          salle: plan.salle._id || plan.salle,
+          debutPrevue: new Date(plan.debutPrevue),
+          finPrevue: new Date(plan.finPrevue),
+          statut: "planifiée"
+        });
+
+        await planification.save();
+      }
+
+      // Marquer les machines comme occupées
+      for (const machineId of planification.machines) {
+        const machine = await Machine.findById(machineId);
+        if (machine) {
+          machine.etat = "occupee";
+          await machine.save();
+        }
+      }
+
+      confirmed.push(planification);
     }
 
-    // Update commande status
-    await Commande.updateMany(
-      { _id: { $in: planification.commandes } },
-      { $set: { etat: "En moulage" } }
-    );
-
-    res.status(200).json({
-      message: "Planification confirmée avec succès",
-      planification: updatedPlanif
-    });
-
+    res.status(200).json({ message: "Planifications confirmées", planifications: confirmed });
   } catch (err) {
     console.error(err);
-    res.status(500).json({
-      message: "Erreur lors de la confirmation",
-      error: err.message
-    });
+    res.status(500).json({ message: "Erreur lors de la confirmation", error: err.message });
   }
 };
 

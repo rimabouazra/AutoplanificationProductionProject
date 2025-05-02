@@ -4,6 +4,7 @@ const Machine = require("../models/Machine");
 const Modele = require("../models/Modele");
 const planificationController = require("./PlanificationController");
 const Client = require("../models/Client");
+const Planification = require("../models/Planification");
 
 
 
@@ -182,16 +183,38 @@ exports.updateCommande = async (req, res) => {
 };
 
 exports.deleteCommande = async (req, res) => {
-    try {
-        const commande = await Commande.findByIdAndDelete(req.params.id);
-        if (!commande) {
-            return res.status(404).json({ message: "Commande non trouvée" });
-        }
-        res.status(200).json({ message: "Commande supprimée avec succès" });
-    } catch (error) {
-        res.status(500).json({ message: "Erreur lors de la suppression de la commande", error });
+  try {
+    const commandeId = req.params.id;
+
+    // Supprimer la commande
+    const commande = await Commande.findByIdAndDelete(commandeId);
+    if (!commande) {
+      return res.status(404).json({ message: "Commande non trouvée" });
     }
+
+    // Mettre à jour les planifications associées
+    const planifications = await Planification.find({ commandes: commandeId });
+
+    for (const planif of planifications) {
+      // Retirer la commande de la planification
+      planif.commandes = planif.commandes.filter(id => id.toString() !== commandeId);
+
+      if (planif.commandes.length === 0) {
+        // Supprimer la planification si elle n'a plus de commandes
+        await Planification.findByIdAndDelete(planif._id);
+      } else {
+        // Sinon, sauvegarder la planification mise à jour
+        await planif.save();
+      }
+    }
+
+    res.status(200).json({ message: "Commande et planification supprimées" });
+
+  } catch (error) {
+    res.status(500).json({ message: "Erreur lors de la suppression de la commande", error: error.message });
+  }
 };
+
 exports.updateCommandeEtat = async (req, res) => {
   try {
     const { id } = req.params;

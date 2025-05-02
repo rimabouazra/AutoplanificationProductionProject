@@ -89,7 +89,7 @@ void initState() {
           decoration: InputDecoration(
             labelText: "Client",
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-            prefixIcon: Icon(Icons.person, color: Colors.lightBlue),
+            prefixIcon: Icon(Icons.person, color: Colors.black87),
           ),
         );
       },
@@ -117,7 +117,7 @@ void initState() {
         decoration: InputDecoration(
           labelText: "Nom du Modèle",
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-          prefixIcon: Icon(Icons.category, color: Colors.lightBlue),
+          prefixIcon: Icon(Icons.category, color: Colors.black87),
         ),
       );
     },
@@ -143,7 +143,7 @@ Widget _buildTailleField() {
         decoration: InputDecoration(
           labelText: "Taille",
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-          prefixIcon: Icon(Icons.straighten, color: Colors.lightBlue),
+          prefixIcon: Icon(Icons.straighten, color: Colors.black87),
         ),
       );
     },
@@ -172,9 +172,9 @@ Widget _buildTailleField() {
         controller: controller,
         keyboardType: isNumber ? TextInputType.number : TextInputType.text,
         decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: Colors.lightBlue),
+          prefixIcon: Icon(icon, color: Colors.black87),
           labelText: label,
-          labelStyle: const TextStyle(color: Colors.lightBlue),
+          labelStyle: const TextStyle(color: Colors.black87),
           border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
           filled: true,
           fillColor: Colors.white,
@@ -212,44 +212,45 @@ Widget _buildTailleField() {
       ));
     });
   }
-
   Future<void> _showPlanificationConfirmation(String commandeId) async {
     final planifProvider = Provider.of<PlanificationProvider>(context, listen: false);
 
     try {
-      final preview = await ApiService.getPlanificationPreview(commandeId);
+      final previews = await ApiService.getPlanificationPreview(commandeId);
 
-      if (preview != null) {
-        if (preview.commandes.isEmpty || preview.machines.isEmpty) {
-          Fluttertoast.showToast(msg: "⚠️ Planification incomplète reçue.");
+      if (previews != null && previews.isNotEmpty) {
+        bool isValid = previews.every((p) => p.commandes.isNotEmpty && p.machines.isNotEmpty);
+
+        if (!isValid) {
+          Fluttertoast.showToast(msg: "⚠️ Une ou plusieurs planifications sont incomplètes.");
           return;
         }
 
         bool? confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => PlanificationConfirmationDialog(
-            planification: preview,
+            planifications: previews,
             commandeId: commandeId,
           ),
         );
 
         if (confirmed == true) {
-          final success = await ApiService.confirmerPlanification(preview);
-          if (success) {
-            Fluttertoast.showToast(msg: "✅ Planification confirmée !");
+          // Envoyer toutes les planifications en une seule requête
+          bool success = await ApiService.confirmerPlanification(previews);
 
+          if (success) {
+            Fluttertoast.showToast(msg: "✅ Toutes les planifications ont été confirmées !");
             await planifProvider.fetchPlanifications();
 
-            // Naviguer vers AdminHomePage
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (_) => AdminHomePage()),
                   (route) => false,
             );
           } else {
-            Fluttertoast.showToast(msg: " Erreur lors de la confirmation.");
+            Fluttertoast.showToast(msg: "❌ Erreur lors de la confirmation.");
           }
         } else {
-          Fluttertoast.showToast(msg: "ℹ Planification annulée.");
+          Fluttertoast.showToast(msg: "ℹ️ Planification annulée.");
         }
       } else {
         Fluttertoast.showToast(msg: "Aucune planification disponible.");
@@ -335,10 +336,10 @@ Widget _buildTailleField() {
       child: Scaffold(
         backgroundColor: Colors.lightBlue.shade50,
         appBar: AppBar(
-          title: const Text("Ajouter une Commande",
+          title: Text("Ajouter une Commande",
               style:
-                  TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-          backgroundColor: Colors.lightBlue[400],
+                  TextStyle(fontWeight: FontWeight.bold, color: Colors.lightBlue[800])),
+          backgroundColor: Colors.lightBlue[100],
           centerTitle: true,
           elevation: 0,
         ),
@@ -372,7 +373,7 @@ Widget _buildTailleField() {
                               : "Date: ${DateFormat('dd/MM/yyyy', 'fr_FR').format(selectedDate!)}",
                         ),
                         trailing: const Icon(Icons.calendar_today,
-                            color: Colors.lightBlue),
+                            color: Colors.black87),
                         onTap: () => _selectDate(context),
                       ),
                       const SizedBox(height: 20),
@@ -397,7 +398,7 @@ Widget _buildTailleField() {
                           )),
                       const SizedBox(height: 20),
                       isLoading
-                          ? const CircularProgressIndicator(color: Colors.lightBlue)
+                          ? const CircularProgressIndicator(color: Colors.black87)
                           : Row(
                               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                               children: [

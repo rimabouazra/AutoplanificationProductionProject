@@ -144,7 +144,7 @@ class _CommandePageState extends State<CommandePage> {
         return AlertDialog(
           title: const Text('Confirmation de suppression'),
           content:
-          const Text('Voulez-vous vraiment supprimer cette commande ?'),
+          const Text('Voulez-vous vraiment supprimer cette commande  ?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
