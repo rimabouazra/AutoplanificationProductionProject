@@ -16,7 +16,7 @@ class _PlanificationViewState extends State<PlanificationView> {
   DateTime? _endDate;
   String? _selectedSalleType;
   String _selectedViewMode = 'journée';
-  String _selectedStatus = 'tous';
+  String _selectedStatus = 'en cours';
   int _startHour = 7;
   int _endHour = 17;
 
@@ -132,7 +132,7 @@ class _PlanificationViewState extends State<PlanificationView> {
           return Column(
             children: [
               _buildDateRangeSelector(context, provider),
-              Expanded(child: _buildGanttChart(filteredPlans)),
+              Flexible(child: Expanded(child: _buildGanttChart(filteredPlans))),
             ],
           );
         },
@@ -305,26 +305,31 @@ class _PlanificationViewState extends State<PlanificationView> {
       return Center(child: CircularProgressIndicator());
     }
 
-    final rowHeight = 70.0;
-    final headerHeight = 60.0;
-    final infoColumnWidth = 200.0;
-    final timeSlotWidth = 100.0;
+    const rowHeight = 70.0;
+    const headerHeight = 60.0;
+    const infoColumnWidth = 200.0;
+    const timeSlotWidth = 100.0;
 
     List<String> headers = [];
     int timeSlots = 0;
 
     if (_selectedViewMode == 'journée') {
-      timeSlots = _endHour - _startHour;
+      timeSlots = _endHour - _startHour + 1; // Inclure la dernière heure
       headers = List.generate(timeSlots, (index) => '${_startHour + index}h');
     } else if (_selectedViewMode == 'semaine') {
       timeSlots = 7;
       headers = List.generate(
-          7,
-          (index) =>
-              DateFormat('EEE').format(_startDate!.add(Duration(days: index))));
+        7,
+            (index) {
+          final date = _startDate!.add(Duration(days: index));
+          return '${DateFormat('EEE dd/MM').format(date)}';
+        },
+      );
     } else if (_selectedViewMode == 'mois') {
       timeSlots = DateTime(_endDate!.year, _endDate!.month + 1, 0).day;
-      headers = List.generate(timeSlots, (index) => '${index + 1}');
+      final monthName = DateFormat('MMMM yyyy').format(_startDate!);
+      headers = ['Mois : $monthName'] + List.generate(timeSlots, (index) => '${index + 1}');
+      timeSlots += 1;
     }
 
     final totalContentWidth = timeSlots * timeSlotWidth;
@@ -353,15 +358,10 @@ class _PlanificationViewState extends State<PlanificationView> {
                             style: TextStyle(fontWeight: FontWeight.bold)),
                       ),
                     ),
-                    ...headers.map((h) => Flexible(
-                          child: SizedBox(
-                            width: timeSlotWidth,
-                            child: Center(
-                                child: Text(h,
-                                    style: TextStyle(
-                                        fontWeight: FontWeight.bold))),
-                          ),
-                        )),
+                    ...headers.map((h) => SizedBox(
+                      width: timeSlotWidth,
+                      child: Text(h, style: TextStyle(fontWeight: FontWeight.bold)),
+                    )),
                   ],
                 ),
               ),
@@ -389,27 +389,28 @@ class _PlanificationViewState extends State<PlanificationView> {
                     padding: EdgeInsets.all(8),
                     child: Column(
                       children: planifications.map((plan) {
-                        int startSlot = 0;
-                        int duration = 1;
+                        double startSlot = 0;
+                        double duration = 1;
 
                         if (_selectedViewMode == 'journée') {
-                          final startHour =
-                              plan.debutPrevue?.hour ?? _startHour;
-                          final endHour = plan.finPrevue?.hour ?? startHour + 1;
-                          startSlot = startHour - _startHour;
-                          duration = (endHour - startHour).clamp(1, timeSlots);
-                        } else if (_selectedViewMode == 'semaine' ||
-                            _selectedViewMode == 'mois') {
+                          final debut = plan.debutPrevue ?? DateTime.now();
+                          final fin = plan.finPrevue ?? debut.add(Duration(hours: 1));
+
+                          final totalMinutesInDay = (_endHour - _startHour) * 60;
+                          final startMinutes =
+                              (debut.hour - _startHour) * 60 + debut.minute;
+                          final endMinutes =
+                              (fin.hour - _startHour) * 60 + fin.minute;
+
+                          startSlot = (startMinutes / 60);
+                          duration = ((endMinutes - startMinutes) / 60).clamp(0.2, timeSlots.toDouble());
+                        } else if (_selectedViewMode == 'semaine' || _selectedViewMode == 'mois') {
                           startSlot = plan.debutPrevue != null
-                              ? plan.debutPrevue!.difference(_startDate!).inDays
+                              ? plan.debutPrevue!.difference(_startDate!).inDays.toDouble()
                               : 0;
-                          duration =
-                              plan.finPrevue != null && plan.debutPrevue != null
-                                  ? plan.finPrevue!
-                                          .difference(plan.debutPrevue!)
-                                          .inDays +
-                                      1
-                                  : 1;
+                          duration = plan.finPrevue != null && plan.debutPrevue != null
+                              ? plan.finPrevue!.difference(plan.debutPrevue!).inDays + 1
+                              : 1;
                         }
 
                         return SizedBox(
@@ -423,23 +424,29 @@ class _PlanificationViewState extends State<PlanificationView> {
                                   padding: EdgeInsets.symmetric(horizontal: 8),
                                   child: Column(
                                     mainAxisAlignment: MainAxisAlignment.center,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
+                                    crossAxisAlignment: CrossAxisAlignment.start,
                                     children: [
                                       Flexible(
-                                          child: Text(plan.commandes.isNotEmpty
+                                        child: Text(
+                                          plan.commandes.isNotEmpty
                                               ? plan.commandes.first.client.name
-                                              : 'No client')),
+                                              : 'No client',
+                                        ),
+                                      ),
                                       Flexible(
-                                          child: Text(
-                                              plan.machines.isNotEmpty
-                                                  ? plan.machines.first.nom
-                                                  : 'No machine',
-                                              style: TextStyle(fontSize: 12))),
+                                        child: Text(
+                                          plan.machines.isNotEmpty
+                                              ? plan.machines.first.nom
+                                              : 'No machine',
+                                          style: TextStyle(fontSize: 12),
+                                        ),
+                                      ),
                                       Flexible(
-                                          child: Text(
-                                              'Salle: ${plan.machines.first.salle.nom}',
-                                              style: TextStyle(fontSize: 12))),
+                                        child: Text(
+                                          'Salle: ${plan.machines.first.salle.nom}',
+                                          style: TextStyle(fontSize: 12),
+                                        ),
+                                      ),
                                       _buildStatut(plan.statut),
                                     ],
                                   ),
@@ -455,34 +462,35 @@ class _PlanificationViewState extends State<PlanificationView> {
                                     child: Stack(
                                       children: [
                                         Row(
-                                            children: List.generate(
-                                                timeSlots,
+                                          children: List.generate(
+                                            timeSlots,
                                                 (index) => Container(
-                                                      width: timeSlotWidth,
-                                                      decoration: BoxDecoration(
-                                                          border: Border(
-                                                              right: BorderSide(
-                                                                  color: Colors
-                                                                      .grey
-                                                                      .shade200))),
-                                                    ))),
+                                              width: timeSlotWidth,
+                                              decoration: BoxDecoration(
+                                                border: Border(
+                                                  right: BorderSide(
+                                                    color: Colors.grey.shade300,
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ),
                                         Positioned(
                                           left: startSlot * timeSlotWidth,
                                           child: Container(
                                             width: duration * timeSlotWidth,
                                             height: 40,
-                                            margin: EdgeInsets.symmetric(
-                                                vertical: 15),
+                                            margin: EdgeInsets.symmetric(vertical: 15),
                                             decoration: BoxDecoration(
-                                              color:
-                                                  _getStatusColor(plan.statut),
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
+                                              color: _getStatusColor(plan.statut),
+                                              borderRadius: BorderRadius.circular(8),
                                               boxShadow: [
                                                 BoxShadow(
-                                                    color: Colors.black26,
-                                                    blurRadius: 4,
-                                                    offset: Offset(2, 2))
+                                                  color: Colors.black26,
+                                                  blurRadius: 4,
+                                                  offset: Offset(2, 2),
+                                                )
                                               ],
                                             ),
                                             child: Center(
@@ -490,16 +498,21 @@ class _PlanificationViewState extends State<PlanificationView> {
                                                 mainAxisAlignment: MainAxisAlignment.center,
                                                 children: [
                                                   Text(
-                                                    plan.commandes.isNotEmpty ? plan.commandes.first.client.name : '',
-                                                    style: TextStyle(
-                                                        fontWeight: FontWeight.bold,
-                                                        color: Colors.white),
+                                                    plan.commandes.isNotEmpty
+                                                        ? plan.commandes.first.client.name
+                                                        : '',
+                                                    style: const TextStyle(
+                                                      fontWeight: FontWeight.bold,
+                                                      color: Colors.white,
+                                                    ),
                                                   ),
                                                   Text(
-                                                      '${_formatTime(plan.debutPrevue)} - ${_formatTime(plan.finPrevue)}',
-                                                      style: TextStyle(
-                                                          color: Colors.white70,
-                                                          fontSize: 12)),
+                                                    '${_formatTime(plan.debutPrevue)} - ${_formatTime(plan.finPrevue)}',
+                                                    style: const TextStyle(
+                                                      color: Colors.white70,
+                                                      fontSize: 12,
+                                                    ),
+                                                  ),
                                                 ],
                                               ),
                                             ),

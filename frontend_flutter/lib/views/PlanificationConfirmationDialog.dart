@@ -10,9 +10,7 @@ import '../models/planification.dart';
 import '../models/matiere.dart';
 import '../models/commande.dart';
 import '../models/salle.dart';
-import '../providers/PlanificationProvider .dart';
 import '../services/api_service.dart';
-import '../views/CommandePage.dart';
 
 class PlanificationConfirmationDialog extends StatefulWidget {
   final List<Planification> planifications;
@@ -33,8 +31,8 @@ class _PlanificationConfirmationDialogState
     extends State<PlanificationConfirmationDialog> {
   bool _isLoading = false;
   List<Matiere> _matieres = [];
-  Map<String, String?> _matieresSelectionnees = {};
-  Map<String, double> _quantitesConsommees = {};
+  final Map<String, String?> _matieresSelectionnees = {};
+  final Map<String, double> _quantitesConsommees = {};
 
   // Store selected values for each planification
   List<Salle?> _selectedSalles = [];
@@ -213,7 +211,7 @@ class _PlanificationConfirmationDialogState
       await planifProvider.fetchPlanifications();
 
       navigatorKey.currentState?.pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => AdminHomePage()),
+        MaterialPageRoute(builder: (_) => const AdminHomePage()),
         (route) => false,
       );
     } catch (e) {
@@ -328,7 +326,7 @@ class _PlanificationConfirmationDialogState
             // Salle Dropdown
             DropdownButtonFormField<Salle>(
               value: _selectedSalles[index],
-              decoration: InputDecoration(
+              decoration: const InputDecoration(
                 labelText: "Salle",
                 border: OutlineInputBorder(),
                 contentPadding: EdgeInsets.symmetric(horizontal: 12),
@@ -535,11 +533,13 @@ class _PlanificationConfirmationDialogState
                       ),
                     ),
                     const SizedBox(height: 8),
-                    ...widget.planifications.expand((p) => p.commandes).expand(
-                          (commande) => commande.modeles.map(
-                            (modele) => _buildMatiereSelector(modele),
-                          ),
-                        ),
+                    ...{
+                      for (var p in widget.planifications)
+                        for (var c in p.commandes)
+                          for (var m in c.modeles)
+                            '${m.nomModele}_${m.taille}_${m.couleur}': m
+                    }.values.map(_buildMatiereSelector),
+
                     const SizedBox(height: 20),
                   ],
                 ),
