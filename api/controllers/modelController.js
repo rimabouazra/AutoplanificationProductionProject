@@ -15,10 +15,12 @@ exports.addModele = async (req, res) => {
         }
 
         // Formater les taillesBases
-        const formattedTaillesBases = taillesBases.map(tb => ({
-            baseId: baseModel._id,
+        const formattedTaillesBases = baseModel && taillesBases 
+        ? taillesBases.map(tb => ({
+            baseId: baseModel._id|| null,
             tailles: tb.tailles
-        }));
+        }))
+        : [];
 
         const newModele = new Modele({
             nom,
@@ -77,16 +79,18 @@ exports.getAllModeles = async (req, res) => {
     try {
         const modeles = await Modele.find().populate("matiere").populate("bases");
 
-        modeles.forEach(modele => {
-            if (!modele.consommation || modele.consommation.length === 0) {
-                modele.consommation = modele.tailles.map(taille => ({
-                    taille: taille,
-                    quantite: 0
-                }));
+        // Transformez les bases en modèles dérivés pour le frontend
+        const modelesAvecDerives = modeles.map(modele => {
+            const modeleObj = modele.toObject();
+            if (modele.bases && modele.bases.length > 0) {
+                modeleObj.derives = modele.bases; // Utilisez directement les bases peuplées
+            } else {
+                modeleObj.derives = [];
             }
+            return modeleObj;
         });
 
-        res.status(200).json(modeles);
+        res.status(200).json(modelesAvecDerives);
     } catch (error) {
         res.status(500).json({ message: "Erreur serveur", error: error.message });
     }
