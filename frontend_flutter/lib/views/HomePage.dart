@@ -29,7 +29,7 @@ class _HomePageState extends State<HomePage> {
       'description': 'Confort et style pour chaque courbe.',
     },
     {
-      'image': 'assets/images/Push Up.jpg',
+      'image': 'assets/images/push-up.jpg',
       'title': 'Push Up',
       'description': 'Un lifting subtil avec une élégance époustouflante.',
     },
@@ -38,6 +38,7 @@ class _HomePageState extends State<HomePage> {
       'title': 'Eco Friendly',
       'description': 'Un style durable sans compromis.',
     },
+
   ];
 
   final List<Map<String, String>> carouselItems = [
@@ -45,6 +46,8 @@ class _HomePageState extends State<HomePage> {
       'image': 'assets/images/hero1.jpg',
       'title': 'Timeless Elegance',
       'subtitle': 'Découvrez notre dernière collection de lingerie.',
+      'title': 'Sustainable StyleSustainable Style',
+      'subtitle': 'Eco-conscious designs for a better tomorrow.',
     },
     {
       'image': 'assets/images/hero2.jpg',
@@ -55,6 +58,8 @@ class _HomePageState extends State<HomePage> {
       'image': 'assets/images/hero3.jpg',
       'title': 'Sustainable Style',
       'subtitle': 'Des conceptions éco-responsables pour un avenir meilleur.',
+      'title': 'Timeless Elegance',
+      'subtitle': 'Discover our latest lingerie collection.',
     },
   ];
 
@@ -390,7 +395,7 @@ class _HomePageState extends State<HomePage> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
                 child: Image.asset(
-                  'assets/images/about.jpg',
+                  'assets/images/About.jpg',
                   fit: BoxFit.cover,
                   height: 400,
                 ),
