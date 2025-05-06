@@ -183,8 +183,9 @@ class ApiService {
         if (consommation.isNotEmpty)
           'consommation': consommation.map((c) => c.toJson()).toList(),
         // Convertir la liste
-        if (taillesBases.isNotEmpty)
-          'taillesBases': taillesBases.map((tb) => tb.toJson()).toList(),
+        "taillesBases": base != null 
+          ? taillesBases.map((tb) => tb.toJson()).toList()
+          : [], // Envoyer une liste vide si pas de base
       }),
     );
     print("Réponse de l'API: ${response.statusCode} - ${response.body}");

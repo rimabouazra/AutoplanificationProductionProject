@@ -6,7 +6,7 @@ const ModeleSchema = new mongoose.Schema({
     tailles: [{ type: String, required: true }],
     bases: [{ type: mongoose.Schema.Types.ObjectId, ref: "Modele" }], // Liste des modèles de base
     taillesBases: [{
-        baseId: { type: mongoose.Schema.Types.ObjectId, ref: "Modele" }, // Référence à la base
+        baseId: { type: mongoose.Schema.Types.ObjectId, ref: "Modele",required: false }, // Référence à la base
         tailles: [{ type: String }] // Correspondance des tailles
     }],
     consommation: [{
