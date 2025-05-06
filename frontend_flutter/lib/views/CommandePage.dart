@@ -971,5 +971,4 @@ class _CommandePageState extends State<CommandePage> {
       }).toList(),
     );
   }
-
 }
