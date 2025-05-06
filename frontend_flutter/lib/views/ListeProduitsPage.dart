@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:animate_do/animate_do.dart';
 import 'package:frontend/models/modele.dart';
 import 'package:provider/provider.dart';
 import '../models/matiere.dart';
@@ -7,6 +8,8 @@ import '../providers/ProduitProvider.dart';
 import '../services/api_service.dart';
 
 class ProduitsPage extends StatefulWidget {
+  const ProduitsPage({super.key});
+
   @override
   _ProduitsPageState createState() => _ProduitsPageState();
 }
@@ -14,7 +17,7 @@ class ProduitsPage extends StatefulWidget {
 class _ProduitsPageState extends State<ProduitsPage> {
   List<Produit> _produits = [];
   bool _isLoading = true;
-  TextEditingController _searchController = TextEditingController();
+  final TextEditingController _searchController = TextEditingController();
   bool _isSearching = false;
 
   @override
@@ -22,13 +25,12 @@ class _ProduitsPageState extends State<ProduitsPage> {
     super.initState();
     _fetchProduits();
   }
+
   List<Produit> get filteredProduits {
     final produits = Provider.of<ProduitProvider>(context).produits;
-
     return produits.where((produit) {
       final produitNom = produit.modele.nom.trim().toLowerCase();
       final searchQuery = _searchController.text.trim().toLowerCase();
-
       return searchQuery.isEmpty || produitNom.contains(searchQuery);
     }).toList();
   }
@@ -46,7 +48,7 @@ class _ProduitsPageState extends State<ProduitsPage> {
   }
 
   Future<List<Matiere>> fetchMatieres() async {
-    List<dynamic> rawData = await ApiService.getMatieres();
+    final List<dynamic> rawData = await ApiService.getMatieres();
     return rawData.map((json) => Matiere.fromJson(json)).toList();
   }
 
@@ -69,11 +71,17 @@ class _ProduitsPageState extends State<ProduitsPage> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Container(
-        padding: EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
           color: Colors.white.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(15),
-          border: Border.all(color: Colors.blue.shade300),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
         ),
         child: DropdownButtonHideUnderline(
           child: DropdownButton<String>(
@@ -86,8 +94,8 @@ class _ProduitsPageState extends State<ProduitsPage> {
                 value: item,
                 child: Row(
                   children: [
-                    Icon(icon, color: Colors.blue.shade600, size: 18),
-                    SizedBox(width: 10),
+                    Icon(icon, color: Colors.blueGrey[700], size: 18),
+                    const SizedBox(width: 10),
                     Text(item),
                   ],
                 ),
@@ -100,29 +108,25 @@ class _ProduitsPageState extends State<ProduitsPage> {
   }
 
   void _modifierProduit(Produit produit, int indexTaille) {
-    var tailleData = produit.tailles[indexTaille];
-    TextEditingController tailleController =
-        TextEditingController(text: tailleData['taille']);
-    TextEditingController couleurController =
-        TextEditingController(text: tailleData['couleur']);
-    TextEditingController quantiteController =
-        TextEditingController(text: tailleData['quantite'].toString());
+    final tailleData = produit.tailles[indexTaille];
+    final TextEditingController tailleController = TextEditingController(text: tailleData['taille']);
+    final TextEditingController couleurController = TextEditingController(text: tailleData['couleur']);
+    final TextEditingController quantiteController = TextEditingController(text: tailleData['quantite'].toString());
     String etat = tailleData['etat'];
 
     showDialog(
       context: context,
       builder: (context) {
         return Dialog(
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: AnimatedContainer(
-            duration: Duration(milliseconds: 1000),
+            duration: const Duration(milliseconds: 300),
             curve: Curves.easeOut,
-            padding: EdgeInsets.all(20),
+            padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(20),
               gradient: LinearGradient(
-                colors: [Colors.blue.shade50, Colors.blue.shade100],
+                colors: [Colors.blueGrey[50]!, Colors.white],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -133,12 +137,13 @@ class _ProduitsPageState extends State<ProduitsPage> {
                 Text(
                   "Modifier Produit",
                   style: TextStyle(
+                    fontFamily: 'PlayfairDisplay',
                     fontSize: 22,
                     fontWeight: FontWeight.bold,
-                    color: Colors.blue.shade700,
+                    color: Colors.blueGrey[800],
                   ),
                 ),
-                SizedBox(height: 15),
+                const SizedBox(height: 15),
                 _buildDropdown(
                   value: etat,
                   label: "État",
@@ -151,29 +156,29 @@ class _ProduitsPageState extends State<ProduitsPage> {
                   },
                 ),
                 _buildStyledTextField(
-                    controller: tailleController,
-                    label: "Taille",
-                    icon: Icons.format_size),
+                  controller: tailleController,
+                  label: "Taille",
+                  icon: Icons.format_size,
+                ),
                 _buildStyledTextField(
-                    controller: couleurController,
-                    label: "Couleur",
-                    icon: Icons.color_lens),
+                  controller: couleurController,
+                  label: "Couleur",
+                  icon: Icons.color_lens,
+                ),
                 _buildStyledTextField(
-                    controller: quantiteController,
-                    label: "Quantité",
-                    icon: Icons.production_quantity_limits,
-                    keyboardType: TextInputType.number),
-                SizedBox(height: 20),
+                  controller: quantiteController,
+                  label: "Quantité",
+                  icon: Icons.production_quantity_limits,
+                  keyboardType: TextInputType.number,
+                ),
+                const SizedBox(height: 20),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
-                    _buildActionButton(
-                        "Annuler", Icons.cancel, Colors.red.shade300, () {
+                    _buildActionButton("Annuler", Icons.cancel, Colors.red[300]!, () {
                       Navigator.of(context).pop();
                     }),
-                    _buildActionButton(
-                        "Modifier", Icons.check_circle, Colors.green.shade400,
-                        () async {
+                    _buildActionButton("Modifier", Icons.check_circle, Colors.green[400]!, () async {
                       produit.tailles[indexTaille] = {
                         'taille': tailleController.text,
                         'couleur': couleurController.text,
@@ -182,8 +187,7 @@ class _ProduitsPageState extends State<ProduitsPage> {
                         'quantite': int.parse(quantiteController.text),
                       };
 
-                      await ApiService.updateProduit(
-                          produit.id, produit.toJson());
+                      await ApiService.updateProduit(produit.id, produit.toJson());
                       _fetchProduits();
                       Navigator.pop(context);
                     }),
@@ -202,11 +206,12 @@ class _ProduitsPageState extends State<ProduitsPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Colors.white,
-          title: Text("Supprimer Produit",
-              style: TextStyle(color: Colors.red[700])),
-          content: Text("Êtes-vous sûr de vouloir supprimer ce produit ?",
-              style: TextStyle(color: Colors.red[600])),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            "Supprimer Produit",
+            style: TextStyle(fontFamily: 'PlayfairDisplay', color: Colors.red[700]),
+          ),
+          content: Text("Êtes-vous sûr de vouloir supprimer ce produit ?"),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -218,13 +223,10 @@ class _ProduitsPageState extends State<ProduitsPage> {
                 _fetchProduits();
                 Navigator.pop(context);
               },
-              child: const Text("Supprimer",
-                  style: TextStyle(color: Colors.white)),
+              child: const Text("Supprimer", style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red[600],
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ],
@@ -238,11 +240,12 @@ class _ProduitsPageState extends State<ProduitsPage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Colors.white,
-          title: Text("Supprimer Taille",
-              style: TextStyle(color: Colors.red[700])),
-          content: Text("Êtes-vous sûr de vouloir supprimer cette taille ?",
-              style: TextStyle(color: Colors.red[600])),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            "Supprimer Taille",
+            style: TextStyle(fontFamily: 'PlayfairDisplay', color: Colors.red[700]),
+          ),
+          content: Text("Êtes-vous sûr de vouloir supprimer cette taille ?"),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -250,17 +253,13 @@ class _ProduitsPageState extends State<ProduitsPage> {
             ),
             ElevatedButton(
               onPressed: () async {
-                await Provider.of<ProduitProvider>(context, listen: false)
-                    .supprimerTaille(produitId, tailleIndex);
+                await Provider.of<ProduitProvider>(context, listen: false).supprimerTaille(produitId, tailleIndex);
                 Navigator.pop(context);
               },
-              child: const Text("Supprimer",
-                  style: TextStyle(color: Colors.white)),
+              child: const Text("Supprimer", style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.red[600],
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ],
@@ -270,85 +269,109 @@ class _ProduitsPageState extends State<ProduitsPage> {
   }
 
   void _ajouterProduit() {
-    TextEditingController _modeleController = TextEditingController();
-    TextEditingController _tailleController = TextEditingController();
-    TextEditingController _couleurController = TextEditingController();
-    TextEditingController _quantiteController = TextEditingController();
-
+    final TextEditingController _modeleController = TextEditingController();
+    final TextEditingController _tailleController = TextEditingController();
+    final TextEditingController _couleurController = TextEditingController();
+    final TextEditingController _quantiteController = TextEditingController();
     String? etatSelectionne = 'coupé';
     Matiere? matiereSelectionnee;
-
-    List<Map<String, dynamic>> taillesList = [];
+    final List<Map<String, dynamic>> taillesList = [];
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          backgroundColor: Colors.white,
-          title: Text("Ajouter un Produit",
-              style: TextStyle(color: Colors.blue[900])),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: Text(
+            "Ajouter un Produit",
+            style: TextStyle(fontFamily: 'PlayfairDisplay', color: Colors.blueGrey[800]),
+          ),
           content: SizedBox(
             width: 500,
-            height: 500,
             child: SingleChildScrollView(
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  _buildTextField(_modeleController, "Modèle"),
+                  _buildStyledTextField(
+                    controller: _modeleController,
+                    label: "Modèle",
+                    icon: Icons.view_in_ar,
+                  ),
                   const SizedBox(height: 16),
-                  _buildTextField(_tailleController, "Taille"),
+                  _buildStyledTextField(
+                    controller: _tailleController,
+                    label: "Taille",
+                    icon: Icons.format_size,
+                  ),
                   const SizedBox(height: 16),
-                  _buildTextField(_couleurController, "Couleur"),
+                  _buildStyledTextField(
+                    controller: _couleurController,
+                    label: "Couleur",
+                    icon: Icons.color_lens,
+                  ),
                   const SizedBox(height: 16),
-                  _buildTextField(_quantiteController, "Quantité",
-                      isNumeric: true),
+                  _buildStyledTextField(
+                    controller: _quantiteController,
+                    label: "Quantité",
+                    icon: Icons.production_quantity_limits,
+                    keyboardType: TextInputType.number,
+                  ),
                   const SizedBox(height: 16),
-
                   DropdownButtonFormField<String>(
                     value: etatSelectionne,
                     items: ['coupé', 'moulé'].map((String value) {
-                      return DropdownMenuItem<String>(
-                          value: value, child: Text(value));
+                      return DropdownMenuItem<String>(value: value, child: Text(value));
                     }).toList(),
                     onChanged: (newValue) {
                       etatSelectionne = newValue;
                     },
-                    decoration: const InputDecoration(
+                    decoration: InputDecoration(
                       labelText: "État",
-                      border: OutlineInputBorder(),
+                      prefixIcon: const Icon(Icons.timeline, color: Colors.blueGrey),
+                      filled: true,
+                      fillColor: Colors.white.withOpacity(0.9),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide.none,
+                      ),
                     ),
                   ),
                   const SizedBox(height: 16),
-
                   FutureBuilder<List<Matiere>>(
                     future: fetchMatieres(),
                     builder: (context, snapshot) {
-                      if (!snapshot.hasData)
-                        return const CircularProgressIndicator();
-                      List<Matiere> matieres = snapshot.data!;
+                      if (!snapshot.hasData) return const CircularProgressIndicator();
+                      final matieres = snapshot.data!;
                       return DropdownButtonFormField<Matiere>(
                         value: matiereSelectionnee,
                         items: matieres.map((Matiere matiere) {
                           return DropdownMenuItem<Matiere>(
-                              value: matiere, child: Text(matiere.reference));
+                            value: matiere,
+                            child: Text(matiere.reference),
+                          );
                         }).toList(),
                         onChanged: (newValue) {
                           matiereSelectionnee = newValue;
                         },
-                        decoration: const InputDecoration(
+                        decoration: InputDecoration(
                           labelText: "Matière (optionnel)",
-                          border: OutlineInputBorder(),
+                          prefixIcon: const Icon(Icons.category, color: Colors.blueGrey),
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.9),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
                         ),
                       );
                     },
                   ),
-
-                  // Bouton pour ajouter la taille à la liste
+                  const SizedBox(height: 16),
                   ElevatedButton(
                     onPressed: () {
-                      String taille = _tailleController.text.trim();
-                      String couleur = _couleurController.text.trim();
-                      String quantiteStr = _quantiteController.text.trim();
+                      final taille = _tailleController.text.trim();
+                      final couleur = _couleurController.text.trim();
+                      final quantiteStr = _quantiteController.text.trim();
                       if (taille.isNotEmpty &&
                           couleur.isNotEmpty &&
                           quantiteStr.isNotEmpty) {
@@ -367,7 +390,12 @@ class _ProduitsPageState extends State<ProduitsPage> {
                         }
                       }
                     },
-                    child: Text("Ajouter Taille"),
+                    child: const Text("Ajouter Taille"),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueGrey[800],
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
                   ),
                 ],
               ),
@@ -387,13 +415,10 @@ class _ProduitsPageState extends State<ProduitsPage> {
                   matiereSelectionnee,
                 );
               },
-              child:
-                  Text("Ajouter", style: TextStyle(color: Colors.green[800])),
+              child: Text("Ajouter", style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueAccent[50],
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
+                backgroundColor: Colors.blueGrey[800],
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ],
@@ -402,47 +427,64 @@ class _ProduitsPageState extends State<ProduitsPage> {
     );
   }
 
-  Widget _buildTextField(TextEditingController controller, String label,
-      {bool isNumeric = false}) {
-    return TextField(
-      controller: controller,
-      keyboardType: isNumeric ? TextInputType.number : TextInputType.text,
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: const TextStyle(color: Colors.black87),
-        enabledBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.teal[50]!),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderSide: BorderSide(color: Colors.blue[300]!),
+  Widget _buildStyledTextField({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    TextInputType keyboardType = TextInputType.text,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      child: TextField(
+        controller: controller,
+        keyboardType: keyboardType,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, color: Colors.blueGrey[700]),
+          filled: true,
+          fillColor: Colors.white.withOpacity(0.9),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
+          ),
         ),
       ),
     );
   }
 
+  Widget _buildActionButton(String label, IconData icon, Color color, VoidCallback onPressed) {
+    return ElevatedButton.icon(
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        padding: const EdgeInsets.symmetric(horizontal: 15, vertical: 10),
+      ),
+      icon: Icon(icon, color: Colors.white),
+      label: Text(label, style: const TextStyle(color: Colors.white)),
+      onPressed: onPressed,
+    );
+  }
+
   Future<void> _validerEtAjouterProduit(
-      String modeleNom,
-      List<Map<String, dynamic>> taillesList,
-      String etat,
-      Matiere? matiere) async {
+      String modeleNom, List<Map<String, dynamic>> taillesList, String etat, Matiere? matiere) async {
     if (modeleNom.isEmpty || taillesList.isEmpty || etat.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Veuillez remplir tous les champs correctement."),
-          backgroundColor: Colors.red,
+          backgroundColor: Colors.redAccent,
         ),
       );
       return;
     }
 
     try {
-      ApiService apiService = ApiService();
-      Modele? modele = await apiService.getModeleParNom(modeleNom);
+      final apiService = ApiService();
+      final modele = await apiService.getModeleParNom(modeleNom);
       if (modele == null) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text("Modèle non trouvé."),
-            backgroundColor: Colors.red,
+            backgroundColor: Colors.redAccent,
           ),
         );
         return;
@@ -451,7 +493,7 @@ class _ProduitsPageState extends State<ProduitsPage> {
       final nouveauProduit = Produit(
         id: '',
         modele: modele,
-        tailles: taillesList, // Pass the list of sizes
+        tailles: taillesList,
       );
 
       await ApiService.addProduit(nouveauProduit);
@@ -468,25 +510,24 @@ class _ProduitsPageState extends State<ProduitsPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Erreur lors de l'ajout du produit : ${e.toString()}"),
-          backgroundColor: Colors.red,
+          backgroundColor: Colors.redAccent,
         ),
       );
     }
   }
 
   void _showAddTailleDialog(String produitId) {
-    TextEditingController quantiteController = TextEditingController();
-    TextEditingController couleurController = TextEditingController();
+    final TextEditingController quantiteController = TextEditingController();
+    final TextEditingController couleurController = TextEditingController();
     String? selectedModeleNom;
     String? selectedModeleId;
     String? selectedTaille;
     String? selectedEtat;
     String? selectedMatiereId;
     String? selectedCouleur;
-
     List<Modele> modeles = [];
     List<String> tailles = [];
-    List<String> etats = ['moulé', 'coupé'];
+    final List<String> etats = ['moulé', 'coupé'];
     List<Matiere> matieres = [];
 
     showDialog(
@@ -497,10 +538,9 @@ class _ProduitsPageState extends State<ProduitsPage> {
           builder: (context, AsyncSnapshot<List<dynamic>> snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Dialog(
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20)),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                child: const Padding(
+                  padding: EdgeInsets.all(20),
                   child: Center(child: CircularProgressIndicator()),
                 ),
               );
@@ -509,12 +549,10 @@ class _ProduitsPageState extends State<ProduitsPage> {
             if (snapshot.hasError) {
               print("Erreur lors du chargement : ${snapshot.error}");
               return Dialog(
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20)),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child:
-                      Center(child: Text("Erreur de chargement des données")),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                child: const Padding(
+                  padding: EdgeInsets.all(20),
+                  child: Center(child: Text("Erreur de chargement des données")),
                 ),
               );
             }
@@ -525,16 +563,15 @@ class _ProduitsPageState extends State<ProduitsPage> {
             return StatefulBuilder(
               builder: (context, setState) {
                 return Dialog(
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20)),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
                   child: AnimatedContainer(
-                    duration: Duration(milliseconds: 300),
+                    duration: const Duration(milliseconds: 300),
                     curve: Curves.easeOut,
-                    padding: EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(20),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(20),
                       gradient: LinearGradient(
-                        colors: [Colors.blue.shade50, Colors.blue.shade100],
+                        colors: [Colors.blueGrey[50]!, Colors.white],
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
                       ),
@@ -545,34 +582,27 @@ class _ProduitsPageState extends State<ProduitsPage> {
                         Text(
                           "Ajouter une taille",
                           style: TextStyle(
+                            fontFamily: 'PlayfairDisplay',
                             fontSize: 22,
                             fontWeight: FontWeight.bold,
-                            color: Colors.blue.shade700,
+                            color: Colors.blueGrey[800],
                           ),
                         ),
-                        SizedBox(height: 15),
-
-                        // Sélection du modèle par nom
+                        const SizedBox(height: 15),
                         DropdownButtonFormField<String>(
                           value: selectedModeleNom,
-                          decoration:
-                              _inputDecoration("Modèle", Icons.view_in_ar),
+                          decoration: _inputDecoration("Modèle", Icons.view_in_ar),
                           items: modeles.map((modele) {
-                            return DropdownMenuItem(
-                              value: modele.nom,
-                              child: Text(modele.nom),
-                            );
+                            return DropdownMenuItem(value: modele.nom, child: Text(modele.nom));
                           }).toList(),
                           onChanged: (value) async {
                             setState(() {
                               selectedModeleNom = value;
                             });
-
-                            // Récupérer l'ID du modèle sélectionné
-                            Modele? modele = modeles.firstWhere(
-                                (m) => m.nom == value,
-                                orElse: () =>
-                                    Modele(id: '', nom: '', tailles: [], consommation: []));
+                            final modele = modeles.firstWhere(
+                              (m) => m.nom == value,
+                              orElse: () => Modele(id: '', nom: '', tailles: [], consommation: []),
+                            );
                             if (modele.id.isNotEmpty) {
                               setState(() {
                                 selectedModeleId = modele.id;
@@ -586,18 +616,12 @@ class _ProduitsPageState extends State<ProduitsPage> {
                             }
                           },
                         ),
-                        SizedBox(height: 10),
-
-                        // Sélection de la taille
+                        const SizedBox(height: 10),
                         DropdownButtonFormField<String>(
                           value: selectedTaille,
-                          decoration:
-                              _inputDecoration("Taille", Icons.format_size),
+                          decoration: _inputDecoration("Taille", Icons.format_size),
                           items: tailles.map((taille) {
-                            return DropdownMenuItem(
-                              value: taille,
-                              child: Text(taille),
-                            );
+                            return DropdownMenuItem(value: taille, child: Text(taille));
                           }).toList(),
                           onChanged: (value) {
                             setState(() {
@@ -605,17 +629,12 @@ class _ProduitsPageState extends State<ProduitsPage> {
                             });
                           },
                         ),
-                        SizedBox(height: 10),
-
-                        // Sélection de l'état
+                        const SizedBox(height: 10),
                         DropdownButtonFormField<String>(
                           value: selectedEtat,
                           decoration: _inputDecoration("État", Icons.timeline),
                           items: etats.map((etat) {
-                            return DropdownMenuItem(
-                              value: etat,
-                              child: Text(etat),
-                            );
+                            return DropdownMenuItem(value: etat, child: Text(etat));
                           }).toList(),
                           onChanged: (value) {
                             setState(() {
@@ -623,20 +642,12 @@ class _ProduitsPageState extends State<ProduitsPage> {
                             });
                           },
                         ),
-                        SizedBox(height: 10),
-
-                        // Sélection de la matière
+                        const SizedBox(height: 10),
                         DropdownButtonFormField<String>(
                           value: selectedMatiereId,
-                          decoration:
-                              _inputDecoration("Matière", Icons.category),
+                          decoration: _inputDecoration("Matière", Icons.category),
                           items: matieres.map((matiere) {
-                            return DropdownMenuItem(
-                              value: matiere
-                                  .id, // Utilisation de l'ID de la matière
-                              child: Text(matiere
-                                  .reference), // Affichage de la référence de la matière
-                            );
+                            return DropdownMenuItem(value: matiere.id, child: Text(matiere.reference));
                           }).toList(),
                           onChanged: (value) {
                             setState(() {
@@ -644,41 +655,30 @@ class _ProduitsPageState extends State<ProduitsPage> {
                             });
                           },
                         ),
-                        SizedBox(height: 10),
-
-                        // Sélection de la couleur
+                        const SizedBox(height: 10),
                         TextField(
-                          controller: couleurController,  // Link controller
+                          controller: couleurController,
                           decoration: _inputDecoration("Couleur", Icons.color_lens),
                           onChanged: (value) {
                             setState(() {
-                              selectedCouleur = value;  // Update state for color
-
+                              selectedCouleur = value;
                             });
                           },
                         ),
-                        SizedBox(height: 10),
-
-                        // Champ de quantité
+                        const SizedBox(height: 10),
                         TextField(
                           controller: quantiteController,
-                          decoration: _inputDecoration(
-                              "Quantité", Icons.production_quantity_limits),
+                          decoration: _inputDecoration("Quantité", Icons.production_quantity_limits),
                           keyboardType: TextInputType.number,
                         ),
-                        SizedBox(height: 20),
-
-                        // Boutons d'action
+                        const SizedBox(height: 20),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           children: [
-                            _buildActionButton(
-                                "", Icons.cancel, Colors.red.shade300, () {
+                            _buildActionButton("", Icons.cancel, Colors.red[300]!, () {
                               Navigator.of(context).pop();
                             }),
-                            _buildActionButton(
-                                "", Icons.check_circle, Colors.green.shade400,
-                                () async {
+                            _buildActionButton("", Icons.check_circle, Colors.green[400]!, () async {
                               if (selectedModeleId == null ||
                                   selectedTaille == null ||
                                   selectedEtat == null ||
@@ -689,7 +689,7 @@ class _ProduitsPageState extends State<ProduitsPage> {
                                 return;
                               }
 
-                              Map<String, dynamic> tailleData = {
+                              final Map<String, dynamic> tailleData = {
                                 'modeleId': selectedModeleId,
                                 'taille': selectedTaille,
                                 'etat': selectedEtat,
@@ -699,18 +699,14 @@ class _ProduitsPageState extends State<ProduitsPage> {
                               };
 
                               try {
-                                await Provider.of<ProduitProvider>(context,
-                                        listen: false)
-                                    .ajouterTailleAuProduit(
-                                        produitId, tailleData);
+                                await Provider.of<ProduitProvider>(context, listen: false)
+                                    .ajouterTailleAuProduit(produitId, tailleData);
                                 setState(() {
-                                  final produit = _produits
-                                      .firstWhere((p) => p.id == produitId);
+                                  final produit = _produits.firstWhere((p) => p.id == produitId);
                                   produit.tailles.add(tailleData);
                                 });
                               } catch (e) {
-                                print(
-                                    "Erreur lors de l'ajout de la taille : $e");
+                                print("Erreur lors de l'ajout de la taille : $e");
                               }
 
                               Navigator.of(context).pop();
@@ -729,53 +725,16 @@ class _ProduitsPageState extends State<ProduitsPage> {
     );
   }
 
-
   InputDecoration _inputDecoration(String label, IconData icon) {
     return InputDecoration(
       labelText: label,
-      prefixIcon: Icon(icon, color: Colors.blue.shade600),
+      prefixIcon: Icon(icon, color: Colors.blueGrey[700]),
       filled: true,
-      fillColor: Colors.white,
-      border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-    );
-  }
-
-  Widget _buildStyledTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    TextInputType keyboardType = TextInputType.text,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextField(
-        controller: controller,
-        keyboardType: keyboardType,
-        decoration: InputDecoration(
-          labelText: label,
-          prefixIcon: Icon(icon, color: Colors.blue.shade600),
-          filled: true,
-          fillColor: Colors.white.withOpacity(0.9),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(15),
-            borderSide: BorderSide.none,
-          ),
-        ),
+      fillColor: Colors.white.withOpacity(0.9),
+      border: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: BorderSide.none,
       ),
-    );
-  }
-
-  Widget _buildActionButton(
-      String label, IconData icon, Color color, VoidCallback onPressed) {
-    return ElevatedButton.icon(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
-        padding: EdgeInsets.symmetric(horizontal: 15, vertical: 10),
-      ),
-      icon: Icon(icon, color: Colors.white),
-      label: Text(label, style: TextStyle(color: Colors.white)),
-      onPressed: onPressed,
     );
   }
 
@@ -784,210 +743,167 @@ class _ProduitsPageState extends State<ProduitsPage> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Row(
-          children: [
-            Expanded(
-              child: AnimatedContainer(
-                duration: Duration(milliseconds: 300),
-                width: _isSearching ? 200 : 0,
-                curve: Curves.easeInOut,
-                child: _isSearching
-                    ? TextField(
-                  controller: _searchController,
-                  autofocus: true,
-                  decoration: InputDecoration(
-                    hintText: 'Rechercher...',
-                    border: InputBorder.none,
-                    hintStyle: TextStyle(color: Colors.black87),
-                  ),
-                  style: TextStyle(color: Colors.black87),
-                  onChanged: (query) {
-                    setState(() {});
-                  },
-                )
-                    : SizedBox(), // Empty space when search is closed
+        backgroundColor: Colors.blueGrey[800],
+        title: FadeInDown(
+          child: Row(
+            children: [
+              Expanded(
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  width: _isSearching ? 200 : 0,
+                  curve: Curves.easeInOut,
+                  child: _isSearching
+                      ? TextField(
+                          controller: _searchController,
+                          autofocus: true,
+                          decoration: InputDecoration(
+                            hintText: 'Rechercher...',
+                            border: InputBorder.none,
+                            hintStyle: TextStyle(color: Colors.white70),
+                          ),
+                          style: const TextStyle(color: Colors.white),
+                          onChanged: (query) {
+                            setState(() {});
+                          },
+                        )
+                      : const SizedBox(),
+                ),
               ),
-            ),
-            IconButton(
-              icon: Icon(_isSearching ? Icons.close : Icons.search,
-                  color: Colors.black87),
-              onPressed: () {
-                setState(() {
-                  _isSearching = !_isSearching;
-                  if (!_isSearching) {
-                    _searchController.clear();
-                  }
-                });
-              },
-            ),
-          ],
+              IconButton(
+                icon: Icon(_isSearching ? Icons.close : Icons.search, color: Colors.white),
+                onPressed: () {
+                  setState(() {
+                    _isSearching = !_isSearching;
+                    if (!_isSearching) {
+                      _searchController.clear();
+                    }
+                  });
+                },
+              ),
+            ],
+          ),
         ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          _ajouterProduit();
-        },
-        icon: Icon(Icons.add),
-        backgroundColor: Color(0xFF1ABC9C),
-        label: Text(""),
+      floatingActionButton: ZoomIn(
+        child: FloatingActionButton.extended(
+          onPressed: () {
+            _ajouterProduit();
+          },
+          icon: const Icon(Icons.add, color: Colors.white),
+          backgroundColor: Colors.blueGrey[800],
+          label: const Text("Ajouter", style: TextStyle(color: Colors.white)),
+        ),
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : ListView.builder(
-        itemCount: _produits.length,
-        itemBuilder: (context, index) {
-          final produit = _produits[index];
-          return Card(
-            margin:
-            const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-              side: BorderSide(color: Colors.teal[200]!),
-            ),
-            elevation: 5,
-            color: Colors.blueAccent[50],
-            child: Column(
-              children: [
-                ExpansionTile(
-                  tilePadding: const EdgeInsets.symmetric(
-                      vertical: 10, horizontal: 16),
-                  title: Text(
-                    produit.modele.nom,
-                    style: const TextStyle(
-                        color: Colors.black87,
-                        fontWeight: FontWeight.bold),
-                  ),
-                  trailing: IconButton(
-                    icon: Icon(Icons.delete, color: Colors.red[500]),
-                    onPressed: () {
-                      _supprimerProduit(produit.id);
-                    },
-                  ),
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: BoxDecoration(
-                        color: Colors.white60,
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: DataTable(
-                        columnSpacing:
-                        20,
-                        // TO DO :Adjust column spacing to make the table wider
-                        horizontalMargin:
-                        10,
-                        // TO DO :Increase horizontal margin for wider appearance
-                        dataTextStyle: TextStyle(
-                            fontSize: 16, color: Colors.black87),
-                        headingTextStyle: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.purple[600]),
-                        columns: [
-                          DataColumn(
-                            label: Text('Taille',
-                                style:
-                                TextStyle(color: Colors.purple[600])),
-                          ),
-                          DataColumn(
-                            label: Text('Couleur',
-                                style:
-                                TextStyle(color: Colors.purple[600])),
-                          ),
-                          DataColumn(
-                            label: Text('État',
-                                style:
-                                TextStyle(color: Colors.purple[600])),
-                          ),
-                          DataColumn(
-                            label: Text('Quantité',
-                                style:
-                                TextStyle(color: Colors.purple[600])),
-                          ),
-                          DataColumn(
-                            label: Text('Actions',
-                                style:
-                                TextStyle(color: Colors.purple[600])),
-                          ),
-                        ],
-                        rows: produit.tailles.map((tailleData) {
-                          return DataRow(
-                            cells: [
-                              DataCell(
-                                Text(tailleData['taille'],
-                                    style: TextStyle(
-                                        color: Colors.black87,
-                                        fontSize: 16)),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.blueGrey[50]!, Colors.white],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : ListView.builder(
+                itemCount: _produits.length,
+                itemBuilder: (context, index) {
+                  final produit = _produits[index];
+                  return FadeInUp(
+                    delay: Duration(milliseconds: index * 100),
+                    child: Card(
+                      margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      elevation: 5,
+                      color: Colors.white,
+                      child: Column(
+                        children: [
+                          ExpansionTile(
+                            tilePadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                            title: Text(
+                              produit.modele.nom,
+                              style: const TextStyle(
+                                fontFamily: 'PlayfairDisplay',
+                                color: Colors.blueGrey,
+                                fontWeight: FontWeight.bold,
                               ),
-                              DataCell(
-                                Text(tailleData['couleur'],
-                                    style: TextStyle(
-                                        color: Colors.black87,
-                                        fontSize: 16)),
-                              ),
-                              DataCell(
-                                Text(tailleData['etat'],
-                                    style: TextStyle(
-                                        color: Colors.black87,
-                                        fontSize: 16)),
-                              ),
-                              DataCell(
-                                Text(tailleData['quantite'].toString(),
-                                    style: TextStyle(
-                                        color: Colors.black87,
-                                        fontSize: 16)),
-                              ),
-                              DataCell(
-                                Row(
-                                  mainAxisAlignment:
-                                  MainAxisAlignment.center,
-                                  children: [
-                                    IconButton(
-                                      icon: Icon(Icons.add,
-                                          color: Colors.green),
-                                      onPressed: () {
-                                        _showAddTailleDialog(produit.id);
-                                      },
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.edit,
-                                          color: Colors.lightBlue),
-                                      onPressed: () {
-                                        int indexTaille = produit.tailles
-                                            .indexOf(tailleData);
-                                        _modifierProduit(
-                                            produit, indexTaille);
-                                      },
-                                    ),
-                                    IconButton(
-                                      icon: Icon(Icons.delete,
-                                          color: Colors.red[500]),
-                                      onPressed: () {
-                                        int indexTaille = produit.tailles
-                                            .indexOf(tailleData);
-                                        _supprimerTaille(
-                                            produit.id, indexTaille);
-                                      },
-                                    ),
+                            ),
+                            trailing: IconButton(
+                              icon: Icon(Icons.delete, color: Colors.red[500]),
+                              onPressed: () {
+                                _supprimerProduit(produit.id);
+                              },
+                            ),
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(4),
+                                decoration: BoxDecoration(
+                                  color: Colors.white,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: DataTable(
+                                  columnSpacing: 20,
+                                  horizontalMargin: 10,
+                                  dataTextStyle: const TextStyle(fontSize: 16, color: Colors.blueGrey),
+                                  headingTextStyle: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.blueGrey[800],
+                                  ),
+                                  columns: [
+                                    DataColumn(label: Text('Taille', style: TextStyle(color: Colors.blueGrey[800]))),
+                                    DataColumn(label: Text('Couleur', style: TextStyle(color: Colors.blueGrey[800]))),
+                                    DataColumn(label: Text('État', style: TextStyle(color: Colors.blueGrey[800]))),
+                                    DataColumn(label: Text('Quantité', style: TextStyle(color: Colors.blueGrey[800]))),
+                                    DataColumn(label: Text('Actions', style: TextStyle(color: Colors.blueGrey[800]))),
                                   ],
+                                  rows: produit.tailles.map((tailleData) {
+                                    return DataRow(
+                                      cells: [
+                                        DataCell(Text(tailleData['taille'], style: const TextStyle(color: Colors.blueGrey))),
+                                        DataCell(Text(tailleData['couleur'], style: const TextStyle(color: Colors.blueGrey))),
+                                        DataCell(Text(tailleData['etat'], style: const TextStyle(color: Colors.blueGrey))),
+                                        DataCell(Text(tailleData['quantite'].toString(), style: const TextStyle(color: Colors.blueGrey))),
+                                        DataCell(
+                                          Row(
+                                            mainAxisAlignment: MainAxisAlignment.center,
+                                            children: [
+                                              IconButton(
+                                                icon: const Icon(Icons.add, color: Colors.green),
+                                                onPressed: () {
+                                                  _showAddTailleDialog(produit.id);
+                                                },
+                                              ),
+                                              IconButton(
+                                                icon: const Icon(Icons.edit, color: Colors.blue),
+                                                onPressed: () {
+                                                  final indexTaille = produit.tailles.indexOf(tailleData);
+                                                  _modifierProduit(produit, indexTaille);
+                                                },
+                                              ),
+                                              IconButton(
+                                                icon: Icon(Icons.delete, color: Colors.red[500]),
+                                                onPressed: () {
+                                                  final indexTaille = produit.tailles.indexOf(tailleData);
+                                                  _supprimerTaille(produit.id, indexTaille);
+                                                },
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    );
+                                  }).toList(),
                                 ),
                               ),
                             ],
-                          );
-                        }).toList(),
+                          ),
+                        ],
                       ),
                     ),
-                  ],
-                )
-              ],
-            ),
-          );
-        },
+                  );
+                },
+              ),
       ),
     );
   }
-
-
-  }
-
-
+}

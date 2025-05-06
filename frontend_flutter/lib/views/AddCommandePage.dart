@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:animate_do/animate_do.dart';
+import 'package:frontend/providers/PlanificationProvider%20.dart';
 import 'package:frontend/providers/modeleProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -13,9 +15,10 @@ import 'PlanificationConfirmationDialog.dart';
 import 'admin_home_page.dart';
 
 class AddCommandePage extends StatefulWidget {
+  const AddCommandePage({super.key});
+
   @override
   _AddCommandePageState createState() => _AddCommandePageState();
-
 }
 
 class _AddCommandePageState extends State<AddCommandePage> {
@@ -25,8 +28,7 @@ class _AddCommandePageState extends State<AddCommandePage> {
 
   final _formKey = GlobalKey<FormState>();
   final TextEditingController clientController = TextEditingController();
-  final TextEditingController conditionnementController =
-      TextEditingController();
+  final TextEditingController conditionnementController = TextEditingController();
   DateTime? selectedDate;
   bool isLoading = false;
 
@@ -40,116 +42,136 @@ class _AddCommandePageState extends State<AddCommandePage> {
   List<String> tailles = [];
 
   @override
-void initState() {
-  super.initState();
-  final commandeProvider = Provider.of<CommandeProvider>(context, listen: false);
-  final modeleProvider = Provider.of<ModeleProvider>(context, listen: false);
+  void initState() {
+    super.initState();
+    final commandeProvider = Provider.of<CommandeProvider>(context, listen: false);
+    final modeleProvider = Provider.of<ModeleProvider>(context, listen: false);
 
-
-  commandeProvider.fetchCommandes().then((_) {
-    setState(() {
-      clients = commandeProvider.getClients();
+    commandeProvider.fetchCommandes().then((_) {
+      setState(() {
+        clients = commandeProvider.getClients();
+      });
     });
-  });
 
-  modeleProvider.fetchModeles().then((_) {
-  setState(() {
-    modele = modeleProvider.modeles.map((m) => m.nom).toList(); // Stocke les noms des modèles en `String`
-  });
-});
-}
+    modeleProvider.fetchModeles().then((_) {
+      setState(() {
+        modele = modeleProvider.modeles.map((m) => m.nom).toList();
+      });
+    });
+  }
 
   Widget _buildClientField(ClientProvider clientProvider) {
-    return Autocomplete<String>(
-      optionsBuilder: (TextEditingValue textEditingValue) {
-        if (textEditingValue.text.isEmpty) {
-          return const Iterable<String>.empty();
-        }
-        return clientProvider.clients
-            .map((c) => c.name)
-            .where((name) => name.toLowerCase().contains(textEditingValue.text.toLowerCase()));
-      },
-      onSelected: (String selection) {
-        setState(() {
-          clientController.text = selection;
-        });
-      },
-      fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
-        return TextFormField(
-          controller: clientController,
-          focusNode: focusNode,
-          onFieldSubmitted: (value) async {
-            if (!clientProvider.clients.any((c) => c.name.toLowerCase() == value.toLowerCase())) {
-              final newClient = await clientProvider.addClient(value);
-              setState(() {
-                clientController.text = newClient.name;
-              });
-            }
-          },
-          decoration: InputDecoration(
-            labelText: "Client",
-            border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-            prefixIcon: Icon(Icons.person, color: Colors.black87),
-          ),
-        );
-      },
+    return FadeInUp(
+      child: Autocomplete<String>(
+        optionsBuilder: (TextEditingValue textEditingValue) {
+          if (textEditingValue.text.isEmpty) {
+            return const Iterable<String>.empty();
+          }
+          return clientProvider.clients
+              .map((c) => c.name)
+              .where((name) => name.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+        },
+        onSelected: (String selection) {
+          setState(() {
+            clientController.text = selection;
+          });
+        },
+        fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
+          return TextFormField(
+            controller: clientController,
+            focusNode: focusNode,
+            onFieldSubmitted: (value) async {
+              if (!clientProvider.clients.any((c) => c.name.toLowerCase() == value.toLowerCase())) {
+                final newClient = await clientProvider.addClient(value);
+                setState(() {
+                  clientController.text = newClient.name;
+                });
+              }
+            },
+            decoration: InputDecoration(
+              labelText: "Client",
+              prefixIcon: const Icon(Icons.person, color: Colors.blueGrey),
+              filled: true,
+              fillColor: Colors.white.withOpacity(0.9),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          );
+        },
+      ),
     );
   }
 
   Widget _buildModeleField() {
-  return Autocomplete<String>(
-    optionsBuilder: (TextEditingValue textEditingValue) {
-      if (textEditingValue.text.isEmpty) {
-        return const Iterable<String>.empty();
-      }
-      return modele.where((modele) => modele.toLowerCase().contains(textEditingValue.text.toLowerCase()));
-    },
-    onSelected: (String selection) {
-      setState(() {
-        modeleController.text = selection;
-        tailles = Provider.of<ModeleProvider>(context, listen: false).getTaillesByModele(selection);
-      });
-    },
-    fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
-      return TextFormField(
-        controller: controller,
-        focusNode: focusNode,
-        decoration: InputDecoration(
-          labelText: "Nom du Modèle",
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-          prefixIcon: Icon(Icons.category, color: Colors.black87),
-        ),
-      );
-    },
-  );
-}
-Widget _buildTailleField() {
-  return Autocomplete<String>(
-    optionsBuilder: (TextEditingValue textEditingValue) {
-      if (textEditingValue.text.isEmpty || tailles.isEmpty) {
-        return const Iterable<String>.empty();
-      }
-      return tailles.where((taille) => taille.toLowerCase().contains(textEditingValue.text.toLowerCase()));
-    },
-    onSelected: (String selection) {
-      setState(() {
-        tailleController.text = selection;
-      });
-    },
-    fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
-      return TextFormField(
-        controller: controller,
-        focusNode: focusNode,
-        decoration: InputDecoration(
-          labelText: "Taille",
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-          prefixIcon: Icon(Icons.straighten, color: Colors.black87),
-        ),
-      );
-    },
-  );
-}
+    return FadeInUp(
+      child: Autocomplete<String>(
+        optionsBuilder: (TextEditingValue textEditingValue) {
+          if (textEditingValue.text.isEmpty) {
+            return const Iterable<String>.empty();
+          }
+          return modele.where((modele) => modele.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+        },
+        onSelected: (String selection) {
+          setState(() {
+            modeleController.text = selection;
+            tailles = Provider.of<ModeleProvider>(context, listen: false).getTaillesByModele(selection);
+          });
+        },
+        fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
+          return TextFormField(
+            controller: controller,
+            focusNode: focusNode,
+            decoration: InputDecoration(
+              labelText: "Nom du Modèle",
+              prefixIcon: const Icon(Icons.category, color: Colors.blueGrey),
+              filled: true,
+              fillColor: Colors.white.withOpacity(0.9),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 
+  Widget _buildTailleField() {
+    return FadeInUp(
+      child: Autocomplete<String>(
+        optionsBuilder: (TextEditingValue textEditingValue) {
+          if (textEditingValue.text.isEmpty || tailles.isEmpty) {
+            return const Iterable<String>.empty();
+          }
+          return tailles.where((taille) => taille.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+        },
+        onSelected: (String selection) {
+          setState(() {
+            tailleController.text = selection;
+          });
+        },
+        fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
+          return TextFormField(
+            controller: controller,
+            focusNode: focusNode,
+            decoration: InputDecoration(
+              labelText: "Taille",
+              prefixIcon: const Icon(Icons.straighten, color: Colors.blueGrey),
+              filled: true,
+              fillColor: Colors.white.withOpacity(0.9),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(12),
+                borderSide: BorderSide.none,
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
 
   Future<void> _selectDate(BuildContext context) async {
     final DateTime? picked = await showDatePicker(
@@ -158,6 +180,23 @@ Widget _buildTailleField() {
       firstDate: DateTime.now(),
       lastDate: DateTime(2101),
       locale: const Locale('fr', 'FR'),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Colors.blueGrey[800]!,
+              onPrimary: Colors.white,
+              onSurface: Colors.blueGrey,
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.blueGrey[800],
+              ),
+            ),
+          ),
+          child: child!,
+        );
+      },
     );
     if (picked != null) {
       setState(() => selectedDate = picked);
@@ -166,52 +205,64 @@ Widget _buildTailleField() {
 
   Widget _buildTextField(
       TextEditingController controller, String label, IconData icon, {bool isNumber = false, bool isOptional = false}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
-      child: TextFormField(
-        controller: controller,
-        keyboardType: isNumber ? TextInputType.number : TextInputType.text,
-        decoration: InputDecoration(
-          prefixIcon: Icon(icon, color: Colors.black87),
-          labelText: label,
-          labelStyle: const TextStyle(color: Colors.black87),
-          border: OutlineInputBorder(borderRadius: BorderRadius.circular(15)),
-          filled: true,
-          fillColor: Colors.white,
+    return FadeInUp(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8.0),
+        child: TextFormField(
+          controller: controller,
+          keyboardType: isNumber ? TextInputType.number : TextInputType.text,
+          decoration: InputDecoration(
+            prefixIcon: Icon(icon, color: Colors.blueGrey),
+            labelText: label,
+            labelStyle: const TextStyle(color: Colors.blueGrey),
+            filled: true,
+            fillColor: Colors.white.withOpacity(0.9),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none,
+            ),
+          ),
+          validator: (value) {
+            if (!isOptional && value!.isEmpty) return "Champ requis";
+            if (isNumber && int.tryParse(value!) == null) {
+              return "Entrer un nombre valide";
+            }
+            if (isNumber && int.parse(value!) <= 0) {
+              return "La quantité doit être positive";
+            }
+            return null;
+          },
         ),
-        validator: (value) {
-          if (!isOptional && value!.isEmpty) return "Champ requis";
-          if (isNumber && int.tryParse(value!) == null) {
-            return "Entrer un nombre valide";
-          }
-          if (isNumber && int.parse(value!) <= 0) {
-            return "La quantité doit être positive";
-          }
-          return null;
-        },
       ),
     );
   }
 
-  void _addModele() {
-    if (modeleController.text.isEmpty ||
-        couleurController.text.isEmpty ||
-        tailleController.text.isEmpty ||
-        quantiteController.text.isEmpty) {
-      Fluttertoast.showToast(
-          msg: "Veuillez remplir tous les champs pour le modèle.");
-      return;
-    }
-
-    setState(() {
-      modeles.add(CommandeModele(
-        nomModele: modeleController.text,
-        taille: tailleController.text,
-        couleur: couleurController.text,
-        quantite: int.parse(quantiteController.text),
-      ));
-    });
+void _addModele() {
+  if (modeleController.text.isEmpty ||
+      couleurController.text.isEmpty ||
+      tailleController.text.isEmpty ||
+      quantiteController.text.isEmpty) {
+    Fluttertoast.showToast(
+        msg: "Veuillez remplir tous les champs pour le modèle.",
+        backgroundColor: Colors.redAccent,
+        textColor: Colors.white);
+    return;
   }
+
+  setState(() {
+    modeles.add(CommandeModele(
+      nomModele: modeleController.text,
+      taille: tailleController.text,
+      couleur: couleurController.text,
+      quantite: int.parse(quantiteController.text),
+    ));
+    modeleController.clear();
+    tailleController.clear();
+    //couleurController.clear();
+    //quantiteController.clear();
+  });
+}
+
   Future<void> _showPlanificationConfirmation(String commandeId) async {
     final planifProvider = Provider.of<PlanificationProvider>(context, listen: false);
 
@@ -222,7 +273,10 @@ Widget _buildTailleField() {
         bool isValid = previews.every((p) => p.commandes.isNotEmpty && p.machines.isNotEmpty);
 
         if (!isValid) {
-          Fluttertoast.showToast(msg: "⚠️ Une ou plusieurs planifications sont incomplètes.");
+          Fluttertoast.showToast(
+              msg: "⚠️ Une ou plusieurs planifications sont incomplètes.",
+              backgroundColor: Colors.redAccent,
+              textColor: Colors.white);
           return;
         }
 
@@ -235,40 +289,53 @@ Widget _buildTailleField() {
         );
 
         if (confirmed == true) {
-          // Envoyer toutes les planifications en une seule requête
           bool success = await ApiService.confirmerPlanification(previews);
 
           if (success) {
-            Fluttertoast.showToast(msg: "✅ Toutes les planifications ont été confirmées !");
+            Fluttertoast.showToast(
+                msg: "✅ Toutes les planifications ont été confirmées !",
+                backgroundColor: Colors.green,
+                textColor: Colors.white);
             await planifProvider.fetchPlanifications();
 
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (_) => AdminHomePage()),
-                  (route) => false,
+              (route) => false,
             );
           } else {
-            Fluttertoast.showToast(msg: "❌ Erreur lors de la confirmation.");
+            Fluttertoast.showToast(
+                msg: "❌ Erreur lors de la confirmation.",
+                backgroundColor: Colors.redAccent,
+                textColor: Colors.white);
           }
         } else {
-          Fluttertoast.showToast(msg: "ℹ️ Planification annulée.");
+          Fluttertoast.showToast(
+              msg: "ℹ️ Planification annulée.",
+              backgroundColor: Colors.blueGrey,
+              textColor: Colors.white);
         }
       } else {
-        Fluttertoast.showToast(msg: "Aucune planification disponible.");
+        Fluttertoast.showToast(
+            msg: "Aucune planification disponible.",
+            backgroundColor: Colors.blueGrey,
+            textColor: Colors.white);
       }
     } catch (e) {
-      Fluttertoast.showToast(msg: "Erreur interne : $e");
+      Fluttertoast.showToast(
+          msg: "Erreur interne : $e",
+          backgroundColor: Colors.redAccent,
+          textColor: Colors.white);
     }
   }
 
-// TO DO : Modify the _submitCommande method
   Future<void> _submitCommande() async {
-    print("debut SubmitCommande in AddCommandePage");
-
     if (!_formKey.currentState!.validate() ||
         selectedDate == null ||
         modeles.isEmpty) {
       Fluttertoast.showToast(
-          msg: "Veuillez remplir tous les champs et ajouter au moins un modèle.");
+          msg: "Veuillez remplir tous les champs et ajouter au moins un modèle.",
+          backgroundColor: Colors.redAccent,
+          textColor: Colors.white);
       return;
     }
 
@@ -289,7 +356,9 @@ Widget _buildTailleField() {
         ));
       } else {
         Fluttertoast.showToast(
-            msg: "Erreur : Modèle '${modele.nomModele}' non trouvé.");
+            msg: "Erreur : Modèle '${modele.nomModele}' non trouvé.",
+            backgroundColor: Colors.redAccent,
+            textColor: Colors.white);
         setState(() => isLoading = false);
         return;
       }
@@ -313,9 +382,11 @@ Widget _buildTailleField() {
     setState(() => isLoading = false);
 
     if (success) {
-      Fluttertoast.showToast(msg: "Commande ajoutée avec succès !");
+      Fluttertoast.showToast(
+          msg: "Commande ajoutée avec succès !",
+          backgroundColor: Colors.green,
+          textColor: Colors.white);
 
-      // Get the latest commande ID (this might need adjustment based on your API)
       await commandeProvider.fetchCommandes();
       final latestCommandes = commandeProvider.commandes;
 
@@ -324,9 +395,13 @@ Widget _buildTailleField() {
         await _showPlanificationConfirmation(latestCommande.id!);
       }
     } else {
-      Fluttertoast.showToast(msg: "Erreur lors de l'ajout de la commande.");
+      Fluttertoast.showToast(
+          msg: "Erreur lors de l'ajout de la commande.",
+          backgroundColor: Colors.redAccent,
+          textColor: Colors.white);
     }
   }
+
   @override
   Widget build(BuildContext context) {
     final clientProvider = Provider.of<ClientProvider>(context);
@@ -334,12 +409,19 @@ Widget _buildTailleField() {
     return GestureDetector(
       onTap: () => FocusScope.of(context).unfocus(),
       child: Scaffold(
-        backgroundColor: Colors.lightBlue.shade50,
+        backgroundColor: Colors.blueGrey[50],
         appBar: AppBar(
-          title: Text("Ajouter une Commande",
-              style:
-                  TextStyle(fontWeight: FontWeight.bold, color: Colors.lightBlue[800])),
-          backgroundColor: Colors.lightBlue[100],
+          backgroundColor: Colors.blueGrey[800],
+          title: FadeInDown(
+            child: const Text(
+              "Ajouter une Commande",
+              style: TextStyle(
+                fontFamily: 'PlayfairDisplay',
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
+            ),
+          ),
           centerTitle: true,
           elevation: 0,
         ),
@@ -347,10 +429,9 @@ Widget _buildTailleField() {
           child: Padding(
             padding: const EdgeInsets.all(20.0),
             child: Card(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
               elevation: 5,
-              color: Colors.white,
+              color: Colors.white.withOpacity(0.95),
               child: Padding(
                 padding: const EdgeInsets.all(20.0),
                 child: Form(
@@ -359,62 +440,103 @@ Widget _buildTailleField() {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       _buildClientField(clientProvider),
-                      _buildTextField(conditionnementController,
-                          "Conditionnement", Icons.inventory,
+                      const SizedBox(height: 16),
+                      _buildTextField(
+                          conditionnementController, "Conditionnement", Icons.inventory,
                           isOptional: true),
-                      const SizedBox(height: 10),
-                      ListTile(
-                        tileColor: Colors.grey.shade200,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10)),
-                        title: Text(
-                          selectedDate == null
-                              ? "Sélectionner une date de livraison"
-                              : "Date: ${DateFormat('dd/MM/yyyy', 'fr_FR').format(selectedDate!)}",
+                      const SizedBox(height: 16),
+                      FadeInUp(
+                        child: ListTile(
+                          tileColor: Colors.blueGrey[100],
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          title: Text(
+                            selectedDate == null
+                                ? "Sélectionner une date de livraison"
+                                : "Date: ${DateFormat('dd/MM/yyyy', 'fr_FR').format(selectedDate!)}",
+                            style: const TextStyle(color: Colors.blueGrey),
+                          ),
+                          trailing: const Icon(Icons.calendar_today, color: Colors.blueGrey),
+                          onTap: () => _selectDate(context),
                         ),
-                        trailing: const Icon(Icons.calendar_today,
-                            color: Colors.black87),
-                        onTap: () => _selectDate(context),
                       ),
                       const SizedBox(height: 20),
-                      const Text("Associer un modèle",
+                      FadeInLeft(
+                        child: const Text(
+                          "Associer un modèle",
                           style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold)),
+                            fontFamily: 'PlayfairDisplay',
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.blueGrey,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
                       _buildModeleForm(),
                       const SizedBox(height: 20),
-                      ...modeles.map((modele) => Card(
-                            margin: const EdgeInsets.symmetric(vertical: 5),
-                            child: ListTile(
-                              title: Text(
-                                  "${modele.nomModele} - Taille : ${modele.taille} - Quantité : ${modele.quantite}"),
-                              subtitle: Text("Couleur : ${modele.couleur}"),
-                              trailing: IconButton(
-                                icon:
-                                    const Icon(Icons.delete, color: Colors.red),
-                                onPressed: () =>
-                                    setState(() => modeles.remove(modele)),
+                      ...modeles.asMap().entries.map((entry) => FadeInUp(
+                            delay: Duration(milliseconds: entry.key * 100),
+                            child: Card(
+                              margin: const EdgeInsets.symmetric(vertical: 5),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              elevation: 2,
+                              child: ListTile(
+                                title: Text(
+                                  "${entry.value.nomModele} - Taille: ${entry.value.taille} - Quantité: ${entry.value.quantite}",
+                                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey),
+                                ),
+                                subtitle: Text(
+                                  "Couleur: ${entry.value.couleur}",
+                                  style: const TextStyle(color: Colors.blueGrey),
+                                ),
+                                trailing: ZoomIn(
+                                  child: IconButton(
+                                    icon: const Icon(Icons.delete, color: Colors.red),
+                                    onPressed: () => setState(() => modeles.remove(entry.value)),
+                                  ),
+                                ),
                               ),
                             ),
                           )),
                       const SizedBox(height: 20),
                       isLoading
-                          ? const CircularProgressIndicator(color: Colors.black87)
-                          : Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                ElevatedButton(
-                                  onPressed: () => Navigator.pop(context),
-                                  style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.redAccent),
-                                  child: const Text("Annuler"),
-                                ),
-                                ElevatedButton(
-                                  onPressed: _submitCommande,
-                                  style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.lightBlue.shade300),
-                                  child: const Text("Ajouter"),
-                                ),
-                              ],
+                          ? const CircularProgressIndicator(color: Colors.blueGrey)
+                          : FadeInUp(
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  ZoomIn(
+                                    child: ElevatedButton(
+                                      onPressed: () => Navigator.pop(context),
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.red[600],
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        "Annuler",
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                  ZoomIn(
+                                    child: ElevatedButton(
+                                      onPressed: _submitCommande,
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.blueGrey[800],
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                      ),
+                                      child: const Text(
+                                        "Ajouter",
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
                     ],
                   ),
@@ -431,14 +553,28 @@ Widget _buildTailleField() {
     return Column(
       children: [
         _buildModeleField(),
+        const SizedBox(height: 16),
         _buildTailleField(),
+        const SizedBox(height: 16),
         _buildTextField(quantiteController, "Quantité", Icons.numbers, isNumber: true),
+        const SizedBox(height: 16),
         _buildTextField(couleurController, "Couleur", Icons.colorize),
-        const SizedBox(height: 10),
-        ElevatedButton.icon(
-          onPressed: _addModele,
-          icon: const Icon(Icons.add),
-          label: const Text("Ajouter Modèle"),
+        const SizedBox(height: 16),
+        FadeInUp(
+          child: ZoomIn(
+            child: ElevatedButton.icon(
+              onPressed: _addModele,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text(
+                "Ajouter Modèle",
+                style: TextStyle(color: Colors.white),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueGrey[800],
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
         ),
       ],
     );
