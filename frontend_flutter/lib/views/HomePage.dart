@@ -29,22 +29,18 @@ class _HomePageState extends State<HomePage> {
       'description': 'Comfort and style for every curve.',
     },
     {
-      'image': 'assets/images/Push Up.jpg',
+      'image': 'assets/images/push-up.jpg',
       'title': 'Push Up',
       'description': 'Subtle lift with stunning elegance.',
     },
-    {
-      'image': 'assets/images/Eco Friendly.jpg',
-      'title': 'Eco Friendly',
-      'description': 'Sustainable style without compromise.',
-    },
+
   ];
 
   final List<Map<String, String>> carouselItems = [
     {
       'image': 'assets/images/hero1.jpg',
-      'title': 'Timeless Elegance',
-      'subtitle': 'Discover our latest lingerie collection.',
+      'title': 'Sustainable StyleSustainable Style',
+      'subtitle': 'Eco-conscious designs for a better tomorrow.',
     },
     {
       'image': 'assets/images/hero2.jpg',
@@ -53,8 +49,8 @@ class _HomePageState extends State<HomePage> {
     },
     {
       'image': 'assets/images/hero3.jpg',
-      'title': 'Sustainable Style',
-      'subtitle': 'Eco-conscious designs for a better tomorrow.',
+      'title': 'Timeless Elegance',
+      'subtitle': 'Discover our latest lingerie collection.',
     },
   ];
 
@@ -350,7 +346,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   SizedBox(height: 20),
                   Text(
-                    'FTE-Epaunova is dedicated to crafting lingerie that blends elegance, comfort, and sustainability. For over two decades, we’ve empowered women with designs that celebrate their natural beauty.',
+                    "FTE-Epaunova se consacre à la création de lingerie alliant élégance, confort et durabilité. Depuis plus de deux décennies, nous offrons aux femmes des créations qui subliment leur beauté naturelle.",
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.blueGrey[700],
@@ -359,7 +355,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   SizedBox(height: 20),
                   Text(
-                    'Our mission is to redefine lingerie with innovative designs and eco-conscious materials, ensuring every piece feels as good as it looks.',
+                    "Notre mission est de redéfinir la lingerie avec des designs innovants et des matériaux respectueux de l environnement, garantissant que chaque pièce soit aussi agréable à porter qu'elle en a l'air.",
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.blueGrey[700],
@@ -390,7 +386,7 @@ class _HomePageState extends State<HomePage> {
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(20),
                 child: Image.asset(
-                  'assets/images/about.jpg',
+                  'assets/images/About.jpg',
                   fit: BoxFit.cover,
                   height: 400,
                 ),
@@ -427,7 +423,7 @@ class _HomePageState extends State<HomePage> {
                       ),
                       SizedBox(height: 20),
                       Text(
-                        'Crafting elegance and comfort since 2005.',
+                        "Créateur d'élégance et de confort depuis 2005.",
                         style: TextStyle(color: Colors.white70, fontSize: 14),
                       ),
                     ],

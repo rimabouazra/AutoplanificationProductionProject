@@ -7,7 +7,9 @@
     <list default="true" id="f1b1f5c6-b780-4356-ad10-8b85adb9bdf5" name="Changes" comment="ajouter schema client">
       <change beforePath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/libraries/Dart_Packages.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/frontend_flutter/pubspec.lock" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/pubspec.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend_flutter/assets/images/hero1.jpg" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/assets/images/hero1.jpg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend_flutter/assets/images/hero3.jpg" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/assets/images/hero3.jpg" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/frontend_flutter/lib/views/HomePage.dart" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/lib/views/HomePage.dart" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/frontend_flutter/pubspec.yaml" beforeDir="false" afterPath="$PROJECT_DIR$/frontend_flutter/pubspec.yaml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
