@@ -36,7 +36,6 @@ class _StockModeleViewState extends State<StockModeleView> {
 
 Widget _buildAssociationsList(Modele modele, ModeleProvider modeleProvider) {
   final associations = <Widget>[];
-  
   for (final tb in modele.taillesBases) {
     final baseName = tb.baseId == null
         ? "Moule d'origine"
@@ -47,13 +46,11 @@ Widget _buildAssociationsList(Modele modele, ModeleProvider modeleProvider) {
                   id: '', nom: 'Inconnu', tailles: [], consommation: []),
             )
             .nom;
-
     associations.add(ListTile(
       title: Text(baseName),
       subtitle: Text('Tailles: ${tb.tailles.join(', ')}'),
     ));
   }
-
   return Column(children: associations);
 }
 
@@ -404,13 +401,7 @@ Widget _buildAssociationsList(Modele modele, ModeleProvider modeleProvider) {
 
   void _editModeleDialog(Modele modele) {
     final modeleProvider = Provider.of<ModeleProvider>(context, listen: false);
-    final basesDisponibles = modeleProvider.modeles.map((m) => m.nom).toList();
-    TextEditingController _consommationController = TextEditingController(
-        text: (modele.consommation.isNotEmpty &&
-                modele.consommation[0].quantity > 0)
-            ? modele.consommation[0].quantity.toStringAsFixed(2)
-            : '');
-
+    
     _nomController.text = modele.nom;
     _taillesController.text = modele.tailles.join(', ');
 
@@ -426,20 +417,11 @@ Widget _buildAssociationsList(Modele modele, ModeleProvider modeleProvider) {
                 controller: _nomController,
                 decoration: InputDecoration(labelText: 'Nom du modèle'),
               ),
-              DropdownButtonFormField<String>(
-                value: _selectedBase,
-                onChanged: (String? newValue) {
-                  setState(() {
-                    _selectedBase = newValue;
-                  });
-                },
-                items: [
-                  DropdownMenuItem(value: null, child: Text("Aucune base")),
-                  ...basesDisponibles.map((base) {
-                    return DropdownMenuItem(value: base, child: Text(base));
-                  }).toList(),
-                ],
-                decoration: InputDecoration(labelText: 'Base (optionnel)'),
+              SizedBox(height: 16),
+              TextField(
+                controller: _taillesController,
+                decoration: InputDecoration(
+                    labelText: 'Tailles (séparées par des virgules)'),
               ),
             ],
           ),
@@ -451,8 +433,21 @@ Widget _buildAssociationsList(Modele modele, ModeleProvider modeleProvider) {
             TextButton(
               onPressed: () async {
                 String nom = _nomController.text;
-                await modeleProvider.updateModele(modele.id, nom,
-                    modele.tailles, _selectedBase, modele.consommation);
+                List<String> tailles = _taillesController.text
+                    .split(',')
+                    .map((e) => e.trim())
+                    .where((e) => e.isNotEmpty)
+                    .toList();
+                
+                await modeleProvider.updateModele(
+                  modele.id, 
+                  nom, 
+                  tailles, 
+                  modele.taillesBases.isNotEmpty ? modele.taillesBases.first.baseId : null,
+                  modele.consommation,
+                  modele.taillesBases
+                );
+                
                 Navigator.pop(context);
               },
               child: Text('Enregistrer'),

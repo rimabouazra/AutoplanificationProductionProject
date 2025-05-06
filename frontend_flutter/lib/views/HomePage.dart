@@ -1,317 +1,517 @@
 import 'package:flutter/material.dart';
+import 'package:animate_do/animate_do.dart';
+import 'package:carousel_slider/carousel_slider.dart';
 import 'package:frontend/views/LoginPage.dart';
 import 'package:frontend/views/RegisterPage.dart';
 
 class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
   @override
   _HomePageState createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  final List<Map<String, String>> initialProducts = [
+  final List<Map<String, String>> products = [
     {
       'image': 'assets/images/BALCONNET.jpg',
-      'description':
-          "Découvrez notre collection de lingerie balconnet, alliant maintien optimal et mise en valeur naturelle de la silhouette."
+      'title': 'Balconnet',
+      'description': 'Elegant support with a natural silhouette.',
     },
     {
       'image': 'assets/images/BANDEAU.jpg',
-      'description':
-          "Découvrez notre collection de lingerie bandeau, conçue pour offrir un soutien ferme tout en restant discrète sous vos vêtements."
+      'title': 'Bandeau',
+      'description': 'Seamless support for a discreet look.',
     },
     {
       'image': 'assets/images/BIG-SIZES.jpg',
-      'description':
-          "Découvrez notre collection de lingerie grandes tailles, spécialement conçue pour offrir un maintien et un confort optimaux."
+      'title': 'Grandes Tailles',
+      'description': 'Comfort and style for every curve.',
+    },
+    {
+      'image': 'assets/images/Push Up.jpg',
+      'title': 'Push Up',
+      'description': 'Subtle lift with stunning elegance.',
+    },
+    {
+      'image': 'assets/images/Eco Friendly.jpg',
+      'title': 'Eco Friendly',
+      'description': 'Sustainable style without compromise.',
     },
   ];
 
-  final List<Map<String, String>> allProducts = [
-    {'image': 'assets/images/BALCONNET.jpg', 'description': 'Découvrez notre collection de lingerie balconnet, alliant maintien optimal et mise en valeur naturelle de la silhouette. Conçus pour offrir un galbe élégant, ces modèles rehaussent la poitrine tout en assurant un ajustement parfait. Idéals pour allier confort et raffinement, ils subliment chaque tenue avec élégance et assurance.'},
-    {'image': 'assets/images/BANDEAU.jpg', 'description': 'Découvrez notre collection de lingerie bandeau, conçue pour offrir un soutien ferme tout en restant discrète sous vos vêtements. Grâce à leurs coques lisses, ces modèles garantissent une silhouette harmonieuse et un style épuré. Idéals pour sublimer vos tenues sans bretelles, ils allient confort et liberté de mouvement, que ce soit pour un look décontracté ou une occasion spéciale.'},
-    {'image': 'assets/images/Bra Cups.jpg', 'description': 'Découvrez notre collection de lingerie Bra Cups, un modèle classique qui allie tradition et confort. Offrant un maintien optimal tout en respectant la silhouette naturelle, il constitue un choix privilégié dans les collections de lingerie. Élégant et fonctionnel, ce modèle intemporel reste un incontournable pour les femmes recherchant à la fois confort et style raffiné.'},
-    {'image': 'assets/images/Push Up.jpg', 'description': 'Découvrez notre collection de lingerie Push Up, des coques conçues pour offrir un maintien optimal tout en sublimant subtilement votre décolleté. Légèrement rembourrées, elles apportent un volume naturel en rehaussant la poitrine tout en garantissant une forme harmonieuse.'},
-    {'image': 'assets/images/Triangle Push Up.jpg', 'description': 'Découvrez nos Triangle Push Up, conçues pour offrir un maintien parfait et un effet rehaussant subtil. Leur forme triangle épouse délicatement la poitrine, lui conférant un galbe naturel. Idéales pour les femmes en quête dun look à la fois confortable et séduisant.'},
-    {'image': 'assets/images/Triangle.jpg', 'description': 'Découvrez notre collection de lingerie Triangle, conçue pour offrir un maintien léger et un style naturel. Sa forme triangle épouse parfaitement la poitrine, créant un effet seconde peau tout en mettant en valeur vos courbes avec élégance. Idéale pour un look à la fois décontracté et raffiné.'},
-    {'image': 'assets/images/Balconnet.jpg', 'description': 'Découvrez notre collection de lingerie balconnet, offrant un maintien optimal et un galbe élégant. Sa forme rehausse la poitrine, créant un effet arrondi et naturel, idéal pour sublimer les tenues les plus féminines. Nos modèles assurent un ajustement parfait et sont conçus pour les femmes recherchant à la fois style et soutien, pour une allure séduisante et confiante au quotidien.'},
-    {'image': 'assets/images/bandeau.jpg', 'description': 'Découvrez notre collection de lingerie bandeau, conçue pour offrir un soutien ferme tout en restant discrète sous vos vêtements. Ces coques garantissent une forme lisse et harmonieuse pour un style minimaliste. Idéales pour sublimer vos tenues sans bretelles, elles assurent confort et liberté de mouvement, que ce soit pour un look décontracté ou une occasion spéciale.'},
-    {'image': 'assets/images/Grandes Tailles.jpg', 'description': 'Découvrez notre collection de lingerie grandes tailles, spécialement conçue pour offrir un maintien et un confort optimaux, tout en épousant et sublimant vos formes. Nous nous engageons à répondre à toutes les tailles, alliant élégance et fonctionnalité. Nos modèles vous garantissent un soutien irréprochable, vous permettant de vous sentir belle et à l aise en toute circonstance.'},
-    {'image': 'assets/images/Comfort Bra Cup.jpg', 'description': 'Découvrez notre collection de lingerie Comfort Bra Cup, conçue pour offrir un soutien doux et agréable. Grâce à leur conception ergonomique, ces coques s adaptent parfaitement à la forme naturelle de votre poitrine, assurant une silhouette harmonieuse sans compromettre le confort. Idéales pour un usage quotidien, elles vous permettent de vous sentir bien tout au long de la journée, tout en sublimant votre lingerie avec un maximum de confort.'},
-    {'image': 'assets/images/Eco Friendly.jpg', 'description': 'Découvrez notre collection de lingerie Eco Friendly, pour un engagement en faveur de la planète sans compromis sur le style. Fabriquées à partir de matériaux durables et respectueux de l environnement, ces coques offrent un maintien et un confort équivalents à nos modèles traditionnels, tout en réduisant leur impact écologique. Avec notre lingerie Eco Friendly, adoptez un mode de vie plus durable tout en profitant de pièces élégantes et fonctionnelles, conçues pour sublimer vos courbes avec une conscience verte.'},
+  final List<Map<String, String>> carouselItems = [
+    {
+      'image': 'assets/images/hero1.jpg',
+      'title': 'Timeless Elegance',
+      'subtitle': 'Discover our latest lingerie collection.',
+    },
+    {
+      'image': 'assets/images/hero2.jpg',
+      'title': 'Effortless Comfort',
+      'subtitle': 'Crafted for your everyday luxury.',
+    },
+    {
+      'image': 'assets/images/hero3.jpg',
+      'title': 'Sustainable Style',
+      'subtitle': 'Eco-conscious designs for a better tomorrow.',
+    },
   ];
-
-  bool _showAllProducts = false;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            _buildHeader(context),
-            SizedBox(height: 20),
-            _buildMainSection(),
-            SizedBox(height: 40),
-            _buildProductGrid(),
-            SizedBox(height: 20),
-            _buildDiscoverMoreButton(),
-            SizedBox(height: 40),
-            _buildAboutUsSection(),
-            SizedBox(height: 40),
-            _buildFooter(),
-          ],
+      body: CustomScrollView(
+        slivers: [
+          _buildSliverAppBar(context),
+          SliverToBoxAdapter(child: _buildHeroCarousel()),
+          SliverToBoxAdapter(child: _buildCollectionsSection()),
+          SliverToBoxAdapter(child: _buildAboutSection()),
+          SliverToBoxAdapter(
+            child: Container(
+              padding: EdgeInsets.symmetric(vertical: 100, horizontal: 40),
+              color: Colors.grey[50],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Notre philosophie',
+                    style: TextStyle(
+                      fontSize: 14,
+                      letterSpacing: 3,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    'Allier confort exceptionnel\net esthétique intemporelle',
+                    style: TextStyle(
+                      fontSize: 36,
+                      fontWeight: FontWeight.w300,
+                      height: 1.3,
+                    ),
+                  ),
+                  SizedBox(height: 40),
+                  Divider(height: 1, color: Colors.grey[300]),
+                  SizedBox(height: 40),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          "Depuis 1998, nous concevons des pièces uniques qui célèbrent "
+                              "la féminité à travers des matières nobles et des coupes architecturales.",
+                          style: TextStyle(
+                            fontSize: 16,
+                            height: 1.8,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 60),
+                      Expanded(
+                        child: Text(
+                          "Chaque collection est le fruit d'un savoir-faire artisanal et d'une "
+                              "attention minutieuse portée aux détails qui font la différence.",
+                          style: TextStyle(
+                            fontSize: 16,
+                            height: 1.8,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(child: _buildFooter()),
+
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSliverAppBar(BuildContext context) {
+    return SliverAppBar(
+      expandedHeight: 80,
+      floating: true,
+      pinned: true,
+      backgroundColor: Colors.white.withOpacity(0.95),
+      elevation: 0,
+      title: FadeInDown(
+        child: Text(
+          'FTE-Epaunova',
+          style: TextStyle(
+            fontFamily: 'PlayfairDisplay',
+            fontSize: 28,
+            fontWeight: FontWeight.w700,
+            color: Colors.blueGrey[900],
+          ),
+        ),
+      ),
+      actions: [
+        _buildNavButton('Contact', Icons.email, () {}),
+        _buildNavButton('Login', Icons.login, () {
+          Navigator.push(context, MaterialPageRoute(builder: (_) => LoginPage()));
+        }),
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: FadeInRight(
+            child: ElevatedButton(
+              onPressed: () {
+                Navigator.push(context, MaterialPageRoute(builder: (_) => RegisterPage()));
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueGrey[800],
+                foregroundColor: Colors.white,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              ),
+              child: Text(
+                'Join Us',
+                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildNavButton(String label, IconData icon, VoidCallback onPressed) {
+    return FadeInRight(
+      child: TextButton.icon(
+        onPressed: onPressed,
+        icon: Icon(icon, size: 20, color: Colors.blueGrey[700]),
+        label: Text(
+          label,
+          style: TextStyle(color: Colors.blueGrey[700], fontSize: 16),
         ),
       ),
     );
   }
 
-Widget _buildDiscoverMoreButton() {
-  return ElevatedButton(
-    onPressed: () {
-      setState(() {
-        _showAllProducts = !_showAllProducts;
-      });
-    },
-    style: ElevatedButton.styleFrom(
-      backgroundColor: Colors.blue.shade700,
-      padding: EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(30),
+  Widget _buildHeroCarousel() {
+    return SizedBox(
+      height: 600,
+      child: CarouselSlider(
+        options: CarouselOptions(
+          autoPlay: true,
+          aspectRatio: 16 / 9,
+          enlargeCenterPage: true,
+          viewportFraction: 1.0,
+          autoPlayInterval: Duration(seconds: 5),
+        ),
+        items: carouselItems.map((item) {
+          return FadeIn(
+            child: Stack(
+              children: [
+                Image.asset(
+                  item['image']!,
+                  fit: BoxFit.cover,
+                  width: double.infinity,
+                  height: double.infinity,
+                ),
+                Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [Colors.black.withOpacity(0.5), Colors.transparent],
+                    ),
+                  ),
+                ),
+                Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      FadeInUp(
+                        child: Text(
+                          item['title']!,
+                          style: TextStyle(
+                            fontFamily: 'PlayfairDisplay',
+                            fontSize: 48,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                            shadows: [Shadow(blurRadius: 10, color: Colors.black45)],
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 16),
+                      FadeInUp(
+                        delay: Duration(milliseconds: 200),
+                        child: Text(
+                          item['subtitle']!,
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: Colors.white70,
+                            fontWeight: FontWeight.w400,
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 24),
+                      FadeInUp(
+                        delay: Duration(milliseconds: 400),
+                        child: ElevatedButton(
+                          onPressed: () {},
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: Colors.blueGrey[900],
+                            padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                          ),
+                          child: Text(
+                            'Shop Now',
+                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
       ),
-    ), // ← cette parenthèse fermante manquait
-    child: Text(
-      _showAllProducts ? 'Voir moins' : 'Découvrir plus',
-      style: TextStyle(
-        fontSize: 16,
-        fontWeight: FontWeight.bold,
-        color: Colors.white,
-      ),
-    ),
-  );
-}
+    );
+  }
 
-
-  Widget _buildHeader(BuildContext context) {
+  Widget _buildCollectionsSection() {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 20, vertical: 15),
-      color: Colors.blue.shade700,
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      padding: EdgeInsets.symmetric(vertical: 60, horizontal: 20),
+      child: Column(
         children: [
-          Text(
-            'FTE-Epaunova',
-            style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
+          FadeInDown(
+            child: Text(
+              'Our Collections',
+              style: TextStyle(
+                fontFamily: 'PlayfairDisplay',
+                fontSize: 36,
+                fontWeight: FontWeight.w700,
+                color: Colors.blueGrey[900],
+              ),
+            ),
           ),
-          Row(
-            children: [
-              Icon(Icons.email, color: Colors.white),
-              SizedBox(width: 5),
-              Text('met@epaunova.com.tn', style: TextStyle(color: Colors.white)),
-              SizedBox(width: 20),
-              Icon(Icons.phone, color: Colors.white),
-              SizedBox(width: 5),
-              Text('+216 73 49 05 00', style: TextStyle(color: Colors.white)),
-              SizedBox(width: 20),
-              TextButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => LoginPage()),
-                  );
-                },
-                child: Text('se connecter', style: TextStyle(color: Colors.white)),
-              ),
-              SizedBox(width: 10),
-              OutlinedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => RegisterPage()),
-                  );
-                },
-                child: Text("s'inscrire", style: TextStyle(color: Colors.white)),
-                style: OutlinedButton.styleFrom(side: BorderSide(color: Colors.white)),
-              ),
-            ],
+          SizedBox(height: 40),
+          GridView.builder(
+            shrinkWrap: true,
+            physics: NeverScrollableScrollPhysics(),
+            gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+              crossAxisCount: MediaQuery.of(context).size.width > 1200
+                  ? 4
+                  : MediaQuery.of(context).size.width > 800
+                      ? 3
+                      : 2,
+              crossAxisSpacing: 20,
+              mainAxisSpacing: 20,
+              childAspectRatio: 0.75,
+            ),
+            itemCount: products.length,
+            itemBuilder: (context, index) {
+              return FadeInUp(
+                delay: Duration(milliseconds: index * 100),
+                child: ProductCard(product: products[index]),
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildMainSection() {
+  Widget _buildAboutSection() {
     return Container(
-      height: 400,
+      padding: EdgeInsets.symmetric(vertical: 80, horizontal: 40),
       decoration: BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage('assets/images/bigPanel.jpg'),
-          fit: BoxFit.cover,
+        gradient: LinearGradient(
+          colors: [Colors.blueGrey[50]!, Colors.white],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
         ),
       ),
-      child: Center(
-        // Add any content you want to display on top of the image
-      ),
-    );
-  }
-
-  Widget _buildAboutUsSection() {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 50, vertical: 60),
-      color: Colors.blue.shade900,
-      child: Column(
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            'À propos de nous',
-            style: TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+          Expanded(
+            child: FadeInLeft(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'About Us',
+                    style: TextStyle(
+                      fontFamily: 'PlayfairDisplay',
+                      fontSize: 36,
+                      fontWeight: FontWeight.w700,
+                      color: Colors.blueGrey[900],
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    'FTE-Epaunova is dedicated to crafting lingerie that blends elegance, comfort, and sustainability. For over two decades, we’ve empowered women with designs that celebrate their natural beauty.',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.blueGrey[700],
+                      height: 1.6,
+                    ),
+                  ),
+                  SizedBox(height: 20),
+                  Text(
+                    'Our mission is to redefine lingerie with innovative designs and eco-conscious materials, ensuring every piece feels as good as it looks.',
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: Colors.blueGrey[700],
+                      height: 1.6,
+                    ),
+                  ),
+                  SizedBox(height: 30),
+                  ElevatedButton(
+                    onPressed: () {},
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueGrey[800],
+                      foregroundColor: Colors.white,
+                      padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                    ),
+                    child: Text(
+                      'Learn More',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
-          SizedBox(height: 20),
-          Text(
-            "Notre Mission",
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-              color: Colors.white70,
+          SizedBox(width: 40),
+          Expanded(
+            child: FadeInRight(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.asset(
+                  'assets/images/about.jpg',
+                  fit: BoxFit.cover,
+                  height: 400,
+                ),
+              ),
             ),
           ),
-          SizedBox(height: 20),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
-                  "FTE-Epaunova est une entreprise spécialisée dans la conception et la fabrication de lingerie de haute qualité. "
-                      "Depuis plus de 20 ans, nous nous engageons à offrir des produits qui allient confort, élégance et durabilité. "
-                      "Notre mission est de mettre en valeur la beauté naturelle de chaque femme à travers nos collections soigneusement conçues.",
-                  style: TextStyle(fontSize: 16, color: Colors.white70),
-                ),
-              ),
-              SizedBox(width: 40),
-              Expanded(
-                child: Text(
-                  "Chez FTE-Epaunova, nous croyons que chaque femme mérite des sous-vêtements qui allient soutien et assurance. "
-                      "Grâce à une combinaison de qualité, de design et d'innovation, notre objectif est de révolutionner la façon dont les femmes perçoivent et expérimentent la lingerie.",
-                  style: TextStyle(fontSize: 16, color: Colors.white70),
-                ),
-              ),
-            ],
-          ),
-          SizedBox(height: 30),
         ],
-      ),
-    );
-  }
-
-  Widget _buildProductGrid() {
-    final displayedProducts = _showAllProducts ? allProducts : initialProducts;
-    
-    return Padding(
-      padding: const EdgeInsets.all(16.0),
-      child: GridView.builder(
-        shrinkWrap: true,
-        physics: NeverScrollableScrollPhysics(),
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: 3,
-          crossAxisSpacing: 20,
-          mainAxisSpacing: 20,
-          childAspectRatio: 0.8,
-        ),
-        itemCount: displayedProducts.length,
-        itemBuilder: (context, index) {
-          return ProductCard(product: displayedProducts[index]);
-        },
       ),
     );
   }
 
   Widget _buildFooter() {
     return Container(
-      width: double.infinity,
-      padding: EdgeInsets.symmetric(vertical: 40, horizontal: 50),
-      color: Colors.blue.shade900,
+      padding: EdgeInsets.symmetric(vertical: 60, horizontal: 40),
+      color: Colors.blueGrey[900],
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            "FTE-Epaunova",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 22,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-          SizedBox(height: 10),
           Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Icon(Icons.location_on, color: Colors.white, size: 20),
-              SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  "Route de Touza 5014 - Béni Hassen - Monastir - Tunisie",
-                  style: TextStyle(color: Colors.white70),
+                child: FadeInLeft(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'FTE-Epaunova',
+                        style: TextStyle(
+                          fontFamily: 'PlayfairDisplay',
+                          fontSize: 24,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      Text(
+                        'Crafting elegance and comfort since 2005.',
+                        style: TextStyle(color: Colors.white70, fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(
+                child: FadeInRight(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Connect',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      _buildFooterLink(Icons.email, 'info@fte-epaunova.com'),
+                      _buildFooterLink(Icons.phone, '+216 73 49 05 00'),
+                      _buildFooterLink(Icons.location_on, 'Monastir, Tunisia'),
+                    ],
+                  ),
+                ),
+              ),
+              Expanded(
+                child: FadeInRight(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Stay Updated',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(height: 20),
+                      TextField(
+                        decoration: InputDecoration(
+                          hintText: 'Your Email',
+                          hintStyle: TextStyle(color: Colors.white70),
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.1),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(30),
+                            borderSide: BorderSide.none,
+                          ),
+                          suffixIcon: IconButton(
+                            icon: Icon(Icons.send, color: Colors.white70),
+                            onPressed: () {},
+                          ),
+                        ),
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ],
           ),
-          SizedBox(height: 10),
-          Row(
-            children: [
-              Icon(Icons.phone, color: Colors.white, size: 20),
-              SizedBox(width: 8),
-              Text("216 73 49 05 00", style: TextStyle(color: Colors.white70)),
-            ],
-          ),
-          SizedBox(height: 10),
-          Row(
-            children: [
-              Icon(Icons.email, color: Colors.white, size: 20),
-              SizedBox(width: 8),
-              Text("info@fte-epaunova.com",
-                  style: TextStyle(color: Colors.white70)),
-            ],
-          ),
-          SizedBox(height: 30),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.start,
-            children: [
-              Icon(Icons.facebook, color: Colors.white, size: 24),
-              SizedBox(width: 12),
-              Icon(Icons.public, color: Colors.white, size: 24),
-              SizedBox(width: 12),
-              Icon(Icons.discord, color: Colors.white, size: 24),
-            ],
-          ),
-          SizedBox(height: 30),
-          Divider(color: Colors.white30, thickness: 0.5),
+          SizedBox(height: 40),
+          Divider(color: Colors.white30),
           SizedBox(height: 20),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                '© 2025 FTE-Epaunova. Tous droits réservés.',
-                style: TextStyle(color: Colors.white70),
-              ),
-              Row(
-                children: [
-                  TextButton(
-                    onPressed: () {},
-                    child: Text("Politique de confidentialité",
-                        style: TextStyle(color: Colors.white70)),
-                  ),
-                  SizedBox(width: 10),
-                  TextButton(
-                    onPressed: () {},
-                    child: Text("Mentions légales",
-                        style: TextStyle(color: Colors.white70)),
-                  ),
-                ],
-              ),
-            ],
+          Text(
+            '© 2025 FTE-Epaunova. All rights reserved.',
+            style: TextStyle(color: Colors.white70, fontSize: 14),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFooterLink(IconData icon, String text) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Icon(icon, color: Colors.white70, size: 20),
+          SizedBox(width: 10),
+          Text(text, style: TextStyle(color: Colors.white70, fontSize: 14)),
         ],
       ),
     );
@@ -321,60 +521,109 @@ Widget _buildDiscoverMoreButton() {
 class ProductCard extends StatefulWidget {
   final Map<String, String> product;
 
-  ProductCard({required this.product});
+  const ProductCard({super.key, required this.product});
 
   @override
   _ProductCardState createState() => _ProductCardState();
 }
 
-class _ProductCardState extends State<ProductCard> {
-  bool _isHovered = false;
+class _ProductCardState extends State<ProductCard> with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: Duration(milliseconds: 300),
+      vsync: this,
+    );
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.05).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return MouseRegion(
-      onEnter: (_) => setState(() => _isHovered = true),
-      onExit: (_) => setState(() => _isHovered = false),
-      child: Card(
-        elevation: _isHovered ? 10 : 4,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(15),
-        ),
-        child: Stack(
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(15),
-              child: Image.asset(
+      onEnter: (_) => _controller.forward(),
+      onExit: (_) => _controller.reverse(),
+      child: ScaleTransition(
+        scale: _scaleAnimation,
+        child: Card(
+          elevation: 6,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          clipBehavior: Clip.antiAlias,
+          child: Stack(
+            children: [
+              Image.asset(
                 widget.product['image']!,
                 fit: BoxFit.cover,
                 width: double.infinity,
                 height: double.infinity,
               ),
-            ),
-            if (_isHovered)
-              Positioned.fill(
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
                 child: Container(
+                  padding: EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(15),
-                    color: Colors.black.withOpacity(0.6),
+                    gradient: LinearGradient(
+                      begin: Alignment.bottomCenter,
+                      end: Alignment.topCenter,
+                      colors: [Colors.black.withOpacity(0.7), Colors.transparent],
+                    ),
                   ),
-                  child: Center(
-                    child: Padding(
-                      padding: const EdgeInsets.all(16.0),
-                      child: Text(
-                        widget.product['description']!,
-                        textAlign: TextAlign.center,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        widget.product['title']!,
                         style: TextStyle(
+                          fontFamily: 'PlayfairDisplay',
+                          fontSize: 20,
+                          fontWeight: FontWeight.w600,
                           color: Colors.white,
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
                         ),
                       ),
-                    ),
+                      SizedBox(height: 8),
+                      Text(
+                        widget.product['description']!,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white70,
+                          height: 1.4,
+                        ),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: () {},
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: Colors.blueGrey[900],
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                        ),
+                        child: Text(
+                          'Explore',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
-          ],
+            ],
+          ),
         ),
       ),
     );

@@ -48,6 +48,8 @@ dependencies:
   flutter_charts: ^0.5.2
   pdf: ^3.10.6
   fl_chart: ^0.63.0
+  animate_do: ^3.3.4
+  carousel_slider: ^5.0.0
 
 dev_dependencies:
   flutter_test:
@@ -70,8 +72,14 @@ flutter:
     - family: Roboto
       fonts:
         - asset: assets/fonts/Roboto.ttf
+    - family: PlayfairDisplay
+      fonts:
+        - asset: assets/fonts/PlayfairDisplay-Regular.ttf
+        - asset: assets/fonts/PlayfairDisplay-Bold.ttf
+          weight: 700
   assets:
     - assets/images/coque.jpg
+    - assets/images/logo.jpg
     - assets/images/bra-cup-1.jpg
     - assets/images/braCup.jpg
     - assets/images/bigPanel.jpg
