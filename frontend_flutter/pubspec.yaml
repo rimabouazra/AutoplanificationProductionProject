@@ -53,6 +53,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_staggered_animations: ^1.1.0
+  flutter_animate: ^4.1.1+1
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is
@@ -91,6 +92,11 @@ flutter:
     - assets/icons/planning.png
     - assets/auth_bg.jpeg
     - assets/logo.jpg
+    - assets/images/hero1.jpg
+    - assets/images/hero2.jpg
+    - assets/images/hero3.jpg
+
+
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
