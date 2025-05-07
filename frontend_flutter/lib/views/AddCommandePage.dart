@@ -216,7 +216,14 @@ Widget _buildTailleField() {
     final planifProvider = Provider.of<PlanificationProvider>(context, listen: false);
 
     try {
+      // Fetch planification previews
       final previews = await ApiService.getPlanificationPreview(commandeId);
+
+      // Fetch waiting planifications for the commande
+      final waitingPlans = await ApiService.getWaitingPlanifications();
+      final waitingPlanifications = waitingPlans
+          .where((wp) => wp.commande.id == commandeId)
+          .toList();
 
       if (previews != null && previews.isNotEmpty) {
         bool isValid = previews.every((p) => p.commandes.isNotEmpty && p.machines.isNotEmpty);
@@ -230,12 +237,13 @@ Widget _buildTailleField() {
           context: context,
           builder: (context) => PlanificationConfirmationDialog(
             planifications: previews,
+            waitingPlanifications: waitingPlanifications, // Pass waiting planifications
             commandeId: commandeId,
           ),
         );
 
         if (confirmed == true) {
-          // Envoyer toutes les planifications en une seule requête
+          // Send all planifications in a single request
           bool success = await ApiService.confirmerPlanification(previews);
 
           if (success) {
@@ -253,12 +261,18 @@ Widget _buildTailleField() {
           Fluttertoast.showToast(msg: "ℹ️ Planification annulée.");
         }
       } else {
-        Fluttertoast.showToast(msg: "Aucune planification disponible.");
+        if (waitingPlanifications.isNotEmpty) {
+          Fluttertoast.showToast(
+              msg: "ℹ La commande est en file d'attente car aucune machine n'est disponible.");
+        } else {
+          Fluttertoast.showToast(msg: "Aucune planification disponible.");
+        }
       }
     } catch (e) {
       Fluttertoast.showToast(msg: "Erreur interne : $e");
     }
   }
+
 
 // TO DO : Modify the _submitCommande method
   Future<void> _submitCommande() async {
