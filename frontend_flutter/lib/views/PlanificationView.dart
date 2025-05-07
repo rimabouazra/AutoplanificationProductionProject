@@ -39,6 +39,7 @@ class _PlanificationViewState extends State<PlanificationView> {
     // Charger les planifications au démarrage
     final provider = Provider.of<PlanificationProvider>(context, listen: false);
     provider.fetchPlanifications();
+    _fetchWaitingPlanifications();
     // Synchronisation des contrôleurs de défilement
     _headerHorizontalScrollController.addListener(_syncHeaderScroll);
     _contentHorizontalScrollController.addListener(_syncContentScroll);
@@ -68,16 +69,6 @@ class _PlanificationViewState extends State<PlanificationView> {
       if (_contentHorizontalScrollController.hasClients &&
           _headerHorizontalScrollController.offset !=
               _contentHorizontalScrollController.offset) {
-  @override
-  void initState() {
-    super.initState();
-    Provider.of<PlanificationProvider>(context, listen: false)
-        .fetchPlanifications();
-    _fetchWaitingPlanifications();
-    _selectedSalleType = 'blanc';
-    _headerHorizontalScrollController.addListener(() {
-      if (_contentHorizontalScrollController.offset !=
-          _headerHorizontalScrollController.offset) {
         _contentHorizontalScrollController
             .jumpTo(_headerHorizontalScrollController.offset);
       }
@@ -101,58 +92,8 @@ class _PlanificationViewState extends State<PlanificationView> {
       _isSyncingContent = false;
     }
   }
-  void _showWaitingPlanificationsDialog(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(
-          "Planifications en Attente",
-          style: TextStyle(fontWeight: FontWeight.bold),
-        ),
-        content: Container(
-          width: double.maxFinite,
-          constraints: BoxConstraints(maxHeight: 400),
-          child: _waitingPlanifications.isEmpty
-              ? Center(child: Text("Aucune planification en attente"))
-              : ListView.builder(
-            itemCount: _waitingPlanifications.length,
-            itemBuilder: (context, index) {
-              final waitingPlan = _waitingPlanifications[index];
-              return Card(
-                margin: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                elevation: 2,
-                child: ListTile(
-                  title: Text(
-                    "Client: ${waitingPlan.commande.client.name}",
-                    style: TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  subtitle: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("Modèle: ${waitingPlan.modele.nom}"),
-                      Text("Taille: ${waitingPlan.taille}"),
-                      Text("Couleur: ${waitingPlan.couleur}"),
-                      Text("Quantité: ${waitingPlan.quantite}"),
-                      Text(
-                        "Ajouté le: ${DateFormat('dd/MM/yyyy HH:mm').format(waitingPlan.createdAt)}",
-                      ),
-                    ],
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("Fermer"),
-          ),
-        ],
-      ),
-    );
-  }
 
+  // Récupérer les planifications en attente
   Future<void> _fetchWaitingPlanifications() async {
     try {
       final waitingPlans = await ApiService.getWaitingPlanifications();
@@ -162,6 +103,92 @@ class _PlanificationViewState extends State<PlanificationView> {
     } catch (e) {
       print("Erreur lors de la récupération des planifications en attente: $e");
     }
+  }
+
+  // Afficher le dialogue des planifications en attente
+  void _showWaitingPlanificationsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          "Planifications en Attente",
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+        ),
+        content: Container(
+          width: double.maxFinite,
+          constraints: BoxConstraints(maxHeight: 400),
+          child: _waitingPlanifications.isEmpty
+              ? Center(
+                  child: Text(
+                    "Aucune planification en attente",
+                    style: TextStyle(color: Colors.grey[600]),
+                  ),
+                )
+              : ListView.builder(
+                  itemCount: _waitingPlanifications.length,
+                  itemBuilder: (context, index) {
+                    final waitingPlan = _waitingPlanifications[index];
+                    return FadeInUp(
+                      duration: Duration(milliseconds: 300 + index * 100),
+                      child: Card(
+                        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                        elevation: 4,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                        child: ListTile(
+                          contentPadding: EdgeInsets.all(12),
+                          title: Text(
+                            "Client: ${waitingPlan.commande.client.name}",
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 14,
+                              color: Colors.deepPurple,
+                            ),
+                          ),
+                          subtitle: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              SizedBox(height: 4),
+                              Text(
+                                "Modèle: ${waitingPlan.modele.nom}",
+                                style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                              ),
+                              Text(
+                                "Taille: ${waitingPlan.taille}",
+                                style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                              ),
+                              Text(
+                                "Couleur: ${waitingPlan.couleur}",
+                                style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                              ),
+                              Text(
+                                "Quantité: ${waitingPlan.quantite}",
+                                style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                              ),
+                              Text(
+                                "Ajouté le: ${DateFormat('dd/MM/yyyy HH:mm').format(waitingPlan.createdAt)}",
+                                style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(
+              "Fermer",
+              style: TextStyle(color: Colors.deepPurple),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   // Confirmer la déconnexion
@@ -181,7 +208,7 @@ class _PlanificationViewState extends State<PlanificationView> {
               await AuthService.logout();
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (context) => LoginPage()),
-                    (Route<dynamic> route) => false,
+                (Route<dynamic> route) => false,
               );
             },
             child: Text("Déconnexion", style: TextStyle(color: Colors.red)),
@@ -214,6 +241,7 @@ class _PlanificationViewState extends State<PlanificationView> {
             onPressed: () {
               final provider = Provider.of<PlanificationProvider>(context, listen: false);
               provider.fetchPlanifications();
+              _fetchWaitingPlanifications();
               _isDateRangeInitialized = false; // Réinitialiser pour recalculer
               if (provider.planifications.isNotEmpty) {
                 _calculateDateRange(provider.planifications);
@@ -241,7 +269,7 @@ class _PlanificationViewState extends State<PlanificationView> {
       ),
       body: Consumer<PlanificationProvider>(
         builder: (context, provider, child) {
-          if (provider.planifications.isEmpty) {
+          if (provider.planifications.isEmpty && _waitingPlanifications.isEmpty) {
             return Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -252,32 +280,16 @@ class _PlanificationViewState extends State<PlanificationView> {
                 ],
               ),
             );
-          if (provider.planifications.isEmpty && _waitingPlanifications.isEmpty) {
-            return const Center(child: Text("Aucune planification disponible"));
           }
 
           // Calculer la plage de dates si nécessaire après le chargement
-          if (!_isDateRangeInitialized) {
+          if (!_isDateRangeInitialized && provider.planifications.isNotEmpty) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               _calculateDateRange(provider.planifications);
             });
           }
 
           final filteredPlans = _filterPlanifications(provider.planifications);
-          if (_startDate == null || _endDate == null) {
-            _calculateDateRange(provider.planifications);
-          }
-
-          final filteredPlans = provider.planifications.where((p) {
-            final date = p.debutPrevue;
-            final statusMatch = _selectedStatus == 'tous' || p.statut == _selectedStatus;
-            return date != null &&
-                (_startDate == null || !date.isBefore(_startDate!)) &&
-                (_endDate == null || !date.isAfter(_endDate!)) &&
-                p.machines.isNotEmpty &&
-                p.machines.first.salle.type == _selectedSalleType &&
-                statusMatch;
-          }).toList();
 
           return Column(
             children: [
@@ -362,25 +374,11 @@ class _PlanificationViewState extends State<PlanificationView> {
                   value: _startHour,
                   onChanged: (value) => setState(() => _startHour = value!),
                   hint: 'Début',
-                  onChanged: (value) {
-                    setState(() => _startHour = value!);
-                  },
-                  items: List.generate(24, (index) => index).map((hour) =>
-                      DropdownMenuItem(value: hour, child: Text('$hour h'))
-                  ).toList(),
-                  hint: Text("Début"),
                 ),
                 _buildHourDropdown(
                   value: _endHour,
                   onChanged: (value) => setState(() => _endHour = value!),
                   hint: 'Fin',
-                  onChanged: (value) {
-                    setState(() => _endHour = value!);
-                  },
-                  items: List.generate(24, (index) => index).map((hour) =>
-                      DropdownMenuItem(value: hour, child: Text('$hour h'))
-                  ).toList(),
-                  hint: Text("Fin"),
                 ),
               ],
               _buildDropdown(
@@ -532,16 +530,15 @@ class _PlanificationViewState extends State<PlanificationView> {
       return Center(child: CircularProgressIndicator());
     }
 
-    const rowHeight = 90.0; // Augmenté pour éviter l'overflow vertical
+    const rowHeight = 90.0;
     const headerHeight = 60.0;
-    const infoColumnWidth = 200.0; // Réduit pour plus d'espace
+    const infoColumnWidth = 200.0;
     final timeSlotWidth = 100.0 * _timeScale;
 
     List<String> headers = [];
     int timeSlots = 0;
 
     if (_selectedViewMode == 'journée') {
-      timeSlots = _endHour - _startHour + 1;
       timeSlots = _endHour - _startHour + 1;
       headers = List.generate(timeSlots, (index) => '${_startHour + index}h');
     } else if (_selectedViewMode == 'semaine') {
@@ -613,13 +610,34 @@ class _PlanificationViewState extends State<PlanificationView> {
             thumbVisibility: true,
             child: ListView.builder(
               controller: _verticalScrollController,
-              itemCount: planifications.length,
+              itemCount: planifications.length + _waitingPlanifications.length,
               itemBuilder: (context, index) {
-                final plan = planifications[index];
-                return FadeInUp(
-                  duration: Duration(milliseconds: 300 + index * 100),
-                  child: _buildGanttRow(plan, timeSlots, timeSlotWidth, infoColumnWidth, totalContentWidth),
-                );
+                if (index < planifications.length) {
+                  // Planifications actives
+                  final plan = planifications[index];
+                  return FadeInUp(
+                    duration: Duration(milliseconds: 300 + index * 100),
+                    child: _buildGanttRow(
+                      plan: plan,
+                      timeSlots: timeSlots,
+                      timeSlotWidth: timeSlotWidth,
+                      infoColumnWidth: infoColumnWidth,
+                      totalContentWidth: totalContentWidth,
+                    ),
+                  );
+                } else {
+                  // Planifications en attente
+                  final waitingPlan = _waitingPlanifications[index - planifications.length];
+                  return FadeInUp(
+                    duration: Duration(milliseconds: 300 + index * 100),
+                    child: _buildWaitingGanttRow(
+                      waitingPlan: waitingPlan,
+                      timeSlotWidth: timeSlotWidth,
+                      infoColumnWidth: infoColumnWidth,
+                      totalContentWidth: totalContentWidth,
+                    ),
+                  );
+                }
               },
             ),
           ),
@@ -628,32 +646,16 @@ class _PlanificationViewState extends State<PlanificationView> {
     );
   }
 
-  // Construire une ligne du Gantt
-  Widget _buildGanttRow(
-    Planification plan,
-    int timeSlots,
-    double timeSlotWidth,
-    double infoColumnWidth,
-    double totalContentWidth,
-  ) {
+  // Construire une ligne du Gantt pour une planification active
+  Widget _buildGanttRow({
+    required Planification plan,
+    required int timeSlots,
+    required double timeSlotWidth,
+    required double infoColumnWidth,
+    required double totalContentWidth,
+  }) {
     double startSlot = 0;
     double duration = 1;
-              scrollDirection: Axis.vertical,
-              child: Scrollbar(
-                controller: _contentHorizontalScrollController,
-                thumbVisibility: true,
-                child: SingleChildScrollView(
-                  controller: _contentHorizontalScrollController,
-                  scrollDirection: Axis.horizontal,
-                  child: Container(
-                    width: totalWidth,
-                    padding: EdgeInsets.all(8),
-                    child: Column(
-                      children: [
-                        // Active Planifications
-                        ...planifications.map((plan) {
-                          double startSlot = 0;
-                          double duration = 1;
 
     if (_selectedViewMode == 'journée') {
       final debut = plan.debutPrevue ?? DateTime.now();
@@ -670,29 +672,9 @@ class _PlanificationViewState extends State<PlanificationView> {
           ? plan.finPrevue!.difference(plan.debutPrevue!).inDays + 1
           : 1;
     }
-                          if (_selectedViewMode == 'journée') {
-                            final debut = plan.debutPrevue ?? DateTime.now();
-                            final fin = plan.finPrevue ?? debut.add(Duration(hours: 1));
-
-                            final totalMinutesInDay = (_endHour - _startHour) * 60;
-                            final startMinutes =
-                                (debut.hour - _startHour) * 60 + debut.minute;
-                            final endMinutes =
-                                (fin.hour - _startHour) * 60 + fin.minute;
-
-                            startSlot = (startMinutes / 60);
-                            duration = ((endMinutes - startMinutes) / 60).clamp(0.2, timeSlots.toDouble());
-                          } else if (_selectedViewMode == 'semaine' || _selectedViewMode == 'mois') {
-                            startSlot = plan.debutPrevue != null
-                                ? plan.debutPrevue!.difference(_startDate!).inDays.toDouble()
-                                : 0;
-                            duration = plan.finPrevue != null && plan.debutPrevue != null
-                                ? plan.finPrevue!.difference(plan.debutPrevue!).inDays + 1
-                                : 1;
-                          }
 
     return SizedBox(
-      height: 90, // Correspond à rowHeight
+      height: 90,
       child: Row(
         children: [
           // Colonne d'informations
@@ -723,7 +705,7 @@ class _PlanificationViewState extends State<PlanificationView> {
                   ),
                   Flexible(
                     child: Text(
-                      'Salle: ${plan.machines.first.salle.nom}',
+                      'Salle: ${plan.machines.isNotEmpty ? plan.machines.first.salle.nom : 'N/A'}',
                       style: TextStyle(fontSize: 10, color: Colors.grey[600]),
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
@@ -764,7 +746,7 @@ class _PlanificationViewState extends State<PlanificationView> {
                         message: '''
 Client: ${plan.commandes.isNotEmpty ? plan.commandes.first.client.name : 'N/A'}
 Machine: ${plan.machines.isNotEmpty ? plan.machines.first.nom : 'N/A'}
-Salle: ${plan.machines.first.salle.nom}
+Salle: ${plan.machines.isNotEmpty ? plan.machines.first.salle.nom : 'N/A'}
 Début: ${_formatTime(plan.debutPrevue)}
 Fin: ${_formatTime(plan.finPrevue)}
 Statut: ${plan.statut}
@@ -820,193 +802,130 @@ Statut: ${plan.statut}
           ),
         ],
       ),
-                          return SizedBox(
-                            height: rowHeight,
-                            child: Row(
-                              children: [
-                                SizedBox(
-                                  width: infoColumnWidth,
-                                  child: Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 8),
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Flexible(
-                                          child: Text(
-                                            plan.commandes.isNotEmpty
-                                                ? plan.commandes.first.client.name
-                                                : 'No client',
-                                          ),
-                                        ),
-                                        Flexible(
-                                          child: Text(
-                                            plan.machines.isNotEmpty
-                                                ? plan.machines.first.nom
-                                                : 'No machine',
-                                            style: TextStyle(fontSize: 12),
-                                          ),
-                                        ),
-                                        Flexible(
-                                          child: Text(
-                                            'Salle: ${plan.machines.first.salle.nom}',
-                                            style: TextStyle(fontSize: 12),
-                                          ),
-                                        ),
-                                        _buildStatut(plan.statut),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: SingleChildScrollView(
-                                    scrollDirection: Axis.horizontal,
-                                    child: SizedBox(
-                                      width: totalContentWidth,
-                                      child: Stack(
-                                        children: [
-                                          Row(
-                                            children: List.generate(
-                                              timeSlots,
-                                                  (index) => Container(
-                                                width: timeSlotWidth,
-                                                decoration: BoxDecoration(
-                                                  border: Border(
-                                                    right: BorderSide(
-                                                      color: Colors.grey.shade300,
-                                                    ),
-                                                  ),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                          Positioned(
-                                            left: startSlot * timeSlotWidth,
-                                            child: Container(
-                                              width: duration * timeSlotWidth,
-                                              height: 40,
-                                              margin: EdgeInsets.symmetric(vertical: 15),
-                                              decoration: BoxDecoration(
-                                                color: _getStatusColor(plan.statut),
-                                                borderRadius: BorderRadius.circular(8),
-                                                boxShadow: [
-                                                  BoxShadow(
-                                                    color: Colors.black26,
-                                                    blurRadius: 4,
-                                                    offset: Offset(2, 2),
-                                                  )
-                                                ],
-                                              ),
-                                              child: Center(
-                                                child: Column(
-                                                  mainAxisAlignment: MainAxisAlignment.center,
-                                                  children: [
-                                                    Text(
-                                                      plan.commandes.isNotEmpty
-                                                          ? plan.commandes.first.client.name
-                                                          : '',
-                                                      style: const TextStyle(
-                                                        fontWeight: FontWeight.bold,
-                                                        color: Colors.white,
-                                                      ),
-                                                    ),
-                                                    Text(
-                                                      '${_formatTime(plan.debutPrevue)} - ${_formatTime(plan.finPrevue)}',
-                                                      style: const TextStyle(
-                                                        color: Colors.white70,
-                                                        fontSize: 12,
-                                                      ),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }),
-                        // Waiting Planifications
-                        ..._waitingPlanifications.map((waitingPlan) {
-                          return SizedBox(
-                            height: rowHeight,
-                            child: Row(
-                              children: [
-                                SizedBox(
-                                  width: infoColumnWidth,
-                                  child: Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 8),
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
-                                      crossAxisAlignment: CrossAxisAlignment.start,
-                                      children: [
-                                        Flexible(
-                                          child: Text(
-                                            waitingPlan.commande.client.name,
-                                            style: TextStyle(fontWeight: FontWeight.bold),
-                                          ),
-                                        ),
-                                        Flexible(
-                                          child: Text(
-                                            'Modèle: ${waitingPlan.modele.nom}',
-                                            style: TextStyle(fontSize: 12),
-                                          ),
-                                        ),
-                                        Flexible(
-                                          child: Text(
-                                            'Taille: ${waitingPlan.taille}',
-                                            style: TextStyle(fontSize: 12),
-                                          ),
-                                        ),
-                                        _buildStatut('en attente'),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                                Expanded(
-                                  child: Container(
-                                    height: 40,
-                                    margin: EdgeInsets.symmetric(vertical: 15),
-                                    decoration: BoxDecoration(
-                                      color: Colors.orange[300],
-                                      borderRadius: BorderRadius.circular(8),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.black26,
-                                          blurRadius: 4,
-                                          offset: Offset(2, 2),
-                                        )
-                                      ],
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        'En attente de machine',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                ),
-                              ],
-                            ),
-                          );
-                        }),
-                      ],
+    );
+  }
+
+  // Construire une ligne du Gantt pour une planification en attente
+  Widget _buildWaitingGanttRow({
+    required WaitingPlanification waitingPlan,
+    required double timeSlotWidth,
+    required double infoColumnWidth,
+    required double totalContentWidth,
+  }) {
+    return SizedBox(
+      height: 90,
+      child: Row(
+        children: [
+          // Colonne d'informations
+          SizedBox(
+            width: infoColumnWidth,
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Flexible(
+                    child: Text(
+                      waitingPlan.commande.client.name,
+                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
                     ),
                   ),
+                  SizedBox(height: 2),
+                  Flexible(
+                    child: Text(
+                      'Modèle: ${waitingPlan.modele.nom}',
+                      style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                  Flexible(
+                    child: Text(
+                      'Taille: ${waitingPlan.taille}',
+                      style: TextStyle(fontSize: 10, color: Colors.grey[600]),
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  _buildStatusBadge('en attente'),
+                ],
+              ),
+            ),
+          ),
+
+          // Barre du Gantt
+          Expanded(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              controller: _contentHorizontalScrollController,
+              child: SizedBox(
+                width: totalContentWidth,
+                child: Stack(
+                  children: [
+                    Row(
+                      children: List.generate(
+                        (totalContentWidth / timeSlotWidth).ceil(),
+                        (index) => Container(
+                          width: timeSlotWidth,
+                          decoration: BoxDecoration(
+                            border: Border(
+                              right: BorderSide(color: Colors.grey.shade200),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: 0,
+                      child: Tooltip(
+                        message: '''
+Client: ${waitingPlan.commande.client.name}
+Modèle: ${waitingPlan.modele.nom}
+Taille: ${waitingPlan.taille}
+Couleur: ${waitingPlan.couleur}
+Quantité: ${waitingPlan.quantite}
+Ajouté le: ${DateFormat('dd/MM/yyyy HH:mm').format(waitingPlan.createdAt)}
+Statut: en attente
+''',
+                        child: Container(
+                          width: totalContentWidth,
+                          height: 50,
+                          margin: EdgeInsets.symmetric(vertical: 20),
+                          decoration: BoxDecoration(
+                            color: Colors.orange[300],
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black26,
+                                blurRadius: 6,
+                                offset: Offset(2, 2),
+                              ),
+                            ],
+                          ),
+                          child: Center(
+                            child: Text(
+                              'En attente de machine',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                                fontSize: 10,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 

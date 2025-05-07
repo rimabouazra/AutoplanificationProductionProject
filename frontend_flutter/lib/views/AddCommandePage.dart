@@ -267,16 +267,20 @@ void _addModele() {
     final planifProvider = Provider.of<PlanificationProvider>(context, listen: false);
 
     try {
+      // Fetch planification previews
       final previews = await ApiService.getPlanificationPreview(commandeId);
+      
+      // Fetch waiting planifications for the commande
+      final waitingPlans = await ApiService.getWaitingPlanifications();
+      final waitingPlanifications = waitingPlans
+          .where((wp) => wp.commande.id == commandeId)
+          .toList();
 
       if (previews != null && previews.isNotEmpty) {
         bool isValid = previews.every((p) => p.commandes.isNotEmpty && p.machines.isNotEmpty);
 
         if (!isValid) {
-          Fluttertoast.showToast(
-              msg: "⚠️ Une ou plusieurs planifications sont incomplètes.",
-              backgroundColor: Colors.redAccent,
-              textColor: Colors.white);
+          Fluttertoast.showToast(msg: "⚠ Une ou plusieurs planifications sont incomplètes.");
           return;
         }
 
@@ -284,18 +288,17 @@ void _addModele() {
           context: context,
           builder: (context) => PlanificationConfirmationDialog(
             planifications: previews,
+            waitingPlanifications: waitingPlanifications, // Pass waiting planifications
             commandeId: commandeId,
           ),
         );
 
         if (confirmed == true) {
+          // Send all planifications in a single request
           bool success = await ApiService.confirmerPlanification(previews);
 
           if (success) {
-            Fluttertoast.showToast(
-                msg: "✅ Toutes les planifications ont été confirmées !",
-                backgroundColor: Colors.green,
-                textColor: Colors.white);
+            Fluttertoast.showToast(msg: "✅ Toutes les planifications ont été confirmées !");
             await planifProvider.fetchPlanifications();
 
             Navigator.of(context).pushAndRemoveUntil(
@@ -303,28 +306,21 @@ void _addModele() {
               (route) => false,
             );
           } else {
-            Fluttertoast.showToast(
-                msg: "❌ Erreur lors de la confirmation.",
-                backgroundColor: Colors.redAccent,
-                textColor: Colors.white);
+            Fluttertoast.showToast(msg: "❌ Erreur lors de la confirmation.");
           }
         } else {
-          Fluttertoast.showToast(
-              msg: "ℹ️ Planification annulée.",
-              backgroundColor: Colors.blueGrey,
-              textColor: Colors.white);
+          Fluttertoast.showToast(msg: "ℹ Planification annulée.");
         }
       } else {
-        Fluttertoast.showToast(
-            msg: "Aucune planification disponible.",
-            backgroundColor: Colors.blueGrey,
-            textColor: Colors.white);
+        if (waitingPlanifications.isNotEmpty) {
+          Fluttertoast.showToast(
+              msg: "ℹ La commande est en file d'attente car aucune machine n'est disponible.");
+        } else {
+          Fluttertoast.showToast(msg: "Aucune planification disponible.");
+        }
       }
     } catch (e) {
-      Fluttertoast.showToast(
-          msg: "Erreur interne : $e",
-          backgroundColor: Colors.redAccent,
-          textColor: Colors.white);
+      Fluttertoast.showToast(msg: "Erreur interne : $e");
     }
   }
 
