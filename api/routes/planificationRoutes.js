@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const planificationController = require("../controllers/PlanificationController");
 
-router.get("/waiting", planificationController.getWaitingPlanifications);
+router.get("/get/waiting", planificationController.getWaitingPlanifications);
 router.post("/add", planificationController.addPlanification);
 router.get("/", planificationController.getAllPlanifications);
 router.put("/update/:id", planificationController.updatePlanification);

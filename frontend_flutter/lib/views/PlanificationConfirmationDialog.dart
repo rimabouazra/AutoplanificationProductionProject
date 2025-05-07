@@ -115,7 +115,7 @@ class _PlanificationConfirmationDialogState
   Future<void> _confirmPlanification() async {
     setState(() => _isLoading = true);
     try {
-      List<Planification> updatedPlanifications = [];
+      List updatedPlanifications = [];
 
       for (int i = 0; i < widget.planifications.length; i++) {
         final plan = widget.planifications[i];
@@ -185,8 +185,8 @@ class _PlanificationConfirmationDialogState
         }
       }
 
-      final success =
-      await ApiService.confirmerPlanification(updatedPlanifications);
+      final success = await ApiService.confirmerPlanification(
+          updatedPlanifications, widget.waitingPlanifications);
 
       if (!success) {
         throw Exception("Failed to confirm planifications");
@@ -215,7 +215,9 @@ class _PlanificationConfirmationDialogState
   }
 
   Widget _buildMatiereSelector(CommandeModele modele) {
+    print('Building matiere selector for modele: ${modele.nomModele}');
     final modeleKey = '${modele.nomModele}_${modele.taille}';
+
     final quantiteNecessaire = _quantitesConsommees[modeleKey] ?? 0;
     var matieresParCouleur = _matieres
         .where((m) =>
@@ -230,6 +232,7 @@ class _PlanificationConfirmationDialogState
         'suffisant': suffisant,
       };
     }).toList();
+    print('Found ${matieresParCouleur.length} matieres for couleur ${modele.couleur}');
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -295,6 +298,8 @@ class _PlanificationConfirmationDialogState
   }
 
   Widget _buildWaitingPlanificationItem(WaitingPlanification waitingPlan) {
+    print('Building waiting planification item for commande: ${waitingPlan.commande.client.name}');
+
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       elevation: 2,
@@ -311,12 +316,12 @@ class _PlanificationConfirmationDialogState
               ),
             ),
             const SizedBox(height: 8),
-            Text("Commande: ${waitingPlan.commande.id}"),
-            Text("Modèle: ${waitingPlan.modele.nom}"),
-            Text("Taille: ${waitingPlan.taille}"),
-            Text("Couleur: ${waitingPlan.couleur}"),
-            Text("Quantité: ${waitingPlan.quantite}"),
-            Text("Ajoutée le: ${DateFormat('dd/MM/yyyy HH:mm').format(waitingPlan.createdAt)}"),
+            Text("Commande: ${waitingPlan.commande.id ?? 'N/A'}"),
+            Text("Modèle: ${waitingPlan.modele?.nom ?? 'N/A'}"),
+            Text("Taille: ${waitingPlan.taille ?? 'N/A'}"),
+            Text("Couleur: ${waitingPlan.couleur ?? 'N/A'}"),
+            Text("Quantité: ${waitingPlan.quantite ?? 'N/A'}"),
+            Text("Ajoutée le: ${waitingPlan.createdAt != null ? DateFormat('dd/MM/yyyy  à HH:mm').format(waitingPlan.createdAt!) : 'N/A'}"),
           ],
         ),
       ),
@@ -497,7 +502,20 @@ class _PlanificationConfirmationDialogState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    print('Building PlanificationConfirmationDialog with:');
+    print('- Planifications count: ${widget.planifications.length}');
+    print('- Waiting planifications count: ${widget.waitingPlanifications.length}');
 
+    // Add this debug for each waiting planification
+    for (var i = 0; i < widget.waitingPlanifications.length; i++) {
+      final wp = widget.waitingPlanifications[i];
+      print('Waiting Planification $i:');
+      print('  Commande ID: ${wp.commande.id}');
+      print('  Modele: ${wp.modele.nom}');
+      print('  Taille: ${wp.taille}');
+      print('  Couleur: ${wp.couleur}');
+      print('  Quantite: ${wp.quantite}');
+    }
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 8,
