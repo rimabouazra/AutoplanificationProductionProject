@@ -6,6 +6,7 @@ import 'package:frontend/views/admin_home_page.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../main.dart';
+import '../models/WaitingPlanification.dart';
 import '../models/planification.dart';
 import '../models/matiere.dart';
 import '../models/commande.dart';
@@ -14,10 +15,12 @@ import '../services/api_service.dart';
 
 class PlanificationConfirmationDialog extends StatefulWidget {
   final List<Planification> planifications;
+  final List<WaitingPlanification> waitingPlanifications;
   final String commandeId;
 
   const PlanificationConfirmationDialog({
     required this.planifications,
+    required this.waitingPlanifications,
     required this.commandeId,
     Key? key,
   }) : super(key: key);
@@ -34,7 +37,6 @@ class _PlanificationConfirmationDialogState
   final Map<String, String?> _matieresSelectionnees = {};
   final Map<String, double> _quantitesConsommees = {};
 
-  // Store selected values for each planification
   List<Salle?> _selectedSalles = [];
   List<List<String>> _selectedMachinesForPlanifications = [];
   List<DateTime> _startDates = [];
@@ -43,11 +45,10 @@ class _PlanificationConfirmationDialogState
   @override
   void initState() {
     super.initState();
-    // Initialize selections for each planification
     _selectedSalles = List<Salle?>.filled(widget.planifications.length, null);
     _selectedMachinesForPlanifications = List<List<String>>.generate(
         widget.planifications.length,
-        (index) =>
+            (index) =>
             widget.planifications[index].machines.map((m) => m.id).toList());
     _startDates = widget.planifications
         .map((p) => p.debutPrevue ?? DateTime.now())
@@ -70,7 +71,7 @@ class _PlanificationConfirmationDialogState
             for (var modele in commande.modeles) {
               final modeleKey = '${modele.nomModele}_${modele.taille}';
               final matiereCorrespondante = _matieres.firstWhere(
-                (m) => m.couleur.toLowerCase() == modele.couleur.toLowerCase(),
+                    (m) => m.couleur.toLowerCase() == modele.couleur.toLowerCase(),
                 orElse: () => Matiere(
                   id: '',
                   reference: '',
@@ -100,8 +101,8 @@ class _PlanificationConfirmationDialogState
           (modele.modele as Modele).consommation.isNotEmpty) {
         final consommation = (modele.modele as Modele).consommation.firstWhere(
               (c) => c.taille == modele.taille,
-              orElse: () => Consommation(taille: modele.taille, quantity: 0),
-            );
+          orElse: () => Consommation(taille: modele.taille, quantity: 0),
+        );
         return consommation.quantity * modele.quantite;
       }
       return modele.quantite * 0.5;
@@ -114,13 +115,11 @@ class _PlanificationConfirmationDialogState
   Future<void> _confirmPlanification() async {
     setState(() => _isLoading = true);
     try {
-      // Prepare updated planifications
       List<Planification> updatedPlanifications = [];
 
       for (int i = 0; i < widget.planifications.length; i++) {
         final plan = widget.planifications[i];
 
-        // Validate salle selection
         if (_selectedSalles[i] == null) {
           Fluttertoast.showToast(
             msg: "Sélectionnez une salle pour toutes les planifications",
@@ -129,17 +128,15 @@ class _PlanificationConfirmationDialogState
           return;
         }
 
-        // Validate machine selection
         if (_selectedMachinesForPlanifications[i].isEmpty) {
           Fluttertoast.showToast(
             msg:
-                "Sélectionnez au moins une machine pour toutes les planifications",
+            "Sélectionnez au moins une machine pour toutes les planifications",
             backgroundColor: Colors.red,
           );
           return;
         }
 
-        // Validate dates
         if (_startDates[i].isAfter(_endDates[i])) {
           Fluttertoast.showToast(
             msg: "La date de début doit être avant la date de fin",
@@ -148,7 +145,6 @@ class _PlanificationConfirmationDialogState
           return;
         }
 
-        // Vérifications matières
         for (var commande in plan.commandes) {
           for (var modele in commande.modeles) {
             final key = '${modele.nomModele}_${modele.taille}';
@@ -162,7 +158,6 @@ class _PlanificationConfirmationDialogState
           }
         }
 
-        // Create updated planification
         updatedPlanifications.add(Planification(
           id: plan.id,
           commandes: plan.commandes,
@@ -177,7 +172,6 @@ class _PlanificationConfirmationDialogState
         ));
       }
 
-      // First update material stocks
       for (var plan in widget.planifications) {
         for (var commande in plan.commandes) {
           for (var modele in commande.modeles) {
@@ -191,9 +185,8 @@ class _PlanificationConfirmationDialogState
         }
       }
 
-      // Then confirm planifications with the backend
       final success =
-          await ApiService.confirmerPlanification(updatedPlanifications);
+      await ApiService.confirmerPlanification(updatedPlanifications);
 
       if (!success) {
         throw Exception("Failed to confirm planifications");
@@ -205,14 +198,13 @@ class _PlanificationConfirmationDialogState
         textColor: Colors.white,
       );
 
-      // Refresh data and navigate
       final planifProvider =
-          Provider.of<PlanificationProvider>(context, listen: false);
+      Provider.of<PlanificationProvider>(context, listen: false);
       await planifProvider.fetchPlanifications();
 
       navigatorKey.currentState?.pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const AdminHomePage()),
-        (route) => false,
+            (route) => false,
       );
     } catch (e) {
       Fluttertoast.showToast(msg: "Erreur: ${e.toString()}");
@@ -227,8 +219,8 @@ class _PlanificationConfirmationDialogState
     final quantiteNecessaire = _quantitesConsommees[modeleKey] ?? 0;
     var matieresParCouleur = _matieres
         .where((m) =>
-            m.couleur.toLowerCase().contains(modele.couleur.toLowerCase()) ||
-            modele.couleur.toLowerCase().contains(m.couleur.toLowerCase()))
+    m.couleur.toLowerCase().contains(modele.couleur.toLowerCase()) ||
+        modele.couleur.toLowerCase().contains(m.couleur.toLowerCase()))
         .toList();
 
     final matieresDisponibles = matieresParCouleur.map((m) {
@@ -253,9 +245,9 @@ class _PlanificationConfirmationDialogState
           Text(
             "${modele.nomModele} (${modele.taille}, ${modele.couleur})",
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.blue[800],
-                ),
+              fontWeight: FontWeight.bold,
+              color: Colors.blue[800],
+            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -302,6 +294,35 @@ class _PlanificationConfirmationDialogState
     );
   }
 
+  Widget _buildWaitingPlanificationItem(WaitingPlanification waitingPlan) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      elevation: 2,
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              "Planification en attente",
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Colors.orange[800],
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text("Commande: ${waitingPlan.commande.id}"),
+            Text("Modèle: ${waitingPlan.modele.nom}"),
+            Text("Taille: ${waitingPlan.taille}"),
+            Text("Couleur: ${waitingPlan.couleur}"),
+            Text("Quantité: ${waitingPlan.quantite}"),
+            Text("Ajoutée le: ${DateFormat('dd/MM/yyyy HH:mm').format(waitingPlan.createdAt)}"),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildPlanificationItem(int index, Planification planification) {
     final theme = Theme.of(context);
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
@@ -323,7 +344,6 @@ class _PlanificationConfirmationDialogState
             ),
             const SizedBox(height: 16),
 
-            // Salle Dropdown
             DropdownButtonFormField<Salle>(
               value: _selectedSalles[index],
               decoration: const InputDecoration(
@@ -335,9 +355,9 @@ class _PlanificationConfirmationDialogState
                   .map((m) => m.salle)
                   .toSet()
                   .map((salle) => DropdownMenuItem<Salle>(
-                        value: salle,
-                        child: Text("${salle.nom} (${salle.type})"),
-                      ))
+                value: salle,
+                child: Text("${salle.nom} (${salle.type})"),
+              ))
                   .toList(),
               onChanged: (Salle? newValue) {
                 setState(() {
@@ -348,7 +368,6 @@ class _PlanificationConfirmationDialogState
             ),
             const SizedBox(height: 16),
 
-            // Machines Dropdown (filtered by selected salle)
             if (_selectedSalles[index] != null)
               Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -361,28 +380,27 @@ class _PlanificationConfirmationDialogState
                   ...planification.machines
                       .where((m) => m.salle.id == _selectedSalles[index]!.id)
                       .map((machine) => CheckboxListTile(
-                            title:
-                                Text("${machine.nom} (${machine.modele.nom})"),
-                            value: _selectedMachinesForPlanifications[index]
-                                .contains(machine.id),
-                            onChanged: (bool? value) {
-                              setState(() {
-                                if (value == true) {
-                                  _selectedMachinesForPlanifications[index]
-                                      .add(machine.id);
-                                } else {
-                                  _selectedMachinesForPlanifications[index]
-                                      .remove(machine.id);
-                                }
-                              });
-                            },
-                          ))
+                    title:
+                    Text("${machine.nom} (${machine.modele.nom})"),
+                    value: _selectedMachinesForPlanifications[index]
+                        .contains(machine.id),
+                    onChanged: (bool? value) {
+                      setState(() {
+                        if (value == true) {
+                          _selectedMachinesForPlanifications[index]
+                              .add(machine.id);
+                        } else {
+                          _selectedMachinesForPlanifications[index]
+                              .remove(machine.id);
+                        }
+                      });
+                    },
+                  ))
                       .toList(),
                 ],
               ),
             const SizedBox(height: 16),
 
-            // Dates Section
             Row(
               children: [
                 Expanded(
@@ -441,7 +459,7 @@ class _PlanificationConfirmationDialogState
   Future<void> _selectDate(
       BuildContext context, bool isStartDate, int planIndex) async {
     final initialDate =
-        isStartDate ? _startDates[planIndex] : _endDates[planIndex];
+    isStartDate ? _startDates[planIndex] : _endDates[planIndex];
 
     final DateTime? pickedDate = await showDatePicker(
       context: context,
@@ -515,16 +533,25 @@ class _PlanificationConfirmationDialogState
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Planification Items
+                    if (widget.waitingPlanifications.isNotEmpty) ...[
+                      Text(
+                        "Planifications en attente",
+                        style: theme.textTheme.titleMedium?.copyWith(
+                          color: Colors.orange[800],
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      ...widget.waitingPlanifications
+                          .map(_buildWaitingPlanificationItem),
+                      const SizedBox(height: 20),
+                    ],
                     ...widget.planifications.asMap().entries.map((entry) {
                       final index = entry.key;
                       final planification = entry.value;
                       return _buildPlanificationItem(index, planification);
                     }).toList(),
-
                     const SizedBox(height: 20),
-
-                    // Materials Section
                     Text(
                       "Consommation de matière",
                       style: theme.textTheme.titleMedium?.copyWith(
@@ -539,7 +566,6 @@ class _PlanificationConfirmationDialogState
                           for (var m in c.modeles)
                             '${m.nomModele}_${m.taille}_${m.couleur}': m
                     }.values.map(_buildMatiereSelector),
-
                     const SizedBox(height: 20),
                   ],
                 ),
@@ -578,13 +604,13 @@ class _PlanificationConfirmationDialogState
                     ),
                     child: _isLoading
                         ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
-                            ),
-                          )
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: Colors.white,
+                      ),
+                    )
                         : const Text("Confirmer la planification"),
                   ),
                 ],
