@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:animate_do/animate_do.dart';
 import 'package:frontend/services/auth_service.dart';
 import 'package:frontend/views/LoginPage.dart';
 import 'MachinesParSalleView.dart';
@@ -21,161 +22,249 @@ class _SalleListPageState extends State<SalleListPage> {
     super.initState();
     fetchSalles();
   }
+
   Future<String?> _getUserRole() async {
-  final prefs = await SharedPreferences.getInstance();
-  return prefs.getString('role');
-}
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('role');
+  }
+
   Future<void> fetchSalles() async {
-    final response =
-        await http.get(Uri.parse('http://localhost:5000/api/salles'));
-
-    if (response.statusCode == 200) {
-      setState(() {
-        salles = json.decode(response.body);
-        print("Salles mises à jour: $salles"); // DEBUG
-      });
-    } else {
-      throw Exception('Échec du chargement des salles');
+    try {
+      final response = await http.get(Uri.parse('http://localhost:5000/api/salles'));
+      if (response.statusCode == 200) {
+        setState(() {
+          salles = json.decode(response.body);
+        });
+      } else {
+        throw Exception('Échec du chargement des salles');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Erreur lors du chargement des salles : $e"),
+          backgroundColor: Colors.redAccent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
     }
   }
 
-  // Ajouter une salle
   Future<void> ajouterSalle(String nom, String type) async {
-    final token = await AuthService.getToken();
-    final response = await http.post(
-      Uri.parse('http://localhost:5000/api/salles'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({"nom": nom, "type": type}),
-    );
+    try {
+      final token = await AuthService.getToken();
+      final response = await http.post(
+        Uri.parse('http://localhost:5000/api/salles'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({"nom": nom, "type": type}),
+      );
 
-    if (response.statusCode == 201) {
-      fetchSalles(); // Rafraîchir la liste après l'ajout
-    } else {
-      print("Erreur lors de l'ajout de la salle: ${response.body}"); //DEBUG
-      throw Exception('Erreur lors de l\'ajout de la salle');
+      if (response.statusCode == 201) {
+        fetchSalles();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text("Salle ajoutée avec succès !"),
+            backgroundColor: Colors.green,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      } else {
+        throw Exception('Erreur lors de l\'ajout de la salle');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Erreur lors de l'ajout de la salle : $e"),
+          backgroundColor: Colors.redAccent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
     }
   }
 
-  // Modifier une salle
-  Future<void> modifierSalle(
-      String id, String nouveauNom, String nouveauType) async {
-        final token = await AuthService.getToken();
-    final response = await http.put(
-      Uri.parse('http://localhost:5000/api/salles/$id'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-        "nom": nouveauNom,
-        "type": nouveauType,
-      }),
-    );
-    print(
-        "Réponse du serveur: ${response.statusCode} - ${response.body}"); // DEBUG
-    if (response.statusCode == 200) {
-      fetchSalles(); // Rafraîchir la liste après la modification
-    } else {
-      throw Exception('Erreur lors de la modification de la salle');
+  Future<void> modifierSalle(String id, String nouveauNom, String nouveauType) async {
+    try {
+      final token = await AuthService.getToken();
+      final response = await http.put(
+        Uri.parse('http://localhost:5000/api/salles/$id'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          "nom": nouveauNom,
+          "type": nouveauType,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+        fetchSalles();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text("Salle modifiée avec succès !"),
+            backgroundColor: Colors.green,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      } else {
+        throw Exception('Erreur lors de la modification de la salle');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Erreur lors de la modification de la salle : $e"),
+          backgroundColor: Colors.redAccent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
     }
   }
 
-  // Supprimer une salle
   Future<void> supprimerSalle(String id) async {
-  try {
-    print('🔍 Tentative de suppression de salle $id');
-    final token = await AuthService.getToken();
-    print('🔑 Token récupéré: ${token != null ? "présent" : "absent"}');
-    
-    if (token == null) {
-      throw Exception('Utilisateur non authentifié');
+    try {
+      final token = await AuthService.getToken();
+      if (token == null) {
+        throw Exception('Utilisateur non authentifié');
+      }
+
+      final response = await http.delete(
+        Uri.parse('http://localhost:5000/api/salles/$id'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        fetchSalles();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text("Salle supprimée avec succès !"),
+            backgroundColor: Colors.green,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
+      } else {
+        throw Exception('Erreur lors de la suppression de la salle');
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Erreur lors de la suppression : $e"),
+          backgroundColor: Colors.redAccent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
     }
-
-    final response = await http.delete(
-      Uri.parse('http://localhost:5000/api/salles/$id'),
-      headers: {
-        'Authorization': 'Bearer $token',
-        'Content-Type': 'application/json',
-      },
-    );
-
-    print('🔄 Réponse du serveur: ${response.statusCode} - ${response.body}');
-
-    if (response.statusCode == 200) {
-      fetchSalles();
-    } else {
-      throw Exception('Erreur lors de la suppression de la salle: ${response.body}');
-    }
-  } catch (e) {
-    print('🔥 Erreur dans supprimerSalle: $e');
-    throw e;
   }
-}
 
-  // Afficher le dialogue pour ajouter/modifier une salle
   void afficherDialogueSalle(
-      {String? id,
-      String? nomActuel,
-      String? typeActuel,
-      bool isModification = false}) {
-    TextEditingController nomController =
-        TextEditingController(text: nomActuel ?? "");
-    String selectedType = typeActuel ?? "noir"; // Valeur par défaut
+      {String? id, String? nomActuel, String? typeActuel, bool isModification = false}) {
+    TextEditingController nomController = TextEditingController(text: nomActuel ?? "");
+    String selectedType = typeActuel ?? "noir";
 
     showDialog(
       context: context,
       builder: (context) {
         return StatefulBuilder(
-          // Ajout de StatefulBuilder pour la mise à jour du DropdownButton
           builder: (context, setState) {
             return AlertDialog(
-              title: Text(
-                  isModification ? "Modifier la salle" : "Ajouter une salle"),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextField(
-                    controller: nomController,
-                    decoration:
-                        const InputDecoration(labelText: "Nom de la salle"),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: FadeInDown(
+                child: Text(
+                  isModification ? "Modifier la salle" : "Ajouter une salle",
+                  style: const TextStyle(
+                    fontFamily: 'PlayfairDisplay',
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueGrey,
                   ),
-                  const SizedBox(height: 10), // Espacement
-                  DropdownButtonFormField<String>(
-                    value: selectedType,
-                    items: ["noir", "blanc"].map((String type) {
-                      return DropdownMenuItem<String>(
-                        value: type,
-                        child: Text(type),
-                      );
-                    }).toList(),
-                    onChanged: (newValue) {
-                      setState(() {
-                        selectedType = newValue ?? "noir";
-                      });
-                    },
-                    decoration:
-                        const InputDecoration(labelText: "Type de salle"),
-                  ),
-                ],
+                ),
+              ),
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    FadeInUp(
+                      child: TextField(
+                        controller: nomController,
+                        decoration: InputDecoration(
+                          labelText: "Nom de la salle",
+                          prefixIcon: const Icon(Icons.meeting_room, color: Colors.blueGrey),
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.9),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    FadeInUp(
+                      child: DropdownButtonFormField<String>(
+                        value: selectedType,
+                        items: ["noir", "blanc"].map((String type) {
+                          return DropdownMenuItem<String>(
+                            value: type,
+                            child: Text(type),
+                          );
+                        }).toList(),
+                        onChanged: (newValue) {
+                          setState(() {
+                            selectedType = newValue ?? "noir";
+                          });
+                        },
+                        decoration: InputDecoration(
+                          labelText: "Type de salle",
+                          prefixIcon: const Icon(Icons.category, color: Colors.blueGrey),
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.9),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text("Annuler"),
+                  child: const Text("Annuler", style: TextStyle(color: Colors.blueGrey)),
                 ),
-                ElevatedButton(
-                  onPressed: () {
-                    if (isModification) {
-                      modifierSalle(id!, nomController.text, selectedType);
-                    } else {
-                      ajouterSalle(nomController.text, selectedType);
-                    }
-                    Navigator.pop(context);
-                  },
-                  child: Text(isModification ? "Modifier" : "Ajouter"),
+                ZoomIn(
+                  child: ElevatedButton(
+                    onPressed: () {
+                      if (nomController.text.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: const Text("Veuillez entrer un nom pour la salle."),
+                            backgroundColor: Colors.redAccent,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          ),
+                        );
+                        return;
+                      }
+                      if (isModification) {
+                        modifierSalle(id!, nomController.text, selectedType);
+                      } else {
+                        ajouterSalle(nomController.text, selectedType);
+                      }
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueGrey[800],
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Text(
+                      isModification ? "Modifier" : "Ajouter",
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ),
                 ),
               ],
             );
@@ -185,93 +274,130 @@ class _SalleListPageState extends State<SalleListPage> {
     );
   }
 
-  // Afficher le dialogue de confirmation de suppression
   void afficherConfirmationSuppression(String id) {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text("Confirmer la suppression"),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text(
+            "Confirmer la suppression",
+            style: TextStyle(
+              fontFamily: 'PlayfairDisplay',
+              fontWeight: FontWeight.bold,
+              color: Colors.blueGrey,
+            ),
+          ),
           content: const Text("Voulez-vous vraiment supprimer cette salle ?"),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text("Annuler"),
+              child: const Text("Annuler", style: TextStyle(color: Colors.blueGrey)),
             ),
-            ElevatedButton(
-            onPressed: () async {
-              try {
-                await supprimerSalle(id);
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Salle supprimée avec succès')),
-                );
-              } catch (e) {
-                Navigator.pop(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Erreur: ${e.toString()}')),
-                );
-              }
-            },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-            child: const Text("Supprimer"),
-          ),
+            ZoomIn(
+              child: ElevatedButton(
+                onPressed: () async {
+                  await supprimerSalle(id);
+                  Navigator.pop(context);
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.red[600],
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: const Text("Supprimer", style: TextStyle(color: Colors.white)),
+              ),
+            ),
           ],
         );
       },
     );
   }
+
   void _confirmLogout(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text("Confirmer la déconnexion"),
-      content: Text("Voulez-vous vraiment vous déconnecter ?"),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text("Annuler"),
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          "Confirmer la déconnexion",
+          style: TextStyle(
+            fontFamily: 'PlayfairDisplay',
+            fontWeight: FontWeight.bold,
+            color: Colors.blueGrey,
+          ),
         ),
-        TextButton(
-          onPressed: () async {
-            await AuthService.logout();
-            Navigator.of(context).pushAndRemoveUntil(
-              MaterialPageRoute(builder: (context) => LoginPage()),
-              (Route<dynamic> route) => false,
-            );
-          },
-          child: Text("Déconnexion", style: TextStyle(color: Colors.red)),
-        ),
-      ],
-    ),
-  );
-}
+        content: const Text("Voulez-vous vraiment vous déconnecter ?"),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Annuler", style: TextStyle(color: Colors.blueGrey)),
+          ),
+          ZoomIn(
+            child: ElevatedButton(
+              onPressed: () async {
+                await AuthService.logout();
+                Navigator.of(context).pushAndRemoveUntil(
+                  MaterialPageRoute(builder: (context) => LoginPage()),
+                  (Route<dynamic> route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[600],
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text("Déconnexion", style: TextStyle(color: Colors.white)),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<String?>(
       future: _getUserRole(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
-        
+        if (!snapshot.hasData) {
+          return const Center(child: CircularProgressIndicator(color: Colors.blueGrey));
+        }
+
         final role = snapshot.data!;
         final isAdminOrManager = role == 'admin' || role == 'manager';
 
         return Scaffold(
+          backgroundColor: Colors.blueGrey[50],
           appBar: AppBar(
             automaticallyImplyLeading: false,
+            backgroundColor: Colors.blueGrey[800],
+            title: FadeInDown(
+              child: const Text(
+                "Liste des Salles",
+                style: TextStyle(
+                  fontFamily: 'PlayfairDisplay',
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+            centerTitle: true,
             actions: [
-              IconButton(
-      icon: Icon(Icons.logout),
-      onPressed: () => _confirmLogout(context),
-    ),
+              FadeInRight(
+                child: IconButton(
+                  icon: const Icon(Icons.logout, color: Colors.white),
+                  onPressed: () => _confirmLogout(context),
+                ),
+              ),
               if (isAdminOrManager)
-                Container(
-                  margin: EdgeInsets.only(right: 16),
-                  child: CircleAvatar(
-                    backgroundColor: Color(0xFF1ABC9C),
-                    child: IconButton(
-                      icon: const Icon(Icons.add, color: Colors.white),
-                      onPressed: () => afficherDialogueSalle(),
+                FadeInRight(
+                  child: Padding(
+                    padding: const EdgeInsets.only(right: 16.0),
+                    child: CircleAvatar(
+                      backgroundColor: Colors.blueGrey[600],
+                      child: IconButton(
+                        icon: const Icon(Icons.add, color: Colors.white),
+                        onPressed: () => afficherDialogueSalle(),
+                      ),
                     ),
                   ),
                 ),
@@ -280,71 +406,81 @@ class _SalleListPageState extends State<SalleListPage> {
           body: Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
-                colors: [Color(0xFFF4F6F7), Colors.white],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
+                colors: [Colors.blueGrey[50]!, Colors.white],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
               ),
             ),
             child: salles.isEmpty
-                ? const Center(child: CircularProgressIndicator())
+                ? const Center(child: CircularProgressIndicator(color: Colors.blueGrey))
                 : ListView.builder(
-                    padding: const EdgeInsets.all(10),
+                    padding: const EdgeInsets.all(16.0),
                     itemCount: salles.length,
                     itemBuilder: (context, index) {
                       final salle = salles[index];
-                      return Card(
-                        elevation: 5,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        child: ListTile(
-                          leading: const Icon(Icons.meeting_room, color: Color(0xFF1ABC9C)),
-                          title: Text(
-                            salle['nom'],
-                            style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF2C3E50)),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                "Type : ${salle['type'].toUpperCase()}",
-                                style: TextStyle(
-                                  color: salle['type'] == 'noir' ? Colors.black : Color(0xFF3498DB)),
+                      return FadeInUp(
+                        delay: Duration(milliseconds: index * 100),
+                        child: Card(
+                          elevation: 5,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                          child: ListTile(
+                            leading: Icon(Icons.meeting_room, color: Colors.blueGrey[800]),
+                            title: Text(
+                              salle['nom'],
+                              style: const TextStyle(
+                                fontFamily: 'PlayfairDisplay',
+                                fontWeight: FontWeight.bold,
+                                color: Colors.blueGrey,
                               ),
-                              Text(
-                                "Nombre de machines: ${salle['machines'].length}",
-                                style: TextStyle(color: Color(0xFF7F8C8D)),
-                              ),
-                            ],
-                          ),
-                          trailing: isAdminOrManager
-                              ? Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: Icon(Icons.edit, color: Color(0xFF3498DB)),
-                                      onPressed: () => afficherDialogueSalle(
-                                        id: salle['_id'],
-                                        nomActuel: salle['nom'],
-                                        typeActuel: salle['type'],
-                                        isModification: true,
+                            ),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  "Type: ${salle['type'].toUpperCase()}",
+                                  style: TextStyle(
+                                    color: salle['type'] == 'noir' ? Colors.blueGrey[600] : Colors.blue,
+                                  ),
+                                ),
+                                Text(
+                                  "Nombre de machines: ${salle['machines'].length}",
+                                  style: TextStyle(color: Colors.blueGrey[600]),
+                                ),
+                              ],
+                            ),
+                            trailing: isAdminOrManager
+                                ? Wrap(
+                                    spacing: 8,
+                                    children: [
+                                      ZoomIn(
+                                        child: IconButton(
+                                          icon: const Icon(Icons.edit, color: Colors.blue),
+                                          onPressed: () => afficherDialogueSalle(
+                                            id: salle['_id'],
+                                            nomActuel: salle['nom'],
+                                            typeActuel: salle['type'],
+                                            isModification: true,
+                                          ),
+                                        ),
                                       ),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete, color: Color(0xFFE74C3C)),
-                                      onPressed: () => afficherConfirmationSuppression(salle['_id']),
-                                    ),
-                                  ],
-                                )
-                              : null,
-                          onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => MachinesParSalleView(salleId: salle['_id']),
-                              ),
-                            );
-                          },
+                                      ZoomIn(
+                                        child: IconButton(
+                                          icon: const Icon(Icons.delete, color: Colors.red),
+                                          onPressed: () => afficherConfirmationSuppression(salle['_id']),
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : null,
+                            onTap: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => MachinesParSalleView(salleId: salle['_id']),
+                                ),
+                              );
+                            },
+                          ),
                         ),
                       );
                     },

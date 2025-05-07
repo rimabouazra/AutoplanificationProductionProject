@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'CommandePage.dart';
 import 'SalleListPage.dart';
-import 'matiereView.dart';
 import 'StockView.dart';
 import 'PlanificationView.dart';
 import 'UsersView.dart';
-import 'StatistiquesView.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 class AdminHomePage extends StatefulWidget {
   const AdminHomePage({Key? key}) : super(key: key);
 
@@ -17,27 +16,14 @@ class AdminHomePage extends StatefulWidget {
 class _AdminHomePageState extends State<AdminHomePage> {
   int _selectedIndex = 0;
 
-  //final List<Widget> _pages = [
-    //Center(child: Text('Statistique en développement')), // Placeholder
-    //PlanificationView(),
-    //UsersView(),
-    //StockView(),
-    //CommandePage(),
-    //SalleListPage(),
-  //];
-  void _onItemTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
-  }
   Future<String?> _getUserRole() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('role');
   }
+
   List<Widget> _buildPages(String? role) {
     List<Widget> pages = [
-      StatistiquesView(),
-      PlanificationView(),
+      PlanificationView(), // Première page par défaut
     ];
 
     if (role == 'admin') {
@@ -46,14 +32,12 @@ class _AdminHomePageState extends State<AdminHomePage> {
         StockView(),
         CommandePage(),
         SalleListPage(),
-        StatistiquesView()
       ]);
     } else if (role == 'manager') {
       pages.addAll([
         StockView(),
         CommandePage(),
         SalleListPage(),
-        StatistiquesView()
       ]);
     } else if (role == 'responsable_modele') {
       pages.addAll([
@@ -66,10 +50,13 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
     return pages;
   }
+
   List<BottomNavigationBarItem> _buildNavItems(String? role) {
     List<BottomNavigationBarItem> items = [
-      BottomNavigationBarItem(icon: Icon(Icons.stacked_line_chart), label: 'Statistique'),
-      BottomNavigationBarItem(icon: Icon(Icons.schedule), label: 'Planification'),
+      BottomNavigationBarItem(
+        icon: Icon(Icons.schedule), 
+        label: 'Planification'
+      ),
     ];
 
     if (role == 'admin') {
@@ -96,12 +83,21 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
     return items;
   }
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<String?>(
       future: _getUserRole(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
+        if (!snapshot.hasData) {
+          return Center(child: CircularProgressIndicator());
+        }
 
         final role = snapshot.data!;
         final pages = _buildPages(role);
@@ -109,7 +105,8 @@ class _AdminHomePageState extends State<AdminHomePage> {
 
         // Ensure selected index is within bounds
         final safeIndex = _selectedIndex < pages.length ? _selectedIndex : 0;
-    return Scaffold(
+
+        return Scaffold(
           body: pages[safeIndex],
           bottomNavigationBar: BottomNavigationBar(
             items: navItems,

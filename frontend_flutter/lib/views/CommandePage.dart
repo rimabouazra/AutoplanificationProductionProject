@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:animate_do/animate_do.dart';
 import 'package:frontend/services/auth_service.dart';
 import 'package:frontend/views/LoginPage.dart';
 import '../providers/modeleProvider.dart';
@@ -8,7 +9,6 @@ import 'package:provider/provider.dart';
 import '../providers/CommandeProvider.dart';
 import '../models/commande.dart';
 import '../models/modele.dart';
-
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -53,17 +53,17 @@ class _CommandePageState extends State<CommandePage> {
   Color getStatusColor(String status) {
     switch (status) {
       case "En attente":
-        return Colors.red;
+        return Colors.red[600]!;
       case "Terminé":
-        return Colors.green;
+        return Colors.green[600]!;
       case "En coupe":
       case "En moulage":
       case "En presse":
       case "En contrôle":
       case "Emballage":
-        return Colors.orange;
+        return Colors.orange[600]!;
       default:
-        return Colors.grey;
+        return Colors.blueGrey[600]!;
     }
   }
 
@@ -74,7 +74,11 @@ class _CommandePageState extends State<CommandePage> {
 
       if (nextEtat == currentEtat) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("La commande est déjà dans son état final")),
+          SnackBar(
+            content: const Text("La commande est déjà dans son état final"),
+            backgroundColor: Colors.redAccent,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
         );
         return;
       }
@@ -84,36 +88,43 @@ class _CommandePageState extends State<CommandePage> {
 
       if (success) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Commande passée à l'état: $nextEtat")),
+          SnackBar(
+            content: Text("Commande passée à l'état: $nextEtat"),
+            backgroundColor: Colors.green,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
         );
-        await Provider.of<CommandeProvider>(context, listen: false)
-            .fetchCommandes();
+        await Provider.of<CommandeProvider>(context, listen: false).fetchCommandes();
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-              content: Text("Erreur lors de la mise à jour de la commande")),
+            content: const Text("Erreur lors de la mise à jour de la commande"),
+            backgroundColor: Colors.redAccent,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
         );
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erreur: ${e.toString()}")),
+        SnackBar(
+          content: Text("Erreur: ${e.toString()}"),
+          backgroundColor: Colors.redAccent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       );
     }
   }
 
   List<Commande> get filteredCommandes {
-    final commandes = Provider
-        .of<CommandeProvider>(context)
-        .commandes;
+    final commandes = Provider.of<CommandeProvider>(context).commandes;
 
     return commandes.where((commande) {
-      final etatCommande = commande.etat.trim().toLowerCase(); // Normalisation
+      final etatCommande = commande.etat.trim().toLowerCase();
       final etatFiltre = selectedFilter.trim().toLowerCase();
 
       final matchesFilter = etatFiltre == 'tous' || etatCommande == etatFiltre;
       final matchesSearch = searchController.text.isEmpty ||
-          commande.client.name.toLowerCase().contains(
-              searchController.text.toLowerCase());
+          commande.client.name.toLowerCase().contains(searchController.text.toLowerCase());
 
       return matchesFilter && matchesSearch;
     }).toList();
@@ -142,23 +153,38 @@ class _CommandePageState extends State<CommandePage> {
       context: context,
       builder: (context) {
         return AlertDialog(
-          title: const Text('Confirmation de suppression'),
-          content:
-          const Text('Voulez-vous vraiment supprimer cette commande  ?'),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          title: const Text(
+            'Confirmation de suppression',
+            style: TextStyle(
+              fontFamily: 'PlayfairDisplay',
+              fontWeight: FontWeight.bold,
+              color: Colors.blueGrey,
+            ),
+          ),
+          content: const Text('Voulez-vous vraiment supprimer cette commande ?'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Annuler'),
+              child: const Text('Annuler', style: TextStyle(color: Colors.blueGrey)),
             ),
             ElevatedButton(
               onPressed: () {
-                Provider.of<CommandeProvider>(context, listen: false)
-                    .deleteCommande(id);
+                Provider.of<CommandeProvider>(context, listen: false).deleteCommande(id);
                 Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: const Text("Commande supprimée avec succès"),
+                    backgroundColor: Colors.green,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                );
               },
-              style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
-              child: const Text('Supprimer',
-                  style: TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[600],
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('Supprimer', style: TextStyle(color: Colors.white)),
             ),
           ],
         );
@@ -216,7 +242,7 @@ class _CommandePageState extends State<CommandePage> {
                     final modeleDetails = modeleProvider.modeleMap[modele.modele];
                     if (modeleDetails != null) {
                       final item = modeleDetails.consommation.firstWhere(
-                            (c) => c.taille == modele.taille,
+                        (c) => c.taille == modele.taille,
                         orElse: () => Consommation(taille: '', quantity: 0),
                       );
                       consommation = item.quantity;
@@ -249,9 +275,7 @@ class _CommandePageState extends State<CommandePage> {
   }
 
   Future<void> editCommande(Commande commande) async {
-    TextEditingController clientController = TextEditingController(
-        text: commande.client.name);
-
+    TextEditingController clientController = TextEditingController(text: commande.client.name);
 
     List<TextEditingController> nomModeleControllers = [];
     List<TextEditingController> tailleControllers = [];
@@ -262,9 +286,7 @@ class _CommandePageState extends State<CommandePage> {
 
     for (var modele in updatedModeles) {
       if (modele.nomModele.isEmpty && modele.modele != null) {
-        print("Recherche du nom pour l'ID du modèle : ${modele.modele}");
-        String? fetchedNom =
-        await Provider.of<CommandeProvider>(context, listen: false)
+        String? fetchedNom = await Provider.of<CommandeProvider>(context, listen: false)
             .getModeleNom(modele.modele!);
         modele.nomModele = fetchedNom ?? "Modèle inconnu";
       }
@@ -279,8 +301,7 @@ class _CommandePageState extends State<CommandePage> {
       nomModeleControllers.add(TextEditingController(text: modele.nomModele));
       tailleControllers.add(TextEditingController(text: modele.taille));
       couleurControllers.add(TextEditingController(text: modele.couleur));
-      quantiteControllers
-          .add(TextEditingController(text: modele.quantite.toString()));
+      quantiteControllers.add(TextEditingController(text: modele.quantite.toString()));
     }
 
     showDialog(
@@ -292,211 +313,245 @@ class _CommandePageState extends State<CommandePage> {
             bool isSavingModeles = false;
 
             return AlertDialog(
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15)),
-              title: const Text('Modifier Commande',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-              content: isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : SingleChildScrollView(
-                child: SizedBox(
-                  width: MediaQuery
-                      .of(context)
-                      .size
-                      .width * 0.7,
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      TextField(
-                        controller: clientController,
-                        decoration: const InputDecoration(
-                          labelText: 'Client',
-                          border: OutlineInputBorder(),
-                        ),
-                        enabled: false,
-                      ),
-                      const SizedBox(height: 15),
-                      ...List.generate(updatedModeles.length, (index) {
-                        return Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: TextField(
-                                    controller:
-                                    nomModeleControllers[index],
-                                    decoration: const InputDecoration(
-                                      labelText: 'Nom du modèle',
-                                      border: OutlineInputBorder(),
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                IconButton(
-                                  icon: const Icon(Icons.delete,
-                                      color: Colors.red),
-                                  onPressed: () async {
-                                    bool confirmDelete = await showDialog(
-                                      context: context,
-                                      builder: (context) =>
-                                          AlertDialog(
-                                            title: const Text(
-                                                'Confirmer la suppression'),
-                                            content: const Text(
-                                                'Êtes-vous sûr de vouloir supprimer ce modèle ?'),
-                                            actions: [
-                                              TextButton(
-                                                onPressed: () =>
-                                                    Navigator.pop(
-                                                        context, false),
-                                                child:
-                                                const Text('Annuler'),
-                                              ),
-                                              TextButton(
-                                                onPressed: () =>
-                                                    Navigator.pop(
-                                                        context, true),
-                                                child: const Text(
-                                                    'Supprimer',
-                                                    style: TextStyle(
-                                                        color:
-                                                        Colors.red)),
-                                              ),
-                                            ],
-                                          ),
-                                    ) ??
-                                        false;
-
-                                    if (confirmDelete) {
-                                      setState(() {
-                                        updatedModeles.removeAt(index);
-                                        nomModeleControllers
-                                            .removeAt(index);
-                                        tailleControllers.removeAt(index);
-                                        couleurControllers
-                                            .removeAt(index);
-                                        quantiteControllers
-                                            .removeAt(index);
-                                      });
-                                    }
-                                  },
-                                )
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            Wrap(
-                              spacing: 10,
-                              runSpacing: 10,
-                              children: [
-                                SizedBox(
-                                  width: 120,
-                                  child: TextField(
-                                    controller: tailleControllers[index],
-                                    decoration: const InputDecoration(
-                                      labelText: 'Taille',
-                                      border: OutlineInputBorder(),
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: 120,
-                                  child: TextField(
-                                    controller: couleurControllers[index],
-                                    decoration: const InputDecoration(
-                                      labelText: 'Couleur',
-                                      border: OutlineInputBorder(),
-                                    ),
-                                  ),
-                                ),
-                                SizedBox(
-                                  width: 120,
-                                  child: TextField(
-                                    controller:
-                                    quantiteControllers[index],
-                                    decoration: const InputDecoration(
-                                      labelText: 'Quantité',
-                                      border: OutlineInputBorder(),
-                                    ),
-                                    keyboardType: TextInputType.number,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 10),
-                            const Divider(thickness: 1, height: 20),
-                          ],
-                        );
-                      }),
-                      Align(
-                        alignment: Alignment.center,
-                        child: TextButton.icon(
-                          onPressed: () {
-                            setState(() {
-                              updatedModeles.add(CommandeModele(
-                                modele: null,
-                                nomModele: "",
-                                taille: "",
-                                couleur: "",
-                                quantite: 0,
-                              ));
-                              nomModeleControllers
-                                  .add(TextEditingController());
-                              tailleControllers
-                                  .add(TextEditingController());
-                              couleurControllers
-                                  .add(TextEditingController());
-                              quantiteControllers
-                                  .add(TextEditingController());
-                            });
-                          },
-                          icon:
-                          const Icon(Icons.add, color: Colors.green),
-                          label: const Text('Ajouter un modèle'),
-                        ),
-                      ),
-                      if (isSavingModeles)
-                        const Center(child: CircularProgressIndicator()),
-                      if (!isSavingModeles)
-                        Align(
-                          alignment: Alignment.center,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                isSavingModeles = true;
-                              });
-
-                              for (int i = 0;
-                              i < updatedModeles.length;
-                              i++) {
-                                updatedModeles[i].nomModele =
-                                    nomModeleControllers[i].text;
-                                updatedModeles[i].taille =
-                                    tailleControllers[i].text;
-                                updatedModeles[i].couleur =
-                                    couleurControllers[i].text;
-                                updatedModeles[i].quantite = int.tryParse(
-                                    quantiteControllers[i].text) ??
-                                    1;
-                              }
-
-                              setState(() {
-                                isSavingModeles = false;
-                              });
-                            },
-                            child: const Text('Enregistrer Modèles'),
-                          ),
-                        ),
-                    ],
-                  ),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              title: const Text(
+                'Modifier Commande',
+                style: TextStyle(
+                  fontFamily: 'PlayfairDisplay',
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blueGrey,
                 ),
               ),
+              content: isLoading
+                  ? const Center(child: CircularProgressIndicator(color: Colors.blueGrey))
+                  : SingleChildScrollView(
+                      child: SizedBox(
+                        width: MediaQuery.of(context).size.width * 0.7,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            TextField(
+                              controller: clientController,
+                              decoration: InputDecoration(
+                                labelText: 'Client',
+                                prefixIcon: const Icon(Icons.person, color: Colors.blueGrey),
+                                filled: true,
+                                fillColor: Colors.white.withOpacity(0.9),
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide.none,
+                                ),
+                              ),
+                              enabled: false,
+                            ),
+                            const SizedBox(height: 15),
+                            ...List.generate(updatedModeles.length, (index) {
+                              return FadeInUp(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Row(
+                                      children: [
+                                        Expanded(
+                                          child: TextField(
+                                            controller: nomModeleControllers[index],
+                                            decoration: InputDecoration(
+                                              labelText: 'Nom du modèle',
+                                              prefixIcon: const Icon(Icons.category, color: Colors.blueGrey),
+                                              filled: true,
+                                              fillColor: Colors.white.withOpacity(0.9),
+                                              border: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                                borderSide: BorderSide.none,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 10),
+                                        ZoomIn(
+                                          child: IconButton(
+                                            icon: const Icon(Icons.delete, color: Colors.red),
+                                            onPressed: () async {
+                                              bool confirmDelete = await showDialog(
+                                                    context: context,
+                                                    builder: (context) => AlertDialog(
+                                                      shape: RoundedRectangleBorder(
+                                                          borderRadius: BorderRadius.circular(20)),
+                                                      title: const Text(
+                                                        'Confirmer la suppression',
+                                                        style: TextStyle(
+                                                            fontFamily: 'PlayfairDisplay',
+                                                            fontWeight: FontWeight.bold,
+                                                            color: Colors.blueGrey),
+                                                      ),
+                                                      content: const Text(
+                                                          'Êtes-vous sûr de vouloir supprimer ce modèle ?'),
+                                                      actions: [
+                                                        TextButton(
+                                                          onPressed: () => Navigator.pop(context, false),
+                                                          child: const Text('Annuler',
+                                                              style: TextStyle(color: Colors.blueGrey)),
+                                                        ),
+                                                        ElevatedButton(
+                                                          onPressed: () => Navigator.pop(context, true),
+                                                          style: ElevatedButton.styleFrom(
+                                                            backgroundColor: Colors.red[600],
+                                                            shape: RoundedRectangleBorder(
+                                                                borderRadius: BorderRadius.circular(12)),
+                                                          ),
+                                                          child: const Text('Supprimer',
+                                                              style: TextStyle(color: Colors.white)),
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ) ??
+                                                  false;
+
+                                              if (confirmDelete) {
+                                                setState(() {
+                                                  updatedModeles.removeAt(index);
+                                                  nomModeleControllers.removeAt(index);
+                                                  tailleControllers.removeAt(index);
+                                                  couleurControllers.removeAt(index);
+                                                  quantiteControllers.removeAt(index);
+                                                });
+                                              }
+                                            },
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    Wrap(
+                                      spacing: 10,
+                                      runSpacing: 10,
+                                      children: [
+                                        SizedBox(
+                                          width: 120,
+                                          child: TextField(
+                                            controller: tailleControllers[index],
+                                            decoration: InputDecoration(
+                                              labelText: 'Taille',
+                                              prefixIcon: const Icon(Icons.straighten, color: Colors.blueGrey),
+                                              filled: true,
+                                              fillColor: Colors.white.withOpacity(0.9),
+                                              border: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                                borderSide: BorderSide.none,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          width: 120,
+                                          child: TextField(
+                                            controller: couleurControllers[index],
+                                            decoration: InputDecoration(
+                                              labelText: 'Couleur',
+                                              prefixIcon: const Icon(Icons.colorize, color: Colors.blueGrey),
+                                              filled: true,
+                                              fillColor: Colors.white.withOpacity(0.9),
+                                              border: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                                borderSide: BorderSide.none,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                        SizedBox(
+                                          width: 120,
+                                          child: TextField(
+                                            controller: quantiteControllers[index],
+                                            decoration: InputDecoration(
+                                              labelText: 'Quantité',
+                                              prefixIcon: const Icon(Icons.numbers, color: Colors.blueGrey),
+                                              filled: true,
+                                              fillColor: Colors.white.withOpacity(0.9),
+                                              border: OutlineInputBorder(
+                                                borderRadius: BorderRadius.circular(12),
+                                                borderSide: BorderSide.none,
+                                              ),
+                                            ),
+                                            keyboardType: TextInputType.number,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                    const SizedBox(height: 10),
+                                    const Divider(thickness: 1, height: 20, color: Colors.blueGrey),
+                                  ],
+                                ),
+                              );
+                            }),
+                            FadeInUp(
+                              child: Align(
+                                alignment: Alignment.center,
+                                child: TextButton.icon(
+                                  onPressed: () {
+                                    setState(() {
+                                      updatedModeles.add(CommandeModele(
+                                        modele: null,
+                                        nomModele: "",
+                                        taille: "",
+                                        couleur: "",
+                                        quantite: 0,
+                                      ));
+                                      nomModeleControllers.add(TextEditingController());
+                                      tailleControllers.add(TextEditingController());
+                                      couleurControllers.add(TextEditingController());
+                                      quantiteControllers.add(TextEditingController());
+                                    });
+                                  },
+                                  icon: const Icon(Icons.add, color: Colors.green),
+                                  label: const Text('Ajouter un modèle', style: TextStyle(color: Colors.blueGrey)),
+                                ),
+                              ),
+                            ),
+                            if (isSavingModeles)
+                              const Center(child: CircularProgressIndicator(color: Colors.blueGrey)),
+                            if (!isSavingModeles)
+                              FadeInUp(
+                                child: Align(
+                                  alignment: Alignment.center,
+                                  child: ElevatedButton(
+                                    onPressed: () {
+                                      setState(() {
+                                        isSavingModeles = true;
+                                      });
+
+                                      for (int i = 0; i < updatedModeles.length; i++) {
+                                        updatedModeles[i].nomModele = nomModeleControllers[i].text;
+                                        updatedModeles[i].taille = tailleControllers[i].text;
+                                        updatedModeles[i].couleur = couleurControllers[i].text;
+                                        updatedModeles[i].quantite =
+                                            int.tryParse(quantiteControllers[i].text) ?? 1;
+                                      }
+
+                                      setState(() {
+                                        isSavingModeles = false;
+                                      });
+                                    },
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blueGrey[800],
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    ),
+                                    child: const Text(
+                                      'Enregistrer Modèles',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text('Annuler',
-                      style: TextStyle(color: Colors.red)),
+                  child: const Text('Annuler', style: TextStyle(color: Colors.blueGrey)),
                 ),
                 ElevatedButton(
                   onPressed: () async {
@@ -506,14 +561,10 @@ class _CommandePageState extends State<CommandePage> {
                       isLoading = true;
                     });
 
-                    // Valider et mettre à jour les modèles
                     for (int i = 0; i < updatedModeles.length; i++) {
                       futures.add(() async {
-                        if (updatedModeles[i].nomModele.isEmpty &&
-                            updatedModeles[i].modele != null) {
-                          String? modeleNom =
-                          await Provider.of<CommandeProvider>(context,
-                              listen: false)
+                        if (updatedModeles[i].nomModele.isEmpty && updatedModeles[i].modele != null) {
+                          String? modeleNom = await Provider.of<CommandeProvider>(context, listen: false)
                               .getModeleNom(updatedModeles[i].modele!);
                           if (modeleNom != null) {
                             updatedModeles[i].nomModele = modeleNom;
@@ -522,12 +573,9 @@ class _CommandePageState extends State<CommandePage> {
                           }
                         }
 
-                        if ((updatedModeles[i].modele == null ||
-                            updatedModeles[i].modele!.isEmpty) &&
+                        if ((updatedModeles[i].modele == null || updatedModeles[i].modele!.isEmpty) &&
                             updatedModeles[i].nomModele.isNotEmpty) {
-                          String? modeleId =
-                          await Provider.of<CommandeProvider>(context,
-                              listen: false)
+                          String? modeleId = await Provider.of<CommandeProvider>(context, listen: false)
                               .getModeleId(updatedModeles[i].nomModele);
                           if (modeleId != null) {
                             updatedModeles[i].modele = modeleId;
@@ -538,8 +586,7 @@ class _CommandePageState extends State<CommandePage> {
 
                         updatedModeles[i].taille = tailleControllers[i].text;
                         updatedModeles[i].couleur = couleurControllers[i].text;
-                        updatedModeles[i].quantite =
-                            int.tryParse(quantiteControllers[i].text) ?? 1;
+                        updatedModeles[i].quantite = int.tryParse(quantiteControllers[i].text) ?? 1;
                       }());
                     }
 
@@ -550,14 +597,16 @@ class _CommandePageState extends State<CommandePage> {
                         isLoading = false;
                       });
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text("Erreur dans les modèles.")),
+                        SnackBar(
+                          content: const Text("Erreur dans les modèles."),
+                          backgroundColor: Colors.redAccent,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
                       );
                       return;
                     }
 
-                    bool success = await Provider.of<CommandeProvider>(context,
-                        listen: false)
+                    bool success = await Provider.of<CommandeProvider>(context, listen: false)
                         .updateCommande(commande.id!, updatedModeles);
 
                     setState(() {
@@ -565,23 +614,33 @@ class _CommandePageState extends State<CommandePage> {
                     });
 
                     if (success) {
-                      print("Commande mise à jour !");
-                      await Provider.of<CommandeProvider>(context,
-                          listen: false)
-                          .fetchCommandes();
-                      Provider.of<CommandeProvider>(context, listen: false)
-                          .notifyListeners();
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: const Text("Commande mise à jour avec succès !"),
+                          backgroundColor: Colors.green,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
+                      );
+                      await Provider.of<CommandeProvider>(context, listen: false).fetchCommandes();
                       Navigator.pop(context);
                     } else {
-                      print("Erreur lors de la mise à jour de la commande.");
                       ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text(
-                                "Erreur lors de la mise à jour de la commande.")),
+                        SnackBar(
+                          content: const Text("Erreur lors de la mise à jour de la commande."),
+                          backgroundColor: Colors.redAccent,
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                        ),
                       );
                     }
                   },
-                  child: const Text('Enregistrer Commande'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.blueGrey[800],
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  ),
+                  child: const Text(
+                    'Enregistrer Commande',
+                    style: TextStyle(color: Colors.white),
+                  ),
                 ),
               ],
             );
@@ -594,73 +653,106 @@ class _CommandePageState extends State<CommandePage> {
   void navigateToAddCommande() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => AddCommandePage()),
+      MaterialPageRoute(builder: (context) => const AddCommandePage()),
     );
   }
 
   void _confirmLogout(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) =>
-          AlertDialog(
-            title: Text("Confirmer la déconnexion"),
-            content: Text("Voulez-vous vraiment vous déconnecter ?"),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: Text("Annuler"),
-              ),
-              TextButton(
-                onPressed: () async {
-                  await AuthService.logout();
-                  Navigator.of(context).pushAndRemoveUntil(
-                    MaterialPageRoute(builder: (context) => LoginPage()),
-                        (Route<dynamic> route) => false,
-                  );
-                },
-                child: Text("Déconnexion", style: TextStyle(color: Colors.red)),
-              ),
-            ],
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          "Confirmer la déconnexion",
+          style: TextStyle(
+            fontFamily: 'PlayfairDisplay',
+            fontWeight: FontWeight.bold,
+            color: Colors.blueGrey,
           ),
+        ),
+        content: const Text(
+          "Voulez-vous vraiment vous déconnecter ?",
+          style: TextStyle(color: Colors.blueGrey),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Annuler', style: TextStyle(color: Colors.blueGrey)),
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              await AuthService.logout();
+              Navigator.of(context).pushAndRemoveUntil(
+                MaterialPageRoute(builder: (context) => LoginPage()),
+                (Route<dynamic> route) => false,
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red[600],
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: const Text('Déconnexion', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFF4F6F7), // Couleur de fond
+      backgroundColor: Colors.blueGrey[50],
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        actions: [
-          IconButton(
-            icon: Icon(Icons.logout),
-            onPressed: () => _confirmLogout(context),
+        backgroundColor: Colors.blueGrey[800],
+        title: FadeInDown(
+          child: const Text(
+            "Gestion des Commandes",
+            style: TextStyle(
+              fontFamily: 'PlayfairDisplay',
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
           ),
-        ],
-      ),
-      body: Row(
-        children: [
-          Expanded(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  buildSearchBar(),
-                  const SizedBox(height: 16),
-                  buildFilters(),
-                  const SizedBox(height: 16),
-                  buildCommandesTable(),
-                ],
-              ),
+        ),
+        centerTitle: true,
+        actions: [
+          FadeInRight(
+            child: IconButton(
+              icon: const Icon(Icons.logout, color: Colors.white),
+              onPressed: () => _confirmLogout(context),
             ),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: navigateToAddCommande,
-        backgroundColor: Color(0xFF1ABC9C), // Couleur d'accent
-        child: const Icon(Icons.add, color: Colors.white),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.blueGrey[50]!, Colors.white],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              FadeInUp(child: buildSearchBar()),
+              const SizedBox(height: 16),
+              FadeInUp(child: buildFilters()),
+              const SizedBox(height: 16),
+              Expanded(child: buildCommandesTable()),
+            ],
+          ),
+        ),
+      ),
+      floatingActionButton: ZoomIn(
+        child: FloatingActionButton(
+          onPressed: navigateToAddCommande,
+          backgroundColor: Colors.blueGrey[800],
+          child: const Icon(Icons.add, color: Colors.white),
+        ),
       ),
     );
   }
@@ -668,8 +760,8 @@ class _CommandePageState extends State<CommandePage> {
   Widget buildSearchBar() {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(25),
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(12),
         boxShadow: const [
           BoxShadow(
             color: Colors.black12,
@@ -682,14 +774,13 @@ class _CommandePageState extends State<CommandePage> {
         controller: searchController,
         decoration: InputDecoration(
           hintText: "Rechercher une commande",
-          hintStyle: TextStyle(color: Color(0xFF7F8C8D)),
-          prefixIcon: Icon(Icons.search, color: Color(0xFF7F8C8D)),
-          border: InputBorder.none,
-          contentPadding: EdgeInsets.symmetric(vertical: 14, horizontal: 16),
-          focusedBorder: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(25),
-            borderSide: BorderSide(color: Color(0xFF1ABC9C)),
+          hintStyle: TextStyle(color: Colors.blueGrey[600]),
+          prefixIcon: Icon(Icons.search, color: Colors.blueGrey[600]),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(12),
+            borderSide: BorderSide.none,
           ),
+          contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 16),
         ),
         onChanged: (value) => setState(() {}),
       ),
@@ -707,17 +798,16 @@ class _CommandePageState extends State<CommandePage> {
             child: ChoiceChip(
               label: Text(filter),
               selected: selectedFilter == filter,
-              selectedColor: Color(0xFF3498DB),
-              // Couleur secondaire
+              selectedColor: Colors.blueGrey[800],
+              backgroundColor: Colors.blueGrey[100],
               onSelected: (bool selected) {
                 setState(() {
                   selectedFilter = filter;
                 });
               },
               labelStyle: TextStyle(
-                  color: selectedFilter == filter
-                      ? Colors.white
-                      : Color(0xFF2C3E50)), // Couleur de texte
+                color: selectedFilter == filter ? Colors.white : Colors.blueGrey[800],
+              ),
             ),
           );
         }).toList(),
@@ -726,34 +816,36 @@ class _CommandePageState extends State<CommandePage> {
   }
 
   Widget buildCommandesTable() {
-    return Expanded(
-      child: ListView(
-        children: filteredCommandes.map((commande) {
-          int totalQuantite =
-          commande.modeles.fold(0, (sum, m) => sum + m.quantite);
+    return ListView(
+      children: filteredCommandes.asMap().entries.map((entry) {
+        final commande = entry.value;
+        int totalQuantite = commande.modeles.fold(0, (sum, m) => sum + m.quantite);
 
-          return Card(
+        return FadeInUp(
+          delay: Duration(milliseconds: entry.key * 100),
+          child: Card(
             elevation: 5,
-            shape:
-            RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
             child: ExpansionTile(
+              tilePadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               title: Text(
                 commande.client.name,
                 style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Color(0xFF2C3E50)),
+                  fontFamily: 'PlayfairDisplay',
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blueGrey,
+                ),
               ),
-              trailing: Row(
-                mainAxisSize: MainAxisSize.min,
+              trailing: Wrap(
+                spacing: 8,
                 children: [
                   Container(
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
                     decoration: BoxDecoration(
                       color: getStatusColor(commande.etat).withOpacity(0.2),
-                      borderRadius: BorderRadius.circular(5),
+                      borderRadius: BorderRadius.circular(8),
                     ),
                     child: Text(
                       commande.etat,
@@ -763,21 +855,23 @@ class _CommandePageState extends State<CommandePage> {
                       ),
                     ),
                   ),
-                  const SizedBox(width: 10),
-                  IconButton(
-                    icon: Icon(Icons.edit,
-                        color: Color(0xFF3498DB)),
-                    onPressed: () => editCommande(commande),
+                  ZoomIn(
+                    child: IconButton(
+                      icon: const Icon(Icons.edit, color: Colors.blue),
+                      onPressed: () => editCommande(commande),
+                    ),
                   ),
-                  IconButton(
-                    icon: Icon(Icons.delete,
-                        color: Color(0xFFE74C3C)),
-                    onPressed: () => deleteCommande(commande.id!),
+                  ZoomIn(
+                    child: IconButton(
+                      icon: const Icon(Icons.delete, color: Colors.red),
+                      onPressed: () => deleteCommande(commande.id!),
+                    ),
                   ),
-                  IconButton(
-                    icon: Icon(Icons.print,
-                        color: Color(0xFF1ABC9C)),
-                    onPressed: () => printCommande(commande),
+                  ZoomIn(
+                    child: IconButton(
+                      icon: const Icon(Icons.print, color: Colors.green),
+                      onPressed: () => printCommande(commande),
+                    ),
                   ),
                 ],
               ),
@@ -790,23 +884,25 @@ class _CommandePageState extends State<CommandePage> {
                       const Text(
                         "Détails de la commande:",
                         style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2C3E50)),
+                          fontFamily: 'PlayfairDisplay',
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blueGrey,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Row(
                         children: [
                           Expanded(
                             child: Text(
-                              " Client: ${commande.client.name}",
-                              style: TextStyle(color: Color(0xFF7F8C8D)),
+                              "Client: ${commande.client.name}",
+                              style: TextStyle(color: Colors.blueGrey[600]),
                             ),
                           ),
                           Expanded(
                             child: Text(
-                              " Conditionnement: ${commande.conditionnement}",
-                              style: TextStyle(color: Color(0xFF7F8C8D)),
+                              "Conditionnement: ${commande.conditionnement}",
+                              style: TextStyle(color: Colors.blueGrey[600]),
                             ),
                           ),
                         ],
@@ -815,49 +911,51 @@ class _CommandePageState extends State<CommandePage> {
                         children: [
                           Expanded(
                             child: Text(
-                                " Salle affectée: ${commande.salleAffectee ??
-                                    'Non assignée'}",
-                                style: TextStyle(
-                                    color: Color(0xFF7F8C8D))),
+                              "Salle affectée: ${commande.salleAffectee ?? 'Non assignée'}",
+                              style: TextStyle(color: Colors.blueGrey[600]),
+                            ),
                           ),
                           Expanded(
                             child: Text(
-                                " Machines affectées: ${commande
-                                    .machinesAffectees?.join(', ') ??
-                                    'Aucune'}",
-                                style: TextStyle(
-                                    color: Color(0xFF7F8C8D))),
+                              "Machines affectées: ${commande.machinesAffectees?.join(', ') ?? 'Aucune'}",
+                              style: TextStyle(color: Colors.blueGrey[600]),
+                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 15),
                       const Text(
-                        " Modèles:",
+                        "Modèles:",
                         style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF2C3E50)),
+                          fontFamily: 'PlayfairDisplay',
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blueGrey,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Card(
                         elevation: 2,
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8)),
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                         child: buildModelesTable(commande),
                       ),
-                      // Replace the button code with this:
                       if (commande.etat.toLowerCase() != "terminé")
                         Padding(
                           padding: const EdgeInsets.only(top: 16.0),
                           child: Align(
                             alignment: Alignment.centerRight,
-                            child: ElevatedButton(
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.green,
+                            child: ZoomIn(
+                              child: ElevatedButton(
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blueGrey[800],
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                ),
+                                onPressed: () => markCommandeAsComplete(commande),
+                                child: const Text(
+                                  "Terminer l'étape",
+                                  style: TextStyle(color: Colors.white),
+                                ),
                               ),
-                              onPressed: () => markCommandeAsComplete(commande),
-                              child: const Text("Terminer l'étape",
-                                  style: TextStyle(color: Colors.white)),
                             ),
                           ),
                         ),
@@ -866,9 +964,9 @@ class _CommandePageState extends State<CommandePage> {
                 ),
               ],
             ),
-          );
-        }).toList(),
-      ),
+          ),
+        );
+      }).toList(),
     );
   }
 
@@ -879,42 +977,40 @@ class _CommandePageState extends State<CommandePage> {
     List<DataColumn> columns = [
       DataColumn(
           label: Text("Modèle",
-              style: TextStyle(color: Color(0xFF2C3E50)))),
+              style: TextStyle(color: Colors.blueGrey[800], fontWeight: FontWeight.bold))),
       DataColumn(
           label: Text("Taille",
-              style: TextStyle(color: Color(0xFF2C3E50)))),
+              style: TextStyle(color: Colors.blueGrey[800], fontWeight: FontWeight.bold))),
       DataColumn(
           label: Text("Couleur",
-              style: TextStyle(color: Color(0xFF2C3E50)))),
+              style: TextStyle(color: Colors.blueGrey[800], fontWeight: FontWeight.bold))),
       DataColumn(
           label: Text("Quantité",
-              style: TextStyle(color: Color(0xFF2C3E50)))),
+              style: TextStyle(color: Colors.blueGrey[800], fontWeight: FontWeight.bold))),
     ];
 
     if (isCoupeState) {
       columns.addAll([
         DataColumn(
             label: Text("Quantité Calculée",
-                style: TextStyle(color: Color(0xFF2C3E50)))),
+                style: TextStyle(color: Colors.blueGrey[800], fontWeight: FontWeight.bold))),
         DataColumn(
             label: Text("Quantité Réelle",
-                style: TextStyle(color: Color(0xFF2C3E50)))),
+                style: TextStyle(color: Colors.blueGrey[800], fontWeight: FontWeight.bold))),
       ]);
     }
 
     return DataTable(
-      headingRowColor: MaterialStateProperty.all(
-          Color(0xFF3498DB).withOpacity(0.1)),
+      headingRowColor: MaterialStateProperty.all(Colors.blueGrey[100]),
       columns: columns,
       rows: commande.modeles.map((commandeModele) {
         final modele = modeleProvider.modeleMap[commandeModele.modele];
         final modeleNom = modele?.nom ?? "Non défini";
 
-        // Calculate consommation for this modele and taille
         double consommation = 0;
         if (modele != null) {
           final consommationItem = modele.consommation.firstWhere(
-                (c) => c.taille == commandeModele.taille,
+            (c) => c.taille == commandeModele.taille,
             orElse: () => Consommation(taille: "", quantity: 0),
           );
           consommation = consommationItem.quantity;
@@ -923,28 +1019,25 @@ class _CommandePageState extends State<CommandePage> {
         double quantiteCalculee = commandeModele.quantite * consommation;
 
         List<DataCell> cells = [
-          DataCell(Text(modeleNom,
-              style: TextStyle(color: Color(0xFF7F8C8D)))),
-          DataCell(Text(commandeModele.taille,
-              style: TextStyle(color: Color(0xFF7F8C8D)))),
-          DataCell(Text(commandeModele.couleur,
-              style: TextStyle(color: Color(0xFF7F8C8D)))),
-          DataCell(Text(commandeModele.quantite.toString(),
-              style: TextStyle(color: Color(0xFF7F8C8D)))),
+          DataCell(Text(modeleNom, style: TextStyle(color: Colors.blueGrey[600]))),
+          DataCell(Text(commandeModele.taille, style: TextStyle(color: Colors.blueGrey[600]))),
+          DataCell(Text(commandeModele.couleur, style: TextStyle(color: Colors.blueGrey[600]))),
+          DataCell(
+              Text(commandeModele.quantite.toString(), style: TextStyle(color: Colors.blueGrey[600]))),
         ];
 
         if (isCoupeState) {
           cells.addAll([
-            DataCell(Text(quantiteCalculee.toStringAsFixed(4),
-                style: TextStyle(color: Color(0xFF7F8C8D)))),
+            DataCell(
+                Text(quantiteCalculee.toStringAsFixed(4), style: TextStyle(color: Colors.blueGrey[600]))),
             DataCell(
               TextField(
-                controller: TextEditingController(
-                    text: commandeModele.quantiteReelle.toString()),
+                controller: TextEditingController(text: commandeModele.quantiteReelle.toString()),
                 keyboardType: TextInputType.number,
                 decoration: InputDecoration(
                   border: InputBorder.none,
                   hintText: 'Saisir quantité',
+                  hintStyle: TextStyle(color: Colors.blueGrey[400]),
                 ),
                 onChanged: (value) async {
                   int newValue = int.tryParse(value) ?? 0;
@@ -956,12 +1049,23 @@ class _CommandePageState extends State<CommandePage> {
                       commandeModele.modele!,
                       newValue,
                     );
-                    print("Quantité réelle mise à jour !");
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: const Text("Quantité réelle mise à jour !"),
+                        backgroundColor: Colors.green,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    );
                   } catch (e) {
-                    print("Erreur lors de la mise à jour : $e");
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text("Erreur lors de la mise à jour : $e"),
+                        backgroundColor: Colors.redAccent,
+                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                      ),
+                    );
                   }
                 },
-
               ),
             ),
           ]);

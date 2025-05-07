@@ -16,22 +16,27 @@ class _HomePageState extends State<HomePage> {
     {
       'image': 'assets/images/BALCONNET.jpg',
       'title': 'Balconnet',
-      'description': 'Elegant support with a natural silhouette.',
+      'description': 'Support élégant avec une silhouette naturelle.',
     },
     {
       'image': 'assets/images/BANDEAU.jpg',
       'title': 'Bandeau',
-      'description': 'Seamless support for a discreet look.',
+      'description': 'Un maintien sans couture pour un look discret.',
     },
     {
       'image': 'assets/images/BIG-SIZES.jpg',
       'title': 'Grandes Tailles',
-      'description': 'Comfort and style for every curve.',
+      'description': 'Confort et style pour chaque courbe.',
     },
     {
       'image': 'assets/images/push-up.jpg',
       'title': 'Push Up',
-      'description': 'Subtle lift with stunning elegance.',
+      'description': 'Un lifting subtil avec une élégance époustouflante.',
+    },
+    {
+      'image': 'assets/images/Eco Friendly.jpg',
+      'title': 'Eco Friendly',
+      'description': 'Un style durable sans compromis.',
     },
 
   ];
@@ -39,16 +44,20 @@ class _HomePageState extends State<HomePage> {
   final List<Map<String, String>> carouselItems = [
     {
       'image': 'assets/images/hero1.jpg',
+      'title': 'Timeless Elegance',
+      'subtitle': 'Découvrez notre dernière collection de lingerie.',
       'title': 'Sustainable StyleSustainable Style',
       'subtitle': 'Eco-conscious designs for a better tomorrow.',
     },
     {
       'image': 'assets/images/hero2.jpg',
       'title': 'Effortless Comfort',
-      'subtitle': 'Crafted for your everyday luxury.',
+      'subtitle': 'Conçu pour votre luxe quotidien.',
     },
     {
       'image': 'assets/images/hero3.jpg',
+      'title': 'Sustainable Style',
+      'subtitle': 'Des conceptions éco-responsables pour un avenir meilleur.',
       'title': 'Timeless Elegance',
       'subtitle': 'Discover our latest lingerie collection.',
     },
@@ -165,7 +174,7 @@ class _HomePageState extends State<HomePage> {
                 padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
               ),
               child: Text(
-                'Join Us',
+                'Rejoignez-nous',
                 style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
               ),
             ),
@@ -281,7 +290,7 @@ class _HomePageState extends State<HomePage> {
         children: [
           FadeInDown(
             child: Text(
-              'Our Collections',
+              'Nos collections',
               style: TextStyle(
                 fontFamily: 'PlayfairDisplay',
                 fontSize: 36,
@@ -336,7 +345,7 @@ class _HomePageState extends State<HomePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    'About Us',
+                    'À propos de nous',
                     style: TextStyle(
                       fontFamily: 'PlayfairDisplay',
                       fontSize: 36,
@@ -346,7 +355,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   SizedBox(height: 20),
                   Text(
-                    "FTE-Epaunova se consacre à la création de lingerie alliant élégance, confort et durabilité. Depuis plus de deux décennies, nous offrons aux femmes des créations qui subliment leur beauté naturelle.",
+                    'FTE-Epaunova se consacre à la création de lingerie alliant élégance, confort et durabilité. Depuis plus de deux décennies, nous offrons aux femmes des créations qui subliment leur beauté naturelle.',
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.blueGrey[700],
@@ -355,7 +364,7 @@ class _HomePageState extends State<HomePage> {
                   ),
                   SizedBox(height: 20),
                   Text(
-                    "Notre mission est de redéfinir la lingerie avec des designs innovants et des matériaux respectueux de l environnement, garantissant que chaque pièce soit aussi agréable à porter qu'elle en a l'air.",
+                    "Notre mission est de redéfinir la lingerie avec des designs innovants et des matériaux respectueux de l'environnement, garantissant que chaque pièce soit aussi belle qu'elle en a l'air.",
                     style: TextStyle(
                       fontSize: 16,
                       color: Colors.blueGrey[700],
@@ -436,7 +445,7 @@ class _HomePageState extends State<HomePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Connect',
+                        'Connecter',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -457,7 +466,7 @@ class _HomePageState extends State<HomePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Stay Updated',
+                        'Restez à jour',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -467,7 +476,7 @@ class _HomePageState extends State<HomePage> {
                       SizedBox(height: 20),
                       TextField(
                         decoration: InputDecoration(
-                          hintText: 'Your Email',
+                          hintText: 'Votre e-mail',
                           hintStyle: TextStyle(color: Colors.white70),
                           filled: true,
                           fillColor: Colors.white.withOpacity(0.1),

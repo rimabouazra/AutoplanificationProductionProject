@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:animate_do/animate_do.dart';
 import 'package:frontend/models/modele.dart';
 import 'package:frontend/views/AjouterModeleAdmin.dart';
 import '../models/machine.dart';
 import '../services/api_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
 class MachinesParSalleView extends StatefulWidget {
   final String salleId;
   const MachinesParSalleView({Key? key, required this.salleId})
@@ -15,10 +17,12 @@ class MachinesParSalleView extends StatefulWidget {
 
 class _MachinesParSalleViewState extends State<MachinesParSalleView> {
   List<dynamic> machines = [];
+
   Future<String?> _getUserRole() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('role');
   }
+
   @override
   void initState() {
     super.initState();
@@ -28,12 +32,18 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
   Future<void> fetchMachinesParSalle() async {
     try {
       var data = await ApiService.fetchMachinesParSalle(widget.salleId);
-      //print("Données reçues de l'API : $data"); // Debug
       setState(() {
         machines = data;
       });
     } catch (e) {
-      print("Erreur lors du chargement des machines : $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Erreur lors du chargement des machines : $e"),
+          backgroundColor: Colors.redAccent,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
     }
   }
 
@@ -46,11 +56,16 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
     try {
       modeles = await ApiService.getModeles();
     } catch (e) {
-      print("Erreur lors du chargement des modèles : $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Erreur lors du chargement des modèles : $e"),
+          backgroundColor: Colors.redAccent,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+      );
     }
-    if (modeles.isEmpty) {
-      print("Aucun modèle disponible !");
-    }
+
     await showDialog(
       context: context,
       builder: (context) {
@@ -58,81 +73,103 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
           builder: (context, setState) {
             return AlertDialog(
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16.0),
-              ),
-              title: Center(
-                child: Text(
+                  borderRadius: BorderRadius.circular(20)),
+              title: FadeInDown(
+                child: const Text(
                   "Ajouter une Machine",
-                  style: TextStyle(fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                    fontFamily: 'PlayfairDisplay',
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueGrey,
+                  ),
                 ),
               ),
               content: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    TextField(
-                      controller: nomController,
-                      decoration: InputDecoration(
-                        labelText: "Nom de la machine",
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8.0),
+                    FadeInUp(
+                      child: TextField(
+                        controller: nomController,
+                        decoration: InputDecoration(
+                          labelText: "Nom de la machine",
+                          prefixIcon: const Icon(Icons.computer,
+                              color: Colors.blueGrey),
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.9),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
                         ),
                       ),
                     ),
-                    SizedBox(height: 10),
-                    DropdownButtonFormField<String>(
-                      value: selectedModele,
-                      hint: Text("Sélectionner un modèle"),
-                      items: modeles.map<DropdownMenuItem<String>>((modele) {
-                        return DropdownMenuItem<String>(
-                          value: modele.id,
-                          child: Text(modele.nom),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          selectedModele = value;
-                          selectedTaille =
-                              null; // Réinitialiser la taille si modèle change
-                        });
-                      },
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8.0),
-                        ),
-                        contentPadding: EdgeInsets.symmetric(horizontal: 10),
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    if (selectedModele != null)
-                      DropdownButtonFormField<String>(
-                        value: selectedTaille,
-                        hint: Text("Sélectionner une taille"),
-                        items: modeles
-                            .firstWhere(
-                              (m) => m.id == selectedModele,
-                              orElse: () => Modele(
-                                  id: '',
-                                  nom: '',
-                                  tailles: [], consommation: []), // Retourne un objet Modele vide si non trouvé
-                            )
-                            .tailles
-                            .map<DropdownMenuItem<String>>((taille) {
+                    const SizedBox(height: 16),
+                    FadeInUp(
+                      child: DropdownButtonFormField<String>(
+                        value: selectedModele,
+                        hint: const Text("Sélectionner un modèle"),
+                        items: modeles.map<DropdownMenuItem<String>>((modele) {
                           return DropdownMenuItem<String>(
-                            value: taille,
-                            child: Text(taille),
+                            value: modele.id,
+                            child: Text(modele.nom),
                           );
                         }).toList(),
                         onChanged: (value) {
                           setState(() {
-                            selectedTaille = value;
+                            selectedModele = value;
+                            selectedTaille = null;
                           });
                         },
                         decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.9),
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.0),
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
                           ),
-                          contentPadding: EdgeInsets.symmetric(horizontal: 10),
+                          prefixIcon: const Icon(Icons.category,
+                              color: Colors.blueGrey),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    if (selectedModele != null)
+                      FadeInUp(
+                        child: DropdownButtonFormField<String>(
+                          value: selectedTaille,
+                          hint: const Text("Sélectionner une taille"),
+                          items: modeles
+                              .firstWhere(
+                                (m) => m.id == selectedModele,
+                                orElse: () => Modele(
+                                    id: '',
+                                    nom: '',
+                                    tailles: [],
+                                    consommation: []),
+                              )
+                              .tailles
+                              .map<DropdownMenuItem<String>>((taille) {
+                            return DropdownMenuItem<String>(
+                              value: taille,
+                              child: Text(taille),
+                            );
+                          }).toList(),
+                          onChanged: (value) {
+                            setState(() {
+                              selectedTaille = value;
+                            });
+                          },
+                          decoration: InputDecoration(
+                            filled: true,
+                            fillColor: Colors.white.withOpacity(0.9),
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              borderSide: BorderSide.none,
+                            ),
+                            prefixIcon: const Icon(Icons.straighten,
+                                color: Colors.blueGrey),
+                          ),
                         ),
                       ),
                   ],
@@ -140,37 +177,65 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
               ),
               actions: [
                 TextButton(
-                  child: Text("Annuler", style: TextStyle(color: Colors.red)),
                   onPressed: () => Navigator.pop(context),
+                  child: const Text("Annuler",
+                      style: TextStyle(color: Colors.blueGrey)),
                 ),
-                ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blue,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8.0),
+                ZoomIn(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueGrey[800],
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
                     ),
-                  ),
-                  child: Text("Ajouter", style: TextStyle(color: Colors.white)),
-                  onPressed: () async {
-                    String nom = nomController.text.trim();
-                    if (nom.isEmpty) {
-                      print("Veuillez remplir le champ du nom.");
-                      return;
-                    }
+                    onPressed: () async {
+                      String nom = nomController.text.trim();
+                      if (nom.isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content:
+                                const Text("Veuillez remplir le champ du nom."),
+                            backgroundColor: Colors.redAccent,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                        );
+                        return;
+                      }
 
-                    try {
-                      await ApiService.addMachine(
-                        nom: nom,
-                        salleId: widget.salleId,
-                        modele: selectedModele,
-                        taille: selectedTaille,
-                      );
-                      Navigator.pop(context);
-                      fetchMachinesParSalle();
-                    } catch (e) {
-                      print("Erreur lors de l'ajout de la machine : $e");
-                    }
-                  },
+                      try {
+                        await ApiService.addMachine(
+                          nom: nom,
+                          salleId: widget.salleId,
+                          modele: selectedModele,
+                          taille: selectedTaille,
+                        );
+                        Navigator.pop(context);
+                        fetchMachinesParSalle();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content:
+                                const Text("Machine ajoutée avec succès !"),
+                            backgroundColor: Colors.green,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(
+                                "Erreur lors de l'ajout de la machine : $e"),
+                            backgroundColor: Colors.redAccent,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                        );
+                      }
+                    },
+                    child: const Text("Ajouter",
+                        style: TextStyle(color: Colors.white)),
+                  ),
                 ),
               ],
             );
@@ -181,35 +246,62 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
   }
 
   Future<void> _confirmDeleteMachine(dynamic machine) async {
-    bool confirm = await showDialog(
+    bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        title: Text("Confirmer la suppression"),
-        content: Text("Voulez-vous vraiment supprimer cette machine ?"),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text(
+          "Confirmer la suppression",
+          style: TextStyle(
+            fontFamily: 'PlayfairDisplay',
+            fontWeight: FontWeight.bold,
+            color: Colors.blueGrey,
+          ),
+        ),
+        content: const Text("Voulez-vous vraiment supprimer cette machine ?"),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text("Annuler", style: TextStyle(color: Colors.redAccent)),
+            child:
+                const Text("Annuler", style: TextStyle(color: Colors.blueGrey)),
           ),
           ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.redAccent),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red[600],
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+            ),
             onPressed: () => Navigator.pop(context, true),
-            child: Text("Supprimer", style: TextStyle(color: Colors.white)),
+            child:
+                const Text("Supprimer", style: TextStyle(color: Colors.white)),
           ),
         ],
       ),
     );
 
-    if (confirm) {
+    if (confirm == true) {
       try {
         await ApiService.deleteMachine(machine["_id"]);
         setState(() {
           machines.removeWhere((m) => m["_id"] == machine["_id"]);
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Text("Machine supprimée avec succès !"),
+            backgroundColor: Colors.green,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
       } catch (e) {
         ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text("Erreur lors de la suppression")));
+          SnackBar(
+            content: Text("Erreur lors de la suppression : $e"),
+            backgroundColor: Colors.redAccent,
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        );
       }
     }
   }
@@ -224,108 +316,181 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
     await showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16.0),
-          ),
-          title: Center(
-            child: Text(
-              "Modifier la Machine",
-              style: TextStyle(fontWeight: FontWeight.bold),
-            ),
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nomController,
-                decoration: InputDecoration(
-                  labelText: "Nom de la machine",
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
+              title: FadeInDown(
+                child: const Text(
+                  "Modifier la Machine",
+                  style: TextStyle(
+                    fontFamily: 'PlayfairDisplay',
+                    fontWeight: FontWeight.bold,
+                    color: Colors.blueGrey,
                   ),
                 ),
               ),
-              SizedBox(height: 10),
-              DropdownButton<String>(
-                value: etat,
-                onChanged: (String? newValue) async {
-                  setState(() {
-                    etat = newValue!;
-                  });
-                  try {
-                    await ApiService.updateMachine(
-                        machine["_id"], nomController.text, etat);
-                    // Mettre à jour l'état localement
-                    setState(() {
-                      machine["etat"] = etat;
-                    });
-                  } catch (e) {
-                    print("Erreur lors de la mise à jour de l'état : $e");
-                  }
-                },
-                items: ["disponible", "occupee", "arretee"].map((String value) {
-                  return DropdownMenuItem<String>(
-                    value: value,
-                    child: Text(value),
-                  );
-                }).toList(),
-              ),
-              if (etat == "occupee")
-                Column(
+              content: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    SizedBox(height: 10),
-                    Text("Modèle associé: $modele"),
-                    Text("Taille: $taille"),
-                  ],
-                ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              child: Text("Annuler", style: TextStyle(color: Colors.red)),
-              onPressed: () => Navigator.pop(context),
-            ),
-            ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(8.0),
-                ),
-              ),
-              child: Text("Enregistrer", style: TextStyle(color: Colors.white)),
-              onPressed: () async {
-                await ApiService.updateMachine(
-                    machine["_id"], nomController.text, etat);
-                setState(() {
-                  machine["etat"] = etat;
-                });
-                Navigator.pop(context);
-                fetchMachinesParSalle();
-              },
-            ),
-            if (etat == "disponible")
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
-                  ),
-                ),
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => AjouterModeleAdmin(
-                        machineId: machine["_id"],
+                    FadeInUp(
+                      child: TextField(
+                        controller: nomController,
+                        decoration: InputDecoration(
+                          labelText: "Nom de la machine",
+                          prefixIcon: const Icon(Icons.computer,
+                              color: Colors.blueGrey),
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.9),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                        ),
                       ),
                     ),
-                  );
-                },
-                child: Text("Ajouter un modèle",
-                    style: TextStyle(color: Colors.white)),
+                    const SizedBox(height: 16),
+                    FadeInUp(
+                      child: DropdownButtonFormField<String>(
+                        value: etat,
+                        onChanged: (String? newValue) async {
+                          setState(() {
+                            etat = newValue!;
+                          });
+                          try {
+                            await ApiService.updateMachine(
+                                machine["_id"], nomController.text, etat);
+                            setState(() {
+                              machine["etat"] = etat;
+                            });
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content:
+                                    const Text("État mis à jour avec succès !"),
+                                backgroundColor: Colors.green,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                content: Text(
+                                    "Erreur lors de la mise à jour de l'état : $e"),
+                                backgroundColor: Colors.redAccent,
+                                shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(12)),
+                              ),
+                            );
+                          }
+                        },
+                        items: ["disponible", "occupee", "arretee"]
+                            .map((String value) {
+                          return DropdownMenuItem<String>(
+                            value: value,
+                            child: Text(value),
+                          );
+                        }).toList(),
+                        decoration: InputDecoration(
+                          filled: true,
+                          fillColor: Colors.white.withOpacity(0.9),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            borderSide: BorderSide.none,
+                          ),
+                          prefixIcon: const Icon(Icons.settings,
+                              color: Colors.blueGrey),
+                        ),
+                      ),
+                    ),
+                    if (etat == "occupee")
+                      FadeInUp(
+                        child: Column(
+                          children: [
+                            const SizedBox(height: 16),
+                            Text("Modèle associé: $modele",
+                                style: TextStyle(color: Colors.blueGrey[600])),
+                            Text("Taille: $taille",
+                                style: TextStyle(color: Colors.blueGrey[600])),
+                          ],
+                        ),
+                      ),
+                  ],
+                ),
               ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text("Annuler",
+                      style: TextStyle(color: Colors.blueGrey)),
+                ),
+                ZoomIn(
+                  child: ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blueGrey[800],
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                    ),
+                    onPressed: () async {
+                      try {
+                        await ApiService.updateMachine(
+                            machine["_id"], nomController.text, etat);
+                        setState(() {
+                          machine["nom"] = nomController.text;
+                          machine["etat"] = etat;
+                        });
+                        Navigator.pop(context);
+                        fetchMachinesParSalle();
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content:
+                                const Text("Machine mise à jour avec succès !"),
+                            backgroundColor: Colors.green,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                        );
+                      } catch (e) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text("Erreur lors de la mise à jour : $e"),
+                            backgroundColor: Colors.redAccent,
+                            shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                          ),
+                        );
+                      }
+                    },
+                    child: const Text("Enregistrer",
+                        style: TextStyle(color: Colors.white)),
+                  ),
+                ),
+                if (etat == "disponible")
+                  ZoomIn(
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.green[600],
+                        shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12)),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                AjouterModeleAdmin(machineId: machine["_id"]),
+                          ),
+                        );
+                      },
+                      child: const Text("Ajouter un modèle",
+                          style: TextStyle(color: Colors.white)),
+                    ),
+                  ),
+              ],
+            );
+          },
         );
       },
     );
@@ -333,48 +498,77 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
 
   @override
   Widget build(BuildContext context) {
-    
-   return FutureBuilder<String?>(
+    return FutureBuilder<String?>(
       future: _getUserRole(),
       builder: (context, snapshot) {
-        if (!snapshot.hasData) return Center(child: CircularProgressIndicator());
-        
+        if (!snapshot.hasData) {
+          return const Center(
+              child: CircularProgressIndicator(color: Colors.blueGrey));
+        }
+
         final role = snapshot.data!;
         final isAdminOrManager = role == 'admin' || role == 'manager';
         final canEditMachine = isAdminOrManager || role == 'responsable_modele';
 
         return Scaffold(
+          backgroundColor: Colors.blueGrey[50],
           appBar: AppBar(
-            title: Text("Machines par Salle", style: TextStyle(fontWeight: FontWeight.bold)),
-            centerTitle: true,
-            backgroundColor: Color.fromARGB(255, 163, 228, 215),
-            elevation: 4,
-            iconTheme: IconThemeData(color: Colors.white),
-          ),
-          body: machines.isEmpty
-              ? Center(child: CircularProgressIndicator())
-              : Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: GridView.builder(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 3,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 1.0,
-                    ),
-                    itemCount: machines.length,
-                    itemBuilder: (context, index) {
-                      var machine = machines[index];
-                      return _buildMachineCard(machine, canEditMachine, isAdminOrManager);
-                    },
-                  ),
+            backgroundColor: Colors.blueGrey[800],
+            title: FadeInDown(
+              child: const Text(
+                "Machines par Salle",
+                style: TextStyle(
+                  fontFamily: 'PlayfairDisplay',
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
                 ),
+              ),
+            ),
+            centerTitle: true,
+            elevation: 0,
+            iconTheme: const IconThemeData(color: Colors.white),
+          ),
+          body: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.blueGrey[50]!, Colors.white],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+            child: machines.isEmpty
+                ? const Center(
+                    child: CircularProgressIndicator(color: Colors.blueGrey))
+                : Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: GridView.builder(
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount:
+                            MediaQuery.of(context).size.width > 600 ? 3 : 2,
+                        crossAxisSpacing: 4,
+                        mainAxisSpacing: 4,
+                        childAspectRatio: 1.0,
+                      ),
+                      itemCount: machines.length,
+                      itemBuilder: (context, index) {
+                        var machine = machines[index];
+                        return FadeInUp(
+                          delay: Duration(milliseconds: index * 100),
+                          child: _buildMachineCard(
+                              machine, canEditMachine, isAdminOrManager),
+                        );
+                      },
+                    ),
+                  ),
+          ),
           floatingActionButton: isAdminOrManager
-              ? FloatingActionButton(
-                  onPressed: _showAddMachineDialog,
-                  backgroundColor: Color(0xFF1ABC9C),
-                  child: Icon(Icons.add, color: Colors.white),
-                  tooltip: "Ajouter une machine",
+              ? ZoomIn(
+                  child: FloatingActionButton(
+                    onPressed: _showAddMachineDialog,
+                    backgroundColor: Colors.blueGrey[800],
+                    tooltip: "Ajouter une machine",
+                    child: const Icon(Icons.add, color: Colors.white),
+                  ),
                 )
               : null,
         );
@@ -384,44 +578,62 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
 
   Widget _buildMachineCard(dynamic machine, bool canEdit, bool canDelete) {
     return Card(
-      elevation: 6,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 3,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      margin: EdgeInsets.all(4), // Réduire la marge
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(12),
         onTap: canEdit ? () => _showEditMachineDialog(machine) : null,
         child: Padding(
-          padding: const EdgeInsets.all(12.0),
+          padding: const EdgeInsets.all(8.0),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Icon(
                 Icons.computer,
-                size: 40,
+                size: 36,
                 color: Color(int.parse(Machine.getEtatColor(machine["etat"]))),
               ),
-              SizedBox(height: 8),
+              const SizedBox(height: 4),
               Text(
                 machine["nom"],
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blueGrey,
+                ),
                 textAlign: TextAlign.center,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
               ),
-              SizedBox(height: 8),
-              if (canEdit || canDelete)
+              const SizedBox(height: 4),
+              Text(
+                "État: ${machine["etat"]}",
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Colors.blueGrey[600],
+                ),
+              ),
+              if (canEdit || canDelete) ...[
+                const SizedBox(height: 4),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     if (canEdit)
                       IconButton(
-                        icon: Icon(Icons.edit, color: Colors.blueAccent),
+                        iconSize: 20,
+                        icon: const Icon(Icons.edit, color: Colors.blue),
                         onPressed: () => _showEditMachineDialog(machine),
                       ),
                     if (canDelete)
                       IconButton(
-                        icon: Icon(Icons.delete, color: Colors.redAccent),
+                        iconSize: 20,
+                        icon: const Icon(Icons.delete, color: Colors.red),
                         onPressed: () => _confirmDeleteMachine(machine),
                       ),
                   ],
                 ),
+              ],
             ],
           ),
         ),
