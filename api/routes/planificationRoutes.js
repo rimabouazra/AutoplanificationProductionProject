@@ -13,6 +13,6 @@ router.post('/mettre-a-jour-machines', planificationController.mettreAJourMachin
 router.post('/confirm', planificationController.confirmPlanification);
 
 router.get("/:id", planificationController.getPlanificationById);
-
+router.get('/active/:machineId', planificationController.checkActivePlanification);
 
 module.exports = router;

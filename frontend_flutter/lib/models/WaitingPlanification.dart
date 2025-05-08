@@ -9,6 +9,7 @@ class WaitingPlanification {
   final String couleur;
   final double quantite;
   final DateTime createdAt;
+  final int order;
 
   WaitingPlanification({
     required this.id,
@@ -18,6 +19,7 @@ class WaitingPlanification {
     required this.couleur,
     required this.quantite,
     required this.createdAt,
+    this.order = 0,
   });
 
   factory WaitingPlanification.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,20 @@ class WaitingPlanification {
       couleur: json['couleur'],
       quantite: (json['quantite'] as num).toDouble(),
       createdAt: DateTime.parse(json['createdAt']),
+      order: json['order'] ?? 0,
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      '_id': id,
+      'commande': commande.toJson(),
+      'modele': modele.toJson(),
+      'taille': taille,
+      'couleur': couleur,
+      'quantite': quantite,
+      'createdAt': createdAt.toIso8601String(),
+      'order': order,
+    };
   }
 }

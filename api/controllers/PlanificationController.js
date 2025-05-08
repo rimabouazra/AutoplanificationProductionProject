@@ -4,6 +4,30 @@ const Salle = require("../models/Salle");
 const Machine = require("../models/Machine");
 const WaitingPlanification = require("../models/WaitingPlanification");
 
+exports.checkActivePlanification = async (req, res) => {
+  try {
+    const { machineId } = req.params;
+
+    const now = new Date();
+    const activePlanification = await Planification.findOne({
+      machines: machineId,
+      statut: { $ne: "terminée" },
+      debutPrevue: { $lte: now },
+      finPrevue: { $gt: now },
+    });
+
+    res.status(200).json({
+      hasActivePlanification: !!activePlanification,
+    });
+  } catch (error) {
+    console.error("Erreur lors de la vérification de la planification :", error);
+    res.status(500).json({
+      message: "Erreur lors de la vérification",
+      error: error.message,
+    });
+  }
+};
+
 exports.mettreAJourCommandesEnCours = async (req, res) => {
   try {
     const now = new Date();
@@ -229,7 +253,7 @@ exports.autoPlanifierCommande = async (req, res) => {
 exports.processWaitingList = async () => {
   try {
     const waitingPlans = await WaitingPlanification.find()
-      .sort({ createdAt: 1 })
+      .sort({ order: 1, createdAt: 1 }) // Sort by order first, then createdAt
       .populate('commande')
       .populate('modele');
 
@@ -456,6 +480,7 @@ exports.getWaitingPlanifications = async (req, res) => {
     const { commandeId } = req.query;
     const query = commandeId ? { commande: commandeId } : {};
     const waitingPlans = await WaitingPlanification.find(query)
+      .sort({ order: 1, createdAt: 1 }) // Sort by order and createdAt
       .populate('commande')
       .populate('modele');
     res.status(200).json(waitingPlans);
@@ -521,6 +546,31 @@ exports.getPlanificationById = async (req, res) => {
     res.status(200).json(planification);
   } catch (error) {
     console.error("Erreur lors de la récupération de la planification :", error);
+    res.status(500).json({ message: "Erreur serveur", error: error.message });
+  }
+};
+
+exports.reorderWaitingPlanifications = async (req, res) => {
+  try {
+    const { orderedIds } = req.body;
+
+    if (!orderedIds || !Array.isArray(orderedIds)) {
+      return res.status(400).json({ message: "orderedIds must be an array" });
+    }
+
+    // Update order for each WaitingPlanification
+    const updates = orderedIds.map((id, index) =>
+      WaitingPlanification.updateOne(
+        { _id: id },
+        { $set: { order: index } }
+      )
+    );
+
+    await Promise.all(updates);
+
+    res.status(200).json({ message: "Waiting planifications reordered successfully" });
+  } catch (error) {
+    console.error("Erreur lors du réordonnancement des planifications en attente :", error);
     res.status(500).json({ message: "Erreur serveur", error: error.message });
   }
 };

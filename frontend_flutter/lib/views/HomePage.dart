@@ -34,7 +34,7 @@ class _HomePageState extends State<HomePage> {
       'description': 'Un lifting subtil avec une élégance époustouflante.',
     },
     {
-      'image': 'assets/images/Eco Friendly.jpg',
+      'image': 'assets/images/ECO-FRIENDLY-BRA-CUP.jpg',
       'title': 'Eco Friendly',
       'description': 'Un style durable sans compromis.',
     },
@@ -138,49 +138,50 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildSliverAppBar(BuildContext context) {
-    return SliverAppBar(
-      expandedHeight: 80,
-      floating: true,
-      pinned: true,
-      backgroundColor: Colors.white.withOpacity(0.95),
-      elevation: 0,
-      title: FadeInDown(
-        child: Text(
-          'FTE-Epaunova',
-          style: TextStyle(
-            fontFamily: 'PlayfairDisplay',
-            fontSize: 28,
-            fontWeight: FontWeight.w700,
-            color: Colors.blueGrey[900],
-          ),
-        ),
-      ),
-      actions: [
-        _buildNavButton('Contact', Icons.email, () {}),
-        _buildNavButton('Login', Icons.login, () {
-          Navigator.push(context, MaterialPageRoute(builder: (_) => LoginPage()));
-        }),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          child: FadeInRight(
-            child: ElevatedButton(
-              onPressed: () {
-                Navigator.push(context, MaterialPageRoute(builder: (_) => RegisterPage()));
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueGrey[800],
-                foregroundColor: Colors.white,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              ),
-              child: Text(
-                'Rejoignez-nous',
-                style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-              ),
+    return Expanded(
+      child: SliverAppBar(
+        expandedHeight: 80,
+        floating: true,
+        pinned: true,
+        backgroundColor: Colors.white.withOpacity(0.95),
+        elevation: 0,
+        title: FadeInDown(
+          child: Text(
+            'FTE-Epaunova',
+            style: TextStyle(
+              fontFamily: 'PlayfairDisplay',
+              fontSize: 28,
+              fontWeight: FontWeight.w700,
+              color: Colors.blueGrey[900],
             ),
           ),
         ),
-      ],
+        actions: [
+          _buildNavButton('Login', Icons.login, () {
+            Navigator.push(context, MaterialPageRoute(builder: (_) => LoginPage()));
+          }),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: FadeInRight(
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => RegisterPage()));
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueGrey[800],
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                  padding: EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                ),
+                child: Text(
+                  'Rejoignez-nous',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -231,44 +232,50 @@ class _HomePageState extends State<HomePage> {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      FadeInUp(
-                        child: Text(
-                          item['title']!,
-                          style: TextStyle(
-                            fontFamily: 'PlayfairDisplay',
-                            fontSize: 48,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            shadows: [Shadow(blurRadius: 10, color: Colors.black45)],
+                      Flexible(
+                        child: FadeInUp(
+                          child: Text(
+                            item['title']!,
+                            style: TextStyle(
+                              fontFamily: 'PlayfairDisplay',
+                              fontSize: 48,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                              shadows: [Shadow(blurRadius: 10, color: Colors.black45)],
+                            ),
                           ),
                         ),
                       ),
                       SizedBox(height: 16),
-                      FadeInUp(
-                        delay: Duration(milliseconds: 200),
-                        child: Text(
-                          item['subtitle']!,
-                          style: TextStyle(
-                            fontSize: 20,
-                            color: Colors.white70,
-                            fontWeight: FontWeight.w400,
+                      Flexible(
+                        child: FadeInUp(
+                          delay: Duration(milliseconds: 200),
+                          child: Text(
+                            item['subtitle']!,
+                            style: TextStyle(
+                              fontSize: 20,
+                              color: Colors.white70,
+                              fontWeight: FontWeight.w400,
+                            ),
                           ),
                         ),
                       ),
                       SizedBox(height: 24),
-                      FadeInUp(
-                        delay: Duration(milliseconds: 400),
-                        child: ElevatedButton(
-                          onPressed: () {},
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.blueGrey[900],
-                            padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
-                          ),
-                          child: Text(
-                            'Shop Now',
-                            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                      Flexible(
+                        child: FadeInUp(
+                          delay: Duration(milliseconds: 400),
+                          child: ElevatedButton(
+                            onPressed: () {},
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.blueGrey[900],
+                              padding: EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
+                            ),
+                            child: Text(
+                              'Shop Now',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                            ),
                           ),
                         ),
                       ),

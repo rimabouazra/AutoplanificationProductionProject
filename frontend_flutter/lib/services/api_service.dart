@@ -134,6 +134,13 @@ class ApiService {
 
   static Future<void> updateMachine(String id, String nom, String etat) async {
     final token = await AuthService.getToken();
+    if (etat != "occupee") {
+      final hasPlanification = await hasActivePlanification(id);
+      if (hasPlanification) {
+        throw Exception(
+            "Cette machine est occupée dans une planification active.");
+      }
+    }
     await http.put(
       Uri.parse("$baseUrl/machines/$id"),
       headers: {
@@ -857,6 +864,38 @@ static Future<void> deleteModele(String id) async {
       return jsonData.map((json) => WaitingPlanification.fromJson(json)).toList();
     } else {
       throw Exception("Erreur lors de la récupération des planifications en attente");
+    }
+  }
+  static Future<bool> hasActivePlanification(String machineId) async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/planifications/active/$machineId'),
+        headers: {"Content-Type": "application/json"},
+      );
+
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        return data['hasActivePlanification'] ?? false;
+      } else {
+        throw Exception("Erreur lors de la vérification des planifications");
+      }
+    } catch (e) {
+      print("Erreur lors de la vérification des planifications: $e");
+      throw Exception("Erreur de connexion");
+    }
+  }
+  static Future<void> updateWaitingPlanificationOrder(List<String> order) async {
+    final token = await AuthService.getToken();
+    final response = await http.put(
+      Uri.parse('$baseUrl/planifications/waiting/order'),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({"order": order}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception("Erreur lors de la mise à jour de l'ordre des planifications en attente");
     }
   }
 }

@@ -41,7 +41,7 @@ class _PlanificationConfirmationDialogState
   List<List<String>> _selectedMachinesForPlanifications = [];
   List<DateTime> _startDates = [];
   List<DateTime> _endDates = [];
-
+//TO DO: initialiser les donnees de la planification
   @override
   void initState() {
     super.initState();

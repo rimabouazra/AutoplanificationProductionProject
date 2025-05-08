@@ -9,7 +9,6 @@ import '../models/planification.dart';
 import '../providers/PlanificationProvider .dart';
 import '../services/api_service.dart';
 
-// Widget principal pour la vue des planifications
 class PlanificationView extends StatefulWidget {
   @override
   _PlanificationViewState createState() => _PlanificationViewState();
@@ -42,7 +41,6 @@ class _PlanificationViewState extends State<PlanificationView> {
     _fetchWaitingPlanifications();
     // Synchronisation des contrôleurs de défilement
     _headerHorizontalScrollController.addListener(_syncHeaderScroll);
-    _contentHorizontalScrollController.addListener(_syncContentScroll);
     // Initialiser la plage de dates après le premier rendu
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_isDateRangeInitialized && provider.planifications.isNotEmpty) {
@@ -61,7 +59,6 @@ class _PlanificationViewState extends State<PlanificationView> {
     super.dispose();
   }
 
-  // Synchroniser le défilement de l'en-tête
   void _syncHeaderScroll() {
     if (_isSyncingContent) return;
     _isSyncingHeader = true;
@@ -77,7 +74,6 @@ class _PlanificationViewState extends State<PlanificationView> {
     }
   }
 
-  // Synchroniser le défilement du contenu
   void _syncContentScroll() {
     if (_isSyncingHeader) return;
     _isSyncingContent = true;
@@ -92,7 +88,6 @@ class _PlanificationViewState extends State<PlanificationView> {
       _isSyncingContent = false;
     }
   }
-
   // Récupérer les planifications en attente
   Future<void> _fetchWaitingPlanifications() async {
     try {
@@ -102,6 +97,21 @@ class _PlanificationViewState extends State<PlanificationView> {
       });
     } catch (e) {
       print("Erreur lors de la récupération des planifications en attente: $e");
+    }
+  }
+
+  // Mettre à jour l'ordre des planifications en attente
+  Future<void> _updateWaitingPlanificationOrder() async {
+    try {
+      final order = _waitingPlanifications.map((wp) => wp.id).toList();
+      await ApiService.updateWaitingPlanificationOrder(order);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Ordre des planifications mis à jour')),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erreur lors de la mise à jour de l\'ordre')),
+      );
     }
   }
 
@@ -124,11 +134,22 @@ class _PlanificationViewState extends State<PlanificationView> {
               style: TextStyle(color: Colors.grey[600]),
             ),
           )
-              : ListView.builder(
-            itemCount: _waitingPlanifications.length,
-            itemBuilder: (context, index) {
-              final waitingPlan = _waitingPlanifications[index];
+              : ReorderableListView(
+            onReorder: (oldIndex, newIndex) {
+              setState(() {
+                if (newIndex > oldIndex) {
+                  newIndex -= 1;
+                }
+                final item = _waitingPlanifications.removeAt(oldIndex);
+                _waitingPlanifications.insert(newIndex, item);
+              });
+              _updateWaitingPlanificationOrder();
+            },
+            children: _waitingPlanifications.asMap().entries.map((entry) {
+              final index = entry.key;
+              final waitingPlan = entry.value;
               return FadeInUp(
+                key: ValueKey(waitingPlan.id), // Unique key for reordering
                 duration: Duration(milliseconds: 300 + index * 100),
                 child: Card(
                   margin: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
@@ -175,7 +196,7 @@ class _PlanificationViewState extends State<PlanificationView> {
                   ),
                 ),
               );
-            },
+            }).toList(),
           ),
         ),
         actions: [
@@ -292,10 +313,10 @@ class _PlanificationViewState extends State<PlanificationView> {
           final filteredPlans = _filterPlanifications(provider.planifications);
 
           return Column(
-            children: [
+              children: [
               _buildFilterBar(context, provider),
-              Flexible(child: Expanded(child: _buildGanttChart(filteredPlans))),
-            ],
+           Flexible(child: Expanded(child: _buildGanttChart(filteredPlans))),
+          ],
           );
         },
       ),
@@ -567,6 +588,7 @@ class _PlanificationViewState extends State<PlanificationView> {
             thumbVisibility: true,
             child: SingleChildScrollView(
               controller: _headerHorizontalScrollController,
+              primary: false,
               scrollDirection: Axis.horizontal,
               child: Container(
                 width: totalWidth,
@@ -604,43 +626,41 @@ class _PlanificationViewState extends State<PlanificationView> {
         Container(height: 1, color: Colors.grey.shade300),
 
         // Contenu
-        Flexible(
-          child: Expanded(
-            child: Scrollbar(
+        Expanded(
+          child: Scrollbar(
+            controller: _verticalScrollController,
+            thumbVisibility: true,
+            child: ListView.builder(
               controller: _verticalScrollController,
-              thumbVisibility: true,
-              child: ListView.builder(
-                controller: _verticalScrollController,
-                itemCount: planifications.length + _waitingPlanifications.length,
-                itemBuilder: (context, index) {
-                  if (index < planifications.length) {
-                    // Planifications actives
-                    final plan = planifications[index];
-                    return FadeInUp(
-                      duration: Duration(milliseconds: 300 + index * 100),
-                      child: _buildGanttRow(
-                        plan: plan,
-                        timeSlots: timeSlots,
-                        timeSlotWidth: timeSlotWidth,
-                        infoColumnWidth: infoColumnWidth,
-                        totalContentWidth: totalContentWidth,
-                      ),
-                    );
-                  } else {
-                    // Planifications en attente
-                    final waitingPlan = _waitingPlanifications[index - planifications.length];
-                    return FadeInUp(
-                      duration: Duration(milliseconds: 300 + index * 100),
-                      child: _buildWaitingGanttRow(
-                        waitingPlan: waitingPlan,
-                        timeSlotWidth: timeSlotWidth,
-                        infoColumnWidth: infoColumnWidth,
-                        totalContentWidth: totalContentWidth,
-                      ),
-                    );
-                  }
-                },
-              ),
+              itemCount: planifications.length + _waitingPlanifications.length,
+              itemBuilder: (context, index) {
+                if (index < planifications.length) {
+                  // Planifications actives
+                  final plan = planifications[index];
+                  return FadeInUp(
+                    duration: Duration(milliseconds: 300 + index * 100),
+                    child: _buildGanttRow(
+                      plan: plan,
+                      timeSlots: timeSlots,
+                      timeSlotWidth: timeSlotWidth,
+                      infoColumnWidth: infoColumnWidth,
+                      totalContentWidth: totalContentWidth,
+                    ),
+                  );
+                } else {
+                  // Planifications en attente
+                  final waitingPlan = _waitingPlanifications[index - planifications.length];
+                  return FadeInUp(
+                    duration: Duration(milliseconds: 300 + index * 100),
+                    child: _buildWaitingGanttRow(
+                      waitingPlan: waitingPlan,
+                      timeSlotWidth: timeSlotWidth,
+                      infoColumnWidth: infoColumnWidth,
+                      totalContentWidth: totalContentWidth,
+                    ),
+                  );
+                }
+              },
             ),
           ),
         ),
@@ -692,7 +712,7 @@ class _PlanificationViewState extends State<PlanificationView> {
                     child: Text(
                       plan.commandes.isNotEmpty ? plan.commandes.first.client.name : 'Aucun client',
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                      overflow: TextOverflow.ellipsis,
+                      overflow: TextOverflow.fade,
                       maxLines: 1,
                     ),
                   ),
@@ -701,7 +721,7 @@ class _PlanificationViewState extends State<PlanificationView> {
                     child: Text(
                       plan.machines.isNotEmpty ? plan.machines.first.nom : 'Aucune machine',
                       style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-                      overflow: TextOverflow.ellipsis,
+                      overflow: TextOverflow.fade,
                       maxLines: 1,
                     ),
                   ),
@@ -709,7 +729,7 @@ class _PlanificationViewState extends State<PlanificationView> {
                     child: Text(
                       'Salle: ${plan.machines.isNotEmpty ? plan.machines.first.salle.nom : 'N/A'}',
                       style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-                      overflow: TextOverflow.ellipsis,
+                      overflow: TextOverflow.fade,
                       maxLines: 1,
                     ),
                   ),
@@ -724,6 +744,7 @@ class _PlanificationViewState extends State<PlanificationView> {
           Expanded(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
+              primary: false,
               controller: _contentHorizontalScrollController,
               child: SizedBox(
                 width: totalContentWidth,
@@ -749,8 +770,8 @@ class _PlanificationViewState extends State<PlanificationView> {
 Client: ${plan.commandes.isNotEmpty ? plan.commandes.first.client.name : 'N/A'}
 Machine: ${plan.machines.isNotEmpty ? plan.machines.first.nom : 'N/A'}
 Salle: ${plan.machines.isNotEmpty ? plan.machines.first.salle.nom : 'N/A'}
-Début: ${_formatTime(plan.debutPrevue)}
-Fin: ${_formatTime(plan.finPrevue)}
+Début: ${_formatDate(plan.debutPrevue)} à ${_formatTime(plan.debutPrevue)}
+Fin:${_formatDate(plan.finPrevue)} à  ${_formatTime(plan.finPrevue)}
 Statut: ${plan.statut}
 ''',
                         child: Container(
@@ -781,7 +802,7 @@ Statut: ${plan.statut}
                                     color: Colors.white,
                                     fontSize: 10,
                                   ),
-                                  overflow: TextOverflow.ellipsis,
+                                  overflow: TextOverflow.fade,
                                   maxLines: 1,
                                 ),
                                 Text(
@@ -831,7 +852,7 @@ Statut: ${plan.statut}
                     child: Text(
                       waitingPlan.commande.client.name,
                       style: TextStyle(fontWeight: FontWeight.bold, fontSize: 12),
-                      overflow: TextOverflow.ellipsis,
+                      overflow: TextOverflow.fade,
                       maxLines: 1,
                     ),
                   ),
@@ -840,7 +861,7 @@ Statut: ${plan.statut}
                     child: Text(
                       'Modèle: ${waitingPlan.modele.nom}',
                       style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-                      overflow: TextOverflow.ellipsis,
+                      overflow: TextOverflow.fade,
                       maxLines: 1,
                     ),
                   ),
@@ -848,7 +869,8 @@ Statut: ${plan.statut}
                     child: Text(
                       'Taille: ${waitingPlan.taille}',
                       style: TextStyle(fontSize: 10, color: Colors.grey[600]),
-                      overflow: TextOverflow.ellipsis,
+                      overflow: TextOverflow.fade
+                      ,
                       maxLines: 1,
                     ),
                   ),
@@ -863,6 +885,8 @@ Statut: ${plan.statut}
           Expanded(
             child: SingleChildScrollView(
               scrollDirection: Axis.horizontal,
+              primary: false,  // Important to prevent conflicts
+
               controller: _contentHorizontalScrollController,
               child: SizedBox(
                 width: totalContentWidth,
@@ -890,7 +914,7 @@ Modèle: ${waitingPlan.modele.nom}
 Taille: ${waitingPlan.taille}
 Couleur: ${waitingPlan.couleur}
 Quantité: ${waitingPlan.quantite}
-Ajouté le: ${DateFormat('dd/MM/yyyy à HH:mm').format(waitingPlan.createdAt)}
+Ajouté le: ${DateFormat('dd/MM/yyyy HH:mm').format(waitingPlan.createdAt)}
 Statut: en attente
 ''',
                         child: Container(
@@ -949,7 +973,9 @@ Statut: en attente
   String _formatTime(DateTime? date) {
     return date != null ? DateFormat('HH:mm').format(date) : '--:--';
   }
-
+  String _formatDate(DateTime? date) {
+    return date != null ? DateFormat('dd/MM/ yyyy').format(date) : '--/--/----';
+  }
   // Badge de statut
   Widget _buildStatusBadge(String statut) {
     return Container(
