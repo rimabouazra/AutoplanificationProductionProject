@@ -45,7 +45,39 @@ class _PlanificationViewState extends State<PlanificationView> {
   void dispose() {
     super.dispose();
   }
-
+  void _showStockAlert(BuildContext context) {
+  showDialog(
+    context: context,
+    builder: (context) => AlertDialog(
+      title: Text("Stock Insuffisant"),
+      content: Text(
+          "Certaines matières premières sont en quantité insuffisante. "
+          "Les commandes concernées ont été mises en attente."),
+      actions: [
+        TextButton(
+          onPressed: () => Navigator.pop(context),
+          child: Text("OK"),
+        ),
+      ],
+    ),
+  );
+}
+  void _showErrorSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.red,
+      ),
+    );
+  }
+    void _showSuccessSnackbar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(message),
+        backgroundColor: Colors.green,
+      ),
+    );
+  }
   // Récupérer les planifications en attente
   Future<void> _fetchWaitingPlanifications() async {
     try {

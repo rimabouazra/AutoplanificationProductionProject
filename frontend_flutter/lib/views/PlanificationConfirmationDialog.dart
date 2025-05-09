@@ -108,10 +108,58 @@ class _PlanificationConfirmationDialogState
       return 0;
     }
   }
-
+  bool _checkStockAvailability() {
+  for (var plan in widget.planifications) {
+    if (plan.statut == "waiting_resources") continue;
+    
+    for (var commande in plan.commandes) {
+      for (var modele in commande.modeles) {
+        final key = '${modele.nomModele}_${modele.taille}';
+        final matiereId = _matieresSelectionnees[key];
+        final quantiteNecessaire = _quantitesConsommees[key] ?? 0;
+        
+        if (matiereId != null) {
+          final matiere = _matieres.firstWhere((m) => m.id == matiereId);
+          if (matiere.quantite < quantiteNecessaire) {
+            return false;
+          }
+        }
+      }
+    }
+  }
+  return true;
+}
   Future<void> _confirmPlanification() async {
     setState(() => _isLoading = true);
     try {
+      if (!_checkStockAvailability()) {
+      Fluttertoast.showToast(
+        msg: "Stock insuffisant pour certaines matières. La planification est mise en attente.",
+        backgroundColor: Colors.orange,
+        toastLength: Toast.LENGTH_LONG,
+      );
+      
+      // Mettre les planifications en attente
+      List<Planification> waitingPlans = [];
+      for (var plan in widget.planifications) {
+        waitingPlans.add(Planification(
+          id: plan.id,
+          commandes: plan.commandes,
+          statut: "waiting_resources",
+          createdAt: DateTime.now(), machines: [],
+        ));
+      }
+
+      final success = await ApiService.confirmerPlanification(waitingPlans);
+      if (success) {
+        Fluttertoast.showToast(
+          msg: "Planifications mises en attente de stock",
+          backgroundColor: Colors.blue[700],
+        );
+        Navigator.pop(context);
+        return;
+      }
+    }
       List<Planification> updatedPlanifications = [];
 
       for (int i = 0; i < widget.planifications.length; i++) {
