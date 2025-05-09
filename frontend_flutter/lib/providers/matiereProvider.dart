@@ -136,5 +136,14 @@ Future<void> renameMatiere(String id, String newReference) async {
 Matiere? getMatiereByCouleur(String couleur) {
   return _matieres.firstWhere((m) => m.couleur.toLowerCase() == couleur.toLowerCase(), orElse: () => Matiere(id: '', reference: '', couleur: '', quantite: 0, dateAjout: DateTime.now(), historique: []));
 }
+bool checkStockForCommande(Commande commande) {
+  for (var modele in commande.modeles) {
+    final matiere = getMatiereByCouleur(modele.couleur);
+    if (matiere == null || matiere.quantite < modele.calculerBesoinMatiere()) {
+      return false;
+    }
+  }
+  return true;
+}
 
 }

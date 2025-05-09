@@ -9,7 +9,7 @@ const moment = require('moment-timezone');
 let workHoursConfig = {
   startHour: 7, // 7 AM
   endHour: 17, // 5 PM
-  timezone: "Europe/Paris"
+  timezone: "Tunisia/Monastir"
 };
 
 // Helper method to update work hours (e.g., for urgent commands)
@@ -205,7 +205,40 @@ exports.autoPlanifierCommande = async (req, res) => {
     const commande = await Commande.findById(commandeId).populate({
       path: 'modeles.modele'
     }).populate('client');
+    // Vérifier le stock
+    const matieres = await Matiere.find();
+    let hasInsufficientStock = false;
 
+    for (const modele of commande.modeles) {
+      const matiere = matieres.find(m =>
+        m.couleur.toLowerCase() === modele.couleur.toLowerCase());
+
+      if (matiere) {
+        const consommation = modele.modele.consommation.find(c =>
+          c.taille === modele.taille);
+        const quantiteNecessaire = (consommation?.quantity || 0.5) * modele.quantite;
+
+        if (matiere.quantite < quantiteNecessaire) {
+          hasInsufficientStock = true;
+          break;
+        }
+      }
+    }
+
+    if (hasInsufficientStock && !preview) {
+      // Créer une planification en attente
+      const waitingPlan = new Planification({
+        commandes: [commande._id],
+        statut: "waiting_resources",
+        createdAt: new Date()
+      });
+      await waitingPlan.save();
+
+      return res.status(201).json({
+        planifications: [waitingPlan],
+        statut: "en attente"
+      });
+    }
     if (!commande) {
       return res.status(404).json({ message: "Commande non trouvée", id: commandeId });
     }
@@ -320,7 +353,8 @@ exports.processWaitingList = async () => {
   try {
     const waitingPlans = await Planification.find({ statut: "waiting_resources" })
       .sort({ order: 1, createdAt: 1 })
-      .populate('commandes'); // On ne populate plus 'modele' ici
+      .populate('commandes')
+      .populate('modele');
 
     const salles = await Salle.find();
     const machines = await Machine.find().populate("modele").populate("salle");
@@ -417,10 +451,57 @@ exports.processWaitingList = async () => {
     console.error("Erreur lors du traitement de la file d'attente :", err);
   }
 };
+
 exports.confirmPlanification = async (req, res) => {
   try {
     const { planifications } = req.body;
 
+     // Vérifier le stock avant confirmation
+     const matieres = await Matiere.find();
+     let hasInsufficientStock = false;
+
+     for (const plan of planifications) {
+       for (const commande of plan.commandes) {
+         const cmd = await Commande.findById(commande._id || commande)
+           .populate('modeles.modele');
+
+         for (const modele of cmd.modeles) {
+           const matiere = matieres.find(m =>
+             m.couleur.toLowerCase() === modele.couleur.toLowerCase());
+
+           if (matiere) {
+             const consommation = modele.modele.consommation.find(c =>
+               c.taille === modele.taille);
+             const quantiteNecessaire = (consommation?.quantity || 0.5) * modele.quantite;
+
+             if (matiere.quantite < quantiteNecessaire) {
+               hasInsufficientStock = true;
+               break;
+             }
+           }
+         }
+         if (hasInsufficientStock) break;
+       }
+       if (hasInsufficientStock) break;
+     }
+
+     // Si stock insuffisant, mettre en attente
+     if (hasInsufficientStock) {
+       const waitingPlans = [];
+       for (const plan of planifications) {
+         const waitingPlan = await Planification.findByIdAndUpdate(
+           plan._id,
+           { statut: "waiting_resources", createdAt: new Date() },
+           { new: true }
+         );
+         waitingPlans.push(waitingPlan);
+       }
+
+       return res.status(200).json({
+         message: "Planifications mises en attente - stock insuffisant",
+         planifications: waitingPlans
+       });
+     }
     if (!planifications || !Array.isArray(planifications)) {
       return res.status(400).json({ message: "Les planifications sont requises sous forme de tableau" });
     }
@@ -439,6 +520,9 @@ exports.confirmPlanification = async (req, res) => {
         planification.salle = plan.salle._id || plan.salle;
         planification.debutPrevue = new Date(plan.debutPrevue);
         planification.finPrevue = new Date(plan.finPrevue);
+        planification.statut = "en attente";
+
+        await planification.save();
       } else {
         planification = new Planification({
           commandes: plan.commandes.map(c => c._id || c),
@@ -469,7 +553,7 @@ exports.confirmPlanification = async (req, res) => {
       }
     }
 
-    // Trigger processWaitingList to handle resource allocation for waiting planifications
+    // Trigger processing of waiting list
     await exports.processWaitingList();
 
     res.status(200).json({
@@ -529,7 +613,7 @@ exports.getWaitingPlanifications = async (req, res) => {
     const query = commandeId ? { commande: commandeId } : {};
     const waitingPlans = await WaitingPlanification.find(query)
       .sort({ order: 1, createdAt: 1 }) // Sort by order and createdAt
-      .populate('commandes')
+      .populate('commande')
       .populate('modele');
     res.status(200).json(waitingPlans);
   } catch (error) {
@@ -542,14 +626,14 @@ exports.deletePlanification = async (req, res) => {
     const { id } = req.params;
     const deletedPlanification = await Planification.findByIdAndDelete(id);
 
-if (!deletedPlanification) return res.status(404).json({ message: "Planification non trouvée" });
-
+    if (!deletedPlanification) {
+      return res.status(404).json({ message: "Planification non trouvée" });
+    }
     res.status(200).json({ message: "Planification supprimée avec succès" });
   } catch (error) {
     res.status(500).json({ message: "Erreur serveur", error: error.message });
   }
 };
-
 
 exports.updatePlanification = async (req, res) => {
   try {
