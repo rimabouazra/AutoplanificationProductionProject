@@ -385,7 +385,6 @@ class ApiService {
       throw Exception('Erreur lors de la récupération des prévisualisations');
     }
   }
-
   static Future<bool> confirmerPlanification(List<Planification> planifications) async {
     try {
       if (planifications.isEmpty) return false;

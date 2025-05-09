@@ -264,7 +264,7 @@ void _addModele() {
   });
 }
 
-  Future _showPlanificationConfirmation(String commandeId) async{
+  Future _showPlanificationConfirmation(String commandeId) async {
     print('Showing planification confirmation for commande: $commandeId');
 
     final planifProvider = Provider.of<PlanificationProvider>(context, listen: false);
@@ -272,11 +272,9 @@ void _addModele() {
       final previews = await ApiService.getPlanificationPreview(commandeId);
       print('Planification previews received:');
       print('- Planifications: ${previews['planifications']?.length ?? 0}');
-      print('- Waiting planifications: ${previews['waitingPlanifications']?.length ?? 0}');
       final planifications = previews['planifications'] as List<Planification>;
-      final waitingPlanifications = previews['waitingPlanifications'] as List<WaitingPlanification>;
 
-      if (planifications.isNotEmpty || waitingPlanifications.isNotEmpty) {
+      if (planifications.isNotEmpty) {
         bool isValid = planifications.every((p) => p.commandes.isNotEmpty && p.machines.isNotEmpty);
         print('Planification validity check: $isValid');
 
@@ -294,11 +292,10 @@ void _addModele() {
         );
 
         if (confirmed == true) {
-          // Send all planifications and waiting planifications in a single request
           bool success = await ApiService.confirmerPlanification(planifications);
 
           if (success) {
-            Fluttertoast.showToast(msg: "✅ Toutes les planifications ont été confirmées !");
+            Fluttertoast.showToast(msg: " Toutes les planifications ont été confirmées !");
             await planifProvider.fetchPlanifications();
 
             Navigator.of(context).pushAndRemoveUntil(
@@ -306,10 +303,10 @@ void _addModele() {
                   (route) => false,
             );
           } else {
-            Fluttertoast.showToast(msg: "❌ Erreur lors de la confirmation.");
+            Fluttertoast.showToast(msg: " Erreur lors de la confirmation.");
           }
         } else {
-          Fluttertoast.showToast(msg: "ℹ️ Planification annulée.");
+          Fluttertoast.showToast(msg: " Planification annulée.");
         }
       } else {
         Fluttertoast.showToast(msg: "Aucune planification disponible.");

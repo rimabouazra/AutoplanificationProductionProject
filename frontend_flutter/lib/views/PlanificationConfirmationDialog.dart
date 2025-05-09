@@ -45,8 +45,7 @@ class _PlanificationConfirmationDialogState
     _selectedSalles = List<Salle?>.filled(widget.planifications.length, null);
     _selectedMachinesForPlanifications = List<List<String>>.generate(
         widget.planifications.length,
-            (index) =>
-            widget.planifications[index].machines.map((m) => m.id).toList());
+            (index) => widget.planifications[index].machines.map((m) => m.id).toList());
     _startDates = widget.planifications
         .map((p) => p.debutPrevue ?? DateTime.now())
         .toList();
@@ -117,9 +116,8 @@ class _PlanificationConfirmationDialogState
       for (int i = 0; i < widget.planifications.length; i++) {
         final plan = widget.planifications[i];
 
-        // Skip validation for "waiting_resources" planifications
         if (plan.statut == "waiting_resources") {
-          updatedPlanifications.add(plan);
+          updatedPlanifications.add(plan); // Keep waiting_resources as is
           continue;
         }
 
@@ -169,7 +167,7 @@ class _PlanificationConfirmationDialogState
           salle: _selectedSalles[i],
           debutPrevue: _startDates[i],
           finPrevue: _endDates[i],
-          statut: "confirmée",
+          statut: "planifiée",
         ));
       }
 
@@ -301,7 +299,6 @@ class _PlanificationConfirmationDialogState
     final theme = Theme.of(context);
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
-    // If the planification is "waiting_resources", show a simplified view
     if (planification.statut == "waiting_resources") {
       return Card(
         margin: const EdgeInsets.only(bottom: 16),
@@ -313,7 +310,7 @@ class _PlanificationConfirmationDialogState
             children: [
               Text(
                 "Planification ${index + 1} (En attente de ressources)",
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                style: theme.textTheme.titleMedium?.copyWith(
                   color: Colors.orange[800],
                   fontWeight: FontWeight.bold,
                 ),
