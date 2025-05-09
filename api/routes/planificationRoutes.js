@@ -2,7 +2,7 @@ const express = require("express");
 const router = express.Router();
 const planificationController = require("../controllers/PlanificationController");
 
-router.get("/waiting", planificationController.getWaitingPlanifications);
+router.get("/get/waiting", planificationController.getWaitingPlanifications);
 router.post("/add", planificationController.addPlanification);
 router.get("/", planificationController.getAllPlanifications);
 router.put("/update/:id", planificationController.updatePlanification);
@@ -13,6 +13,6 @@ router.post('/mettre-a-jour-machines', planificationController.mettreAJourMachin
 router.post('/confirm', planificationController.confirmPlanification);
 
 router.get("/:id", planificationController.getPlanificationById);
-
+router.get('/active/:machineId', planificationController.checkActivePlanification);
 
 module.exports = router;

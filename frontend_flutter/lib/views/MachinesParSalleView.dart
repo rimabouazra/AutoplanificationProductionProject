@@ -305,10 +305,9 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
       }
     }
   }
-
   Future<void> _showEditMachineDialog(dynamic machine) async {
     TextEditingController nomController =
-        TextEditingController(text: machine["nom"]);
+    TextEditingController(text: machine["nom"]);
     String etat = machine["etat"] ?? "disponible";
     String modele = machine["modele"]?["nom"] ?? "Aucun modèle";
     String taille = machine["taille"] ?? "Aucune taille";
@@ -356,34 +355,42 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
                       child: DropdownButtonFormField<String>(
                         value: etat,
                         onChanged: (String? newValue) async {
-                          setState(() {
-                            etat = newValue!;
-                          });
-                          try {
-                            await ApiService.updateMachine(
-                                machine["_id"], nomController.text, etat);
-                            setState(() {
-                              machine["etat"] = etat;
-                            });
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content:
-                                    const Text("État mis à jour avec succès !"),
-                                backgroundColor: Colors.green,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12)),
-                              ),
-                            );
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(
-                                    "Erreur lors de la mise à jour de l'état : $e"),
-                                backgroundColor: Colors.redAccent,
-                                shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12)),
-                              ),
-                            );
+                          if (newValue != null) {
+                            try {
+                              await ApiService.updateMachine(
+                                  machine["_id"], nomController.text, newValue);
+                              setState(() {
+                                etat = newValue;
+                                machine["etat"] = newValue;
+                              });
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: const Text(
+                                      "État mis à jour avec succès !"),
+                                  backgroundColor: Colors.green,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                ),
+                              );
+                            } catch (e) {
+                              String errorMessage = e.toString();
+                              if (errorMessage.contains(
+                                  "Cette machine est occupée dans une planification active")) {
+                                errorMessage =
+                                "Cette machine est occupée dans une planification.";
+                              } else {
+                                errorMessage =
+                                "Erreur lors de la mise à jour de l'état : $e";
+                              }
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text(errorMessage),
+                                  backgroundColor: Colors.redAccent,
+                                  shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12)),
+                                ),
+                              );
+                            }
                           }
                         },
                         items: ["disponible", "occupee", "arretee"]
@@ -446,16 +453,24 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
                             content:
-                                const Text("Machine mise à jour avec succès !"),
+                            const Text("Machine mise à jour avec succès !"),
                             backgroundColor: Colors.green,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12)),
                           ),
                         );
                       } catch (e) {
+                        String errorMessage = e.toString();
+                        if (errorMessage.contains(
+                            "Cette machine est occupée dans une planification active")) {
+                          errorMessage =
+                          "Cette machine est occupée dans une planification.";
+                        } else {
+                          errorMessage = "Erreur lors de la mise à jour : $e";
+                        }
                         ScaffoldMessenger.of(context).showSnackBar(
                           SnackBar(
-                            content: Text("Erreur lors de la mise à jour : $e"),
+                            content: Text(errorMessage),
                             backgroundColor: Colors.redAccent,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12)),
@@ -495,7 +510,6 @@ class _MachinesParSalleViewState extends State<MachinesParSalleView> {
       },
     );
   }
-
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<String?>(

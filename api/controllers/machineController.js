@@ -106,6 +106,7 @@ exports.updateMachine = [
                 return res.status(404).json({ message: "Machine non trouvée" });
             }
 
+
             // Mise à jour des champs si fournis
             if (nom) machine.nom = nom;
             if (etat) machine.etat = etat;

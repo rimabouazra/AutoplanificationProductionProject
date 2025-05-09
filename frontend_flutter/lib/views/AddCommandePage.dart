@@ -5,10 +5,11 @@ import 'package:frontend/providers/PlanificationProvider%20.dart';
 import 'package:frontend/providers/modeleProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import '../models/WaitingPlanification.dart';
 import '../models/client.dart';
 import '../models/commande.dart';
+import '../models/planification.dart';
 import '../providers/CommandeProvider.dart';
-import '../providers/PlanificationProvider .dart';
 import '../providers/client_provider.dart';
 import '../services/api_service.dart';
 import 'PlanificationConfirmationDialog.dart';
@@ -263,39 +264,38 @@ void _addModele() {
   });
 }
 
-  Future<void> _showPlanificationConfirmation(String commandeId) async {
+  Future _showPlanificationConfirmation(String commandeId) async{
+    print('Showing planification confirmation for commande: $commandeId');
+
     final planifProvider = Provider.of<PlanificationProvider>(context, listen: false);
-
     try {
-      // Fetch planification previews
       final previews = await ApiService.getPlanificationPreview(commandeId);
-      
-      // Fetch waiting planifications for the commande
-      final waitingPlans = await ApiService.getWaitingPlanifications();
-      final waitingPlanifications = waitingPlans
-          .where((wp) => wp.commande.id == commandeId)
-          .toList();
+      print('Planification previews received:');
+      print('- Planifications: ${previews['planifications']?.length ?? 0}');
+      print('- Waiting planifications: ${previews['waitingPlanifications']?.length ?? 0}');
+      final planifications = previews['planifications'] as List<Planification>;
+      final waitingPlanifications = previews['waitingPlanifications'] as List<WaitingPlanification>;
 
-      if (previews != null && previews.isNotEmpty) {
-        bool isValid = previews.every((p) => p.commandes.isNotEmpty && p.machines.isNotEmpty);
+      if (planifications.isNotEmpty || waitingPlanifications.isNotEmpty) {
+        bool isValid = planifications.every((p) => p.commandes.isNotEmpty && p.machines.isNotEmpty);
+        print('Planification validity check: $isValid');
 
-        if (!isValid) {
-          Fluttertoast.showToast(msg: "⚠ Une ou plusieurs planifications sont incomplètes.");
+        if (!isValid && planifications.isNotEmpty) {
+          Fluttertoast.showToast(msg: "Une ou plusieurs planifications sont incomplètes.");
           return;
         }
 
         bool? confirmed = await showDialog<bool>(
           context: context,
           builder: (context) => PlanificationConfirmationDialog(
-            planifications: previews,
-            waitingPlanifications: waitingPlanifications, // Pass waiting planifications
+            planifications: planifications,
             commandeId: commandeId,
           ),
         );
 
         if (confirmed == true) {
-          // Send all planifications in a single request
-          bool success = await ApiService.confirmerPlanification(previews);
+          // Send all planifications and waiting planifications in a single request
+          bool success = await ApiService.confirmerPlanification(planifications);
 
           if (success) {
             Fluttertoast.showToast(msg: "✅ Toutes les planifications ont été confirmées !");
@@ -303,7 +303,7 @@ void _addModele() {
 
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (_) => AdminHomePage()),
-              (route) => false,
+                  (route) => false,
             );
           } else {
             Fluttertoast.showToast(msg: "❌ Erreur lors de la confirmation.");
@@ -312,12 +312,7 @@ void _addModele() {
           Fluttertoast.showToast(msg: "ℹ Planification annulée.");
         }
       } else {
-        if (waitingPlanifications.isNotEmpty) {
-          Fluttertoast.showToast(
-              msg: "ℹ La commande est en file d'attente car aucune machine n'est disponible.");
-        } else {
-          Fluttertoast.showToast(msg: "Aucune planification disponible.");
-        }
+        Fluttertoast.showToast(msg: "Aucune planification disponible.");
       }
     } catch (e) {
       Fluttertoast.showToast(msg: "Erreur interne : $e");

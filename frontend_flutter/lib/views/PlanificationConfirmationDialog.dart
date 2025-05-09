@@ -6,21 +6,18 @@ import 'package:frontend/views/admin_home_page.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../main.dart';
-import '../models/WaitingPlanification.dart';
-import '../models/planification.dart';
 import '../models/matiere.dart';
 import '../models/commande.dart';
+import '../models/planification.dart';
 import '../models/salle.dart';
 import '../services/api_service.dart';
 
 class PlanificationConfirmationDialog extends StatefulWidget {
   final List<Planification> planifications;
-  final List<WaitingPlanification> waitingPlanifications;
   final String commandeId;
 
   const PlanificationConfirmationDialog({
     required this.planifications,
-    required this.waitingPlanifications,
     required this.commandeId,
     Key? key,
   }) : super(key: key);
@@ -120,6 +117,12 @@ class _PlanificationConfirmationDialogState
       for (int i = 0; i < widget.planifications.length; i++) {
         final plan = widget.planifications[i];
 
+        // Skip validation for "waiting_resources" planifications
+        if (plan.statut == "waiting_resources") {
+          updatedPlanifications.add(plan);
+          continue;
+        }
+
         if (_selectedSalles[i] == null) {
           Fluttertoast.showToast(
             msg: "Sélectionnez une salle pour toutes les planifications",
@@ -130,8 +133,7 @@ class _PlanificationConfirmationDialogState
 
         if (_selectedMachinesForPlanifications[i].isEmpty) {
           Fluttertoast.showToast(
-            msg:
-            "Sélectionnez au moins une machine pour toutes les planifications",
+            msg: "Sélectionnez au moins une machine pour toutes les planifications",
             backgroundColor: Colors.red,
           );
           return;
@@ -162,8 +164,7 @@ class _PlanificationConfirmationDialogState
           id: plan.id,
           commandes: plan.commandes,
           machines: plan.machines
-              .where(
-                  (m) => _selectedMachinesForPlanifications[i].contains(m.id))
+              .where((m) => _selectedMachinesForPlanifications[i].contains(m.id))
               .toList(),
           salle: _selectedSalles[i],
           debutPrevue: _startDates[i],
@@ -172,21 +173,21 @@ class _PlanificationConfirmationDialogState
         ));
       }
 
-      for (var plan in widget.planifications) {
-        for (var commande in plan.commandes) {
-          for (var modele in commande.modeles) {
-            final key = '${modele.nomModele}_${modele.taille}';
-            final matiereId = _matieresSelectionnees[key]!;
-            final quantite = _quantitesConsommees[key]!;
+      for (var plan in updatedPlanifications) {
+        if (plan.statut != "waiting_resources") {
+          for (var commande in plan.commandes) {
+            for (var modele in commande.modeles) {
+              final key = '${modele.nomModele}_${modele.taille}';
+              final matiereId = _matieresSelectionnees[key]!;
+              final quantite = _quantitesConsommees[key]!;
 
-            await ApiService.updateMatiere(matiereId, quantite,
-                action: "consommation");
+              await ApiService.updateMatiere(matiereId, quantite, action: "consommation");
+            }
           }
         }
       }
 
-      final success =
-      await ApiService.confirmerPlanification(updatedPlanifications);
+      final success = await ApiService.confirmerPlanification(updatedPlanifications);
 
       if (!success) {
         throw Exception("Failed to confirm planifications");
@@ -198,8 +199,7 @@ class _PlanificationConfirmationDialogState
         textColor: Colors.white,
       );
 
-      final planifProvider =
-      Provider.of<PlanificationProvider>(context, listen: false);
+      final planifProvider = Provider.of<PlanificationProvider>(context, listen: false);
       await planifProvider.fetchPlanifications();
 
       navigatorKey.currentState?.pushAndRemoveUntil(
@@ -215,7 +215,9 @@ class _PlanificationConfirmationDialogState
   }
 
   Widget _buildMatiereSelector(CommandeModele modele) {
+    print('Building matiere selector for modele: ${modele.nomModele}');
     final modeleKey = '${modele.nomModele}_${modele.taille}';
+
     final quantiteNecessaire = _quantitesConsommees[modeleKey] ?? 0;
     var matieresParCouleur = _matieres
         .where((m) =>
@@ -230,6 +232,7 @@ class _PlanificationConfirmationDialogState
         'suffisant': suffisant,
       };
     }).toList();
+    print('Found ${matieresParCouleur.length} matieres for couleur ${modele.couleur}');
 
     return Container(
       padding: const EdgeInsets.all(12),
@@ -294,38 +297,39 @@ class _PlanificationConfirmationDialogState
     );
   }
 
-  Widget _buildWaitingPlanificationItem(WaitingPlanification waitingPlan) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              "Planification en attente",
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Colors.orange[800],
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text("Commande: ${waitingPlan.commande.id}"),
-            Text("Modèle: ${waitingPlan.modele.nom}"),
-            Text("Taille: ${waitingPlan.taille}"),
-            Text("Couleur: ${waitingPlan.couleur}"),
-            Text("Quantité: ${waitingPlan.quantite}"),
-            Text("Ajoutée le: ${DateFormat('dd/MM/yyyy HH:mm').format(waitingPlan.createdAt)}"),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildPlanificationItem(int index, Planification planification) {
     final theme = Theme.of(context);
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
+
+    // If the planification is "waiting_resources", show a simplified view
+    if (planification.statut == "waiting_resources") {
+      return Card(
+        margin: const EdgeInsets.only(bottom: 16),
+        elevation: 2,
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                "Planification ${index + 1} (En attente de ressources)",
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: Colors.orange[800],
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text("Commande: ${planification.commandes.isNotEmpty ? planification.commandes.first.id : 'N/A'}"),
+              Text("Modèle: ${planification.modele?.nom ?? 'N/A'}"),
+              Text("Taille: ${planification.taille ?? 'N/A'}"),
+              Text("Couleur: ${planification.couleur ?? 'N/A'}"),
+              Text("Quantité: ${planification.quantite ?? 'N/A'}"),
+              Text("Ajoutée le: ${planification.createdAt != null ? DateFormat('dd/MM/yyyy  à HH:mm').format(planification.createdAt!) : 'N/A'}"),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
@@ -380,8 +384,7 @@ class _PlanificationConfirmationDialogState
                   ...planification.machines
                       .where((m) => m.salle.id == _selectedSalles[index]!.id)
                       .map((machine) => CheckboxListTile(
-                    title:
-                    Text("${machine.nom} (${machine.modele.nom})"),
+                    title: Text("${machine.nom} (${machine.modele.nom})"),
                     value: _selectedMachinesForPlanifications[index]
                         .contains(machine.id),
                     onChanged: (bool? value) {
@@ -497,6 +500,8 @@ class _PlanificationConfirmationDialogState
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    print('Building PlanificationConfirmationDialog with:');
+    print('- Planifications count: ${widget.planifications.length}');
 
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
@@ -533,19 +538,6 @@ class _PlanificationConfirmationDialogState
                   mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    if (widget.waitingPlanifications.isNotEmpty) ...[
-                      Text(
-                        "Planifications en attente",
-                        style: theme.textTheme.titleMedium?.copyWith(
-                          color: Colors.orange[800],
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      ...widget.waitingPlanifications
-                          .map(_buildWaitingPlanificationItem),
-                      const SizedBox(height: 20),
-                    ],
                     ...widget.planifications.asMap().entries.map((entry) {
                       final index = entry.key;
                       final planification = entry.value;
@@ -562,9 +554,10 @@ class _PlanificationConfirmationDialogState
                     const SizedBox(height: 8),
                     ...{
                       for (var p in widget.planifications)
-                        for (var c in p.commandes)
-                          for (var m in c.modeles)
-                            '${m.nomModele}_${m.taille}_${m.couleur}': m
+                        if (p.statut != "waiting_resources")
+                          for (var c in p.commandes)
+                            for (var m in c.modeles)
+                              '${m.nomModele}_${m.taille}_${m.couleur}': m
                     }.values.map(_buildMatiereSelector),
                     const SizedBox(height: 20),
                   ],
@@ -582,8 +575,7 @@ class _PlanificationConfirmationDialogState
                     style: OutlinedButton.styleFrom(
                       foregroundColor: Colors.blue[800],
                       side: BorderSide(color: Colors.blue[800]!),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
@@ -596,8 +588,7 @@ class _PlanificationConfirmationDialogState
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue[700],
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),

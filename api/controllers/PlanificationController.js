@@ -3,6 +3,102 @@ const Commande = require("../models/Commande");
 const Salle = require("../models/Salle");
 const Machine = require("../models/Machine");
 const WaitingPlanification = require("../models/WaitingPlanification");
+const moment = require('moment-timezone');
+
+// Default work hours configuration (7 AM to 5 PM, Tunisia timezone)
+let workHoursConfig = {
+  startHour: 7, // 7 AM
+  endHour: 17, // 5 PM
+  timezone: "Tunisia/Monastir"
+};
+
+// Helper method to update work hours (e.g., for urgent commands)
+exports.updateWorkHours = async (newStartHour, newEndHour) => {
+  try {
+    if (newStartHour < 0 || newStartHour > 23 || newEndHour < 0 || newEndHour > 23) {
+      throw new Error("Invalid hours: Must be between 0 and 23");
+    }
+    if (newEndHour <= newStartHour) {
+      throw new Error("End hour must be after start hour");
+    }
+    workHoursConfig.startHour = newStartHour;
+    workHoursConfig.endHour = newEndHour;
+    return {
+      message: `Work hours updated to ${newStartHour}:00 - ${newEndHour}:00`,
+      workHoursConfig
+    };
+  } catch (error) {
+    console.error("Error updating work hours:", error);
+    throw error;
+  }
+};
+
+// Helper method to calculate planification dates respecting work hours
+const calculatePlanificationDates = (startDate, hoursRequired, workHours = workHoursConfig) => {
+  let currentDate = moment(startDate).tz(workHours.timezone);
+  let remainingHours = hoursRequired;
+  let workDayHours = workHours.endHour - workHours.startHour;
+
+  // Start at the next available work hour
+  if (currentDate.hour() < workHours.startHour) {
+    currentDate.set({ hour: workHours.startHour, minute: 0, second: 0 });
+  } else if (currentDate.hour() >= workHours.endHour) {
+    currentDate.add(1, 'day').set({ hour: workHours.startHour, minute: 0, second: 0 });
+  } else if (currentDate.hour() === workHours.startHour && currentDate.minute() > 0) {
+    currentDate.set({ minute: 0, second: 0 });
+  }
+
+  let debutPrevue = currentDate.toDate();
+  let finPrevue;
+
+  while (remainingHours > 0) {
+    // Calculate remaining hours in the current workday
+    let hoursUntilEndOfDay = workHours.endHour - currentDate.hour();
+    if (hoursUntilEndOfDay <= 0) {
+      currentDate.add(1, 'day').set({ hour: workHours.startHour, minute: 0, second: 0 });
+      hoursUntilEndOfDay = workDayHours;
+    }
+
+    // Use the minimum of remaining hours or hours until end of day
+    let hoursToUse = Math.min(remainingHours, hoursUntilEndOfDay);
+    remainingHours -= hoursToUse;
+
+    if (remainingHours <= 0) {
+      // Set finPrevue to the end of this work period
+      currentDate.add(hoursToUse, 'hours');
+      finPrevue = currentDate.toDate();
+    } else {
+      // Move to the next workday
+      currentDate.add(1, 'day').set({ hour: workHours.startHour, minute: 0, second: 0 });
+    }
+  }
+
+  return { debutPrevue, finPrevue };
+};
+
+exports.checkActivePlanification = async (req, res) => {
+  try {
+    const { machineId } = req.params;
+
+    const now = new Date();
+    const activePlanification = await Planification.findOne({
+      machines: machineId,
+      statut: { $ne: "terminée" },
+      debutPrevue: { $lte: now },
+      finPrevue: { $gt: now },
+    });
+
+    res.status(200).json({
+      hasActivePlanification: !!activePlanification,
+    });
+  } catch (error) {
+    console.error("Erreur lors de la vérification de la planification :", error);
+    res.status(500).json({
+      message: "Erreur lors de la vérification",
+      error: error.message,
+    });
+  }
+};
 
 exports.mettreAJourCommandesEnCours = async (req, res) => {
   try {
@@ -44,7 +140,10 @@ exports.mettreAJourMachinesDisponibles = async (req, res) => {
     const now = new Date();
 
     const planifs = await Planification.find({
-      finPrevue: { $lte: now },
+      $or: [
+        { finPrevue: { $lte: now } },
+        { debutPrevue: { $lte: now }, finPrevue: { $gt: now } }
+      ],
       statut: { $ne: "terminée" }
     }).populate({
       path: 'machines'
@@ -57,20 +156,27 @@ exports.mettreAJourMachinesDisponibles = async (req, res) => {
     let commandesTerminees = [];
 
     for (const planif of planifs) {
-      for (const machine of planif.machines) {
-        machine.etat = "disponible";
-        await machine.save();
-        updatedMachinesCount++;
-      }
+      console.log("update planification statut en cours")
+      // Update planification status
+      if (planif.debutPrevue <= now && planif.finPrevue > now && planif.statut !== "en cours") {
+        planif.statut = "en cours";
+        await planif.save();
+      } else if (planif.finPrevue <= now && planif.statut !== "terminée") {
+        for (const machine of planif.machines) {
+          machine.etat = "disponible";
+          await machine.save();
+          updatedMachinesCount++;
+        }
 
-      for (const commande of planif.commandes) {
-        commande.etat = "en presse";
-        await commande.save();
-        commandesTerminees.push(commande._id);
-      }
+        for (const commande of planif.commandes) {
+          commande.etat = "en presse";
+          await commande.save();
+          commandesTerminees.push(commande._id);
+        }
 
-      planif.statut = "terminée";
-      await planif.save();
+        planif.statut = "terminée";
+        await planif.save();
+      }
     }
 
     // Process the waiting list after freeing machines
@@ -106,7 +212,6 @@ exports.autoPlanifierCommande = async (req, res) => {
 
     const salles = await Salle.find();
     const machines = await Machine.find().populate("modele").populate("salle");
-
     const planifications = [];
     const allMachinesAssignees = [];
     const allSallesUtilisees = new Set();
@@ -120,47 +225,45 @@ exports.autoPlanifierCommande = async (req, res) => {
       }
 
       const machinesSalle = machines.filter(m => m.salle._id.equals(salleCible._id));
-
       let machine = machinesSalle.find(m =>
         m.modele && m.modele._id.equals(modele.modele._id) &&
         m.taille === modele.taille &&
         m.etat === "disponible"
       );
-       if (!machine) {
-        machine = machinesSalle.find(m => m.etat === "disponible");
-        if (machine) {
-          machine.modele = modele.modele;
-          machine.taille = modele.taille;
-          await machine.save();
-        }
-      }
+
       if (!machine) {
-        // No suitable machine available, add to waiting list
-        const waitingPlan = new WaitingPlanification({
-          commande: commande._id,
+        machine = machinesSalle.find(m => m.etat === "disponible");
+      }
+
+      if (!machine) {
+        const planification = {
+          commandes: [commande._id],
           modele: modele.modele._id,
           taille: modele.taille,
           couleur: modele.couleur,
-          quantite: modele.quantite
-        });
-        await waitingPlan.save();
-        console.log("la planification est en attente ")
-        commande.etat = "en attente";
-        await commande.save();
-
-        return res.status(200).json({
-          message: `Aucune machine disponible pour le modèle ${modele.modele.nom}. La commande est ajoutée à la file d'attente.`,
-          statut: "en attente",
-          commandeId: commande._id
-        });
+          quantite: modele.quantite,
+          salle: salleCible._id,
+          statut: "waiting_resources",
+          createdAt: moment().tz("Europe/Paris").toDate()
+        };
+        if (!preview) {
+          const newPlanification = new Planification(planification);
+          await newPlanification.save();
+          planifications.push(newPlanification);
+        } else {
+          planifications.push(planification);
+        }
+        continue;
       }
 
       const heures = (modele.quantite / 35) + 2;
-      const debut = new Date();
-      const fin = new Date(debut.getTime() + heures * 60 * 60 * 1000);
+      const now = moment().tz("Europe/Paris").toDate();
+      const { debutPrevue, finPrevue } = calculatePlanificationDates(now, heures);
 
-      machine.etat = "occupee";
-      await machine.save();
+      if (!preview) {
+        machine.etat = "occupee";
+        await machine.save();
+      }
 
       allMachinesAssignees.push(machine._id);
       allSallesUtilisees.add(String(salleCible._id));
@@ -169,8 +272,8 @@ exports.autoPlanifierCommande = async (req, res) => {
         commandes: [commande._id],
         machines: [machine._id],
         salle: salleCible._id,
-        debutPrevue: debut,
-        finPrevue: fin,
+        debutPrevue,
+        finPrevue,
         statut: "en attente"
       };
 
@@ -178,11 +281,9 @@ exports.autoPlanifierCommande = async (req, res) => {
         const populatedCommande = await Commande.findById(commande._id)
           .populate('client')
           .populate('modeles.modele');
-
         const populatedMachine = await Machine.findById(machine._id)
           .populate('salle')
           .populate('modele');
-
         planifications.push({
           ...planification,
           commandes: [populatedCommande],
@@ -195,14 +296,19 @@ exports.autoPlanifierCommande = async (req, res) => {
       }
     }
 
-    if (!preview) {
+    if (!preview && (planifications.length > 0)) {
       commande.machinesAffectees = allMachinesAssignees;
       commande.salleAffectee = [...allSallesUtilisees][0];
-      commande.etat = "en attente";
+      commande.etat = planifications.some(p => p.statut === "waiting_resources") ? "en attente" : "en attente";
       await commande.save();
     }
 
-    return res.status(preview ? 200 : 201).json(planifications);
+    const response = {
+      planifications,
+      statut: planifications.some(p => p.statut === "waiting_resources") ? "en attente" : "planifiée"
+    };
+
+    return res.status(preview ? 200 : 201).json(response);
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Erreur lors de la planification automatique", error: err.message });
@@ -211,8 +317,8 @@ exports.autoPlanifierCommande = async (req, res) => {
 
 exports.processWaitingList = async () => {
   try {
-    const waitingPlans = await WaitingPlanification.find()
-      .sort({ createdAt: 1 }) // FIFO order
+    const waitingPlans = await Planification.find({ statut: "waiting_resources" })
+      .sort({ order: 1, createdAt: 1 })
       .populate('commande')
       .populate('modele');
 
@@ -222,10 +328,8 @@ exports.processWaitingList = async () => {
       statut: { $ne: "terminée" }
     });
 
-    for (const waitingPlan of waitingPlans) {
-      const commande = waitingPlan.commande;
-      const modele = waitingPlan.modele;
-      const estFoncee = ["noir", "bleu marine", "bleu", "vert"].includes(waitingPlan.couleur.toLowerCase());
+    for (const plan of waitingPlans) {
+      const estFoncee = ["noir", "bleu marine", "bleu", "vert"].includes(plan.couleur.toLowerCase());
       const salleCible = salles.find(s => estFoncee ? s.type === "noir" : s.type === "blanc");
 
       if (!salleCible) {
@@ -234,11 +338,9 @@ exports.processWaitingList = async () => {
       }
 
       const machinesSalle = machines.filter(m => m.salle._id.equals(salleCible._id));
-
-      // Check for a machine with the exact model and size
       let machine = machinesSalle.find(m =>
-        m.modele && m.modele._id.equals(modele._id) &&
-        m.taille === waitingPlan.taille &&
+        m.modele && m.modele._id.equals(plan.modele) &&
+        m.taille === plan.taille &&
         m.etat === "disponible"
       );
 
@@ -246,11 +348,9 @@ exports.processWaitingList = async () => {
       let finPrevue;
 
       if (!machine) {
-        // No machine with exact model, find any available machine or wait for one to free up
         machine = machinesSalle.find(m => m.etat === "disponible");
 
         if (!machine) {
-          // Find the machine that will be free the soonest
           let earliestFinPrevue = null;
           let targetMachine = null;
 
@@ -266,15 +366,14 @@ exports.processWaitingList = async () => {
 
           if (targetMachine && earliestFinPrevue) {
             machine = targetMachine;
-            debutPrevue = new Date(earliestFinPrevue.getTime() + 15 * 60 * 1000); // 15-minute buffer
+            debutPrevue = new Date(earliestFinPrevue.getTime() + 15 * 60 * 1000);
           } else {
-            continue; // No machine will be available, keep in queue
+            continue;
           }
         }
 
-        // Update machine model and size
-        machine.modele = modele._id;
-        machine.taille = waitingPlan.taille;
+        machine.modele = plan.modele;
+        machine.taille = plan.taille;
         machine.etat = "occupee";
         await machine.save();
       } else {
@@ -282,30 +381,25 @@ exports.processWaitingList = async () => {
         await machine.save();
       }
 
-      // Calculate duration
-      const heures = (waitingPlan.quantite / 35) + 2;
-      finPrevue = new Date(debutPrevue.getTime() + heures * 60 * 60 * 1000);
+      const heures = (plan.quantite / 35) + 2;
+      const { debutPrevue: calculatedDebut, finPrevue: calculatedFin } = calculatePlanificationDates(debutPrevue, heures);
+      debutPrevue = calculatedDebut;
+      finPrevue = calculatedFin;
 
-      // Create new planification
-      const newPlanification = new Planification({
-        commandes: [commande._id],
-        machines: [machine._id],
-        salle: salleCible._id,
-        debutPrevue,
-        finPrevue,
-        statut: "en attente"
-      });
+      plan.machines = [machine._id];
+      plan.salle = salleCible._id;
+      plan.debutPrevue = debutPrevue;
+      plan.finPrevue = finPrevue;
+      plan.statut = "en attente";
+      await plan.save();
 
-      await newPlanification.save();
-
-      // Update commande
-      commande.machinesAffectees = [machine._id];
-      commande.salleAffectee = salleCible._id;
-      commande.etat = "en attente";
-      await commande.save();
-
-      // Remove from waiting list
-      await WaitingPlanification.findByIdAndDelete(waitingPlan._id);
+      const commande = await Commande.findById(plan.commandes[0]);
+      if (commande) {
+        commande.machinesAffectees = [machine._id];
+        commande.salleAffectee = salleCible._id;
+        commande.etat = "en attente";
+        await commande.save();
+      }
     }
   } catch (err) {
     console.error("Erreur lors du traitement de la file d'attente :", err);
@@ -314,14 +408,16 @@ exports.processWaitingList = async () => {
 
 exports.confirmPlanification = async (req, res) => {
   try {
-    const { planifications } = req.body;
+    const { planifications, waitingPlanifications } = req.body;
 
     if (!planifications || !Array.isArray(planifications)) {
       return res.status(400).json({ message: "Les planifications sont requises sous forme de tableau" });
     }
 
-    const confirmed = [];
+    const confirmedPlanifications = [];
+    const confirmedWaitingPlanifications = [];
 
+    // Process actual planifications
     for (const plan of planifications) {
       let planification;
       if (plan._id) {
@@ -356,10 +452,44 @@ exports.confirmPlanification = async (req, res) => {
         }
       }
 
-      confirmed.push(planification);
+      confirmedPlanifications.push(planification);
     }
 
-    res.status(200).json({ message: "Planifications confirmées", planifications: confirmed });
+    // Process waiting planifications
+    if (waitingPlanifications && Array.isArray(waitingPlanifications)) {
+      for (const waitingPlan of waitingPlanifications) {
+        const existingWaitingPlan = await WaitingPlanification.findOne({
+          commande: waitingPlan.commande,
+          modele: waitingPlan.modele,
+          taille: waitingPlan.taille
+        });
+
+        if (!existingWaitingPlan) {
+          const newWaitingPlan = new WaitingPlanification({
+            commande: waitingPlan.commande,
+            modele: waitingPlan.modele,
+            taille: waitingPlan.taille,
+            couleur: waitingPlan.couleur,
+            quantite: waitingPlan.quantite,
+            statut: "en attente"
+          });
+
+          await newWaitingPlan.save();
+          confirmedWaitingPlanifications.push(newWaitingPlan);
+        } else {
+          confirmedWaitingPlanifications.push(existingWaitingPlan);
+        }
+      }
+    }
+
+    // Trigger processing of waiting list
+    await exports.processWaitingList();
+
+    res.status(200).json({
+      message: "Planifications confirmées",
+      planifications: confirmedPlanifications,
+      waitingPlanifications: confirmedWaitingPlanifications
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ message: "Erreur lors de la confirmation", error: err.message });
@@ -411,6 +541,7 @@ exports.getWaitingPlanifications = async (req, res) => {
     const { commandeId } = req.query;
     const query = commandeId ? { commande: commandeId } : {};
     const waitingPlans = await WaitingPlanification.find(query)
+      .sort({ order: 1, createdAt: 1 }) // Sort by order and createdAt
       .populate('commande')
       .populate('modele');
     res.status(200).json(waitingPlans);
@@ -424,7 +555,7 @@ exports.deletePlanification = async (req, res) => {
     const { id } = req.params;
     const deletedPlanification = await Planification.findByIdAndDelete(id);
 
-    if (!deletedPlanification) return res.status(404).json({ message: "Planification non trouvée" });
+    if (!deletedPlanification) return res.status(404).json Inactive response: { message: "Planification non trouvée" });
 
     res.status(200).json({ message: "Planification supprimée avec succès" });
   } catch (error) {
@@ -454,6 +585,7 @@ exports.updatePlanification = async (req, res) => {
     res.status(500).json({ message: "Erreur serveur", error: error.message });
   }
 };
+
 exports.getPlanificationById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -475,6 +607,31 @@ exports.getPlanificationById = async (req, res) => {
     res.status(200).json(planification);
   } catch (error) {
     console.error("Erreur lors de la récupération de la planification :", error);
+    res.status(500).json({ message: "Erreur serveur", error: error.message });
+  }
+};
+
+exports.reorderWaitingPlanifications = async (req, res) => {
+  try {
+    const { orderedIds } = req.body;
+
+    if (!orderedIds || !Array.isArray(orderedIds)) {
+      return res.status(400).json({ message: "orderedIds must be an array" });
+    }
+
+    // Update order for each WaitingPlanification
+    const updates = orderedIds.map((id, index) =>
+      WaitingPlanification.updateOne(
+        { _id: id },
+        { $set: { order: index } }
+      )
+    );
+
+    await Promise.all(updates);
+
+    res.status(200).json({ message: "Waiting planifications reordered successfully" });
+  } catch (error) {
+    console.error("Erreur lors du réordonnancement des planifications en attente :", error);
     res.status(500).json({ message: "Erreur serveur", error: error.message });
   }
 };
