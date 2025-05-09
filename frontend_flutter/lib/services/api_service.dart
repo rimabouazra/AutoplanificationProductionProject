@@ -375,13 +375,9 @@ class ApiService {
 
     if (response.statusCode == 200) {
       final jsonData = json.decode(response.body);
-
       return {
         'planifications': (jsonData['planifications'] as List<dynamic>?)
             ?.map((json) => Planification.fromJson(json))
-            .toList() ?? [],
-        'waitingPlanifications': (jsonData['waitingPlanifications'] as List<dynamic>?)
-            ?.map((json) => WaitingPlanification.fromJson(json))
             .toList() ?? [],
         'statut': jsonData['statut'] ?? 'planifiée'
       };
@@ -390,11 +386,9 @@ class ApiService {
     }
   }
 
-
-  static Future confirmerPlanification(List planifications, List waitingPlanifications) async {
+  static Future<bool> confirmerPlanification(List<Planification> planifications) async {
     try {
-      // Validate before sending
-      if (planifications.isEmpty && waitingPlanifications.isEmpty) return false;
+      if (planifications.isEmpty) return false;
       final response = await http.post(
         Uri.parse('$baseUrl/planifications/confirm'),
         headers: {'Content-Type': 'application/json'},
@@ -405,7 +399,6 @@ class ApiService {
             }
             return p.toJson();
           }).toList(),
-          'waitingPlanifications': waitingPlanifications.map((w) => w.toJson()).toList(),
         }),
       );
 
@@ -418,6 +411,7 @@ class ApiService {
       return false;
     }
   }
+
   static Future<bool> addPlanification(Planification planification) async {
     final response = await http.post(
       Uri.parse('$baseUrl/planifications/'),

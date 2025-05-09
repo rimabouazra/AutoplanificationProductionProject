@@ -10,7 +10,6 @@ import '../models/client.dart';
 import '../models/commande.dart';
 import '../models/planification.dart';
 import '../providers/CommandeProvider.dart';
-import '../providers/PlanificationProvider .dart';
 import '../providers/client_provider.dart';
 import '../services/api_service.dart';
 import 'PlanificationConfirmationDialog.dart';
@@ -290,14 +289,13 @@ void _addModele() {
           context: context,
           builder: (context) => PlanificationConfirmationDialog(
             planifications: planifications,
-            waitingPlanifications: waitingPlanifications,
             commandeId: commandeId,
           ),
         );
 
         if (confirmed == true) {
           // Send all planifications and waiting planifications in a single request
-          bool success = await ApiService.confirmerPlanification(planifications, waitingPlanifications);
+          bool success = await ApiService.confirmerPlanification(planifications);
 
           if (success) {
             Fluttertoast.showToast(msg: "✅ Toutes les planifications ont été confirmées !");

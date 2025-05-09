@@ -81,7 +81,7 @@ app.get("/", (req, res) => {
 
 const BASE_URL = 'http://localhost:5000/api';
 // Tâche pour mettre à jour les commandes en cours toutes les minutes
-cron.schedule('*/15 * * * *', async () => {
+cron.schedule('*/5 * * * *', async () => {
   try {
     console.log('Cronjob: Mise à jour des commandes en cours...');
     await axios.post(`${BASE_URL}/planifications/mettre-a-jour-commandes`);
@@ -90,7 +90,7 @@ cron.schedule('*/15 * * * *', async () => {
     console.error('Erreur mise à jour commandes en cours :', error.response?.data || error.message);
   }});
 // Tâche pour mettre à jour les machines disponibles toutes les minutes
-cron.schedule('*/15 * * * *', async () => {
+cron.schedule('*/5 * * * *', async () => {
   try {
     console.log('Cronjob: Mise à jour des machines disponibles...');
     await axios.post(`${BASE_URL}/planifications/mettre-a-jour-machines`);
