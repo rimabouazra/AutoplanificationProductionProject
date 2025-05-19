@@ -851,6 +851,7 @@ static Future<void> deleteModele(String id) async {
         ? Uri.parse('$baseUrl/planifications/get/waiting?commandeId=$commandeId')
         : Uri.parse('$baseUrl/planifications/get/waiting');
     final response = await http.get(uri);
+
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
       return jsonData.map((json) => Planification.fromJson(json)).toList();

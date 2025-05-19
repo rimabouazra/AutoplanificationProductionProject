@@ -13,6 +13,7 @@ const PlanificationSchema = new mongoose.Schema({
   quantite: { type: Number },
   createdAt: { type: Date, default: Date.now },
   order: { type: Number, default: 0 } // For ordering waiting planifications
+
 });
 
 module.exports = mongoose.model("Planification", PlanificationSchema);

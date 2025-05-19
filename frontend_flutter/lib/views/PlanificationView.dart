@@ -81,6 +81,7 @@ class _PlanificationViewState extends State<PlanificationView> {
   Future<void> _fetchWaitingPlanifications() async {
     try {
       final waitingPlans = await ApiService.getWaitingPlanifications();
+      print("API Response: $waitingPlans");
       setState(() {
         _waitingPlanifications = waitingPlans;
       });
@@ -137,8 +138,12 @@ class _PlanificationViewState extends State<PlanificationView> {
             children: _waitingPlanifications.asMap().entries.map((entry) {
               final index = entry.key;
               final waitingPlan = entry.value;
+              // Safely access commande and modele data
+              final commande = waitingPlan.commandes.isNotEmpty ? waitingPlan.commandes.first : null;
+              final modeleData = commande?.modeles?.isNotEmpty == true ? commande!.modeles.first : null;
+
               return FadeInUp(
-                key: ValueKey(waitingPlan.id), // Unique key for reordering
+                key: ValueKey(waitingPlan.id),
                 duration: Duration(milliseconds: 300 + index * 100),
                 child: Card(
                   margin: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
@@ -149,7 +154,7 @@ class _PlanificationViewState extends State<PlanificationView> {
                   child: ListTile(
                     contentPadding: EdgeInsets.all(12),
                     title: Text(
-                      "Client: ${waitingPlan.commandes.first.client.name}",
+                      "Client: ${commande?.client.name ?? 'Inconnu'}",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
@@ -160,23 +165,19 @@ class _PlanificationViewState extends State<PlanificationView> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SizedBox(height: 4),
-                        Text(
-                          "Modèle: ${waitingPlan.modele?.nom}",
-                          style: TextStyle(fontSize: 12, color: Colors.grey[800]),
-                        ),
-                        Text(
-                          "Taille: ${waitingPlan.taille}",
-                          style: TextStyle(fontSize: 12, color: Colors.grey[800]),
-                        ),
-                        Text(
-                          "Couleur: ${waitingPlan.couleur}",
-                          style: TextStyle(fontSize: 12, color: Colors.grey[800]),
-                        ),
-                        Text(
-                          "Quantité: ${waitingPlan.quantite}",
-                          style: TextStyle(fontSize: 12, color: Colors.grey[800]),
-                        ),
 
+                        Text(
+                          "Taille: ${waitingPlan.taille ?? modeleData?.taille ?? 'Non spécifié'}",
+                          style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                        ),
+                        Text(
+                          "Couleur: ${waitingPlan.couleur ?? modeleData?.couleur ?? 'Non spécifié'}",
+                          style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                        ),
+                        Text(
+                          "Quantité: ${waitingPlan.quantite?.toString() ?? modeleData?.quantite?.toString() ?? 'Non spécifié'}",
+                          style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                        ),
                       ],
                     ),
                   ),
@@ -197,7 +198,6 @@ class _PlanificationViewState extends State<PlanificationView> {
       ),
     );
   }
-
   // Confirmer la déconnexion
   void _confirmLogout(BuildContext context) {
     showDialog(
