@@ -218,7 +218,7 @@ class _CommandePageState extends State<CommandePage> {
               pw.Text('Client: ${commande.client.name}'),
               pw.Text('Conditionnement: ${commande.conditionnement}'),
               pw.Text('Salle Affectée: ${commande.salleAffectee ?? 'Non assignée'}'),
-              pw.Text('Machines Affectées: ${commande.machinesAffectees?.join(', ') ?? 'Aucune'}'),
+              pw.Text('Machines Affectées: ${commande.machinesAffectees ?? 'Aucune'}'),
               pw.SizedBox(height: 20),
               pw.Text('Modèles:',
                   style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),

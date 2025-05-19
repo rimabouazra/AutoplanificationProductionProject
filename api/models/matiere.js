@@ -14,6 +14,4 @@ const matiereSchema = new mongoose.Schema({
   historique: [historiqueSchema] 
 });
 
-const Matiere = mongoose.model("Matiere", matiereSchema);
-
-module.exports = Matiere;
+module.exports = mongoose.models.Matiere || mongoose.model('Matiere', matiereSchema);

@@ -45,8 +45,7 @@ class _PlanificationConfirmationDialogState
     _selectedSalles = List<Salle?>.filled(widget.planifications.length, null);
     _selectedMachinesForPlanifications = List<List<String>>.generate(
         widget.planifications.length,
-            (index) =>
-            widget.planifications[index].machines.map((m) => m.id).toList());
+            (index) => widget.planifications[index].machines.map((m) => m.id).toList());
     _startDates = widget.planifications
         .map((p) => p.debutPrevue ?? DateTime.now())
         .toList();
@@ -109,65 +108,64 @@ class _PlanificationConfirmationDialogState
     }
   }
   bool _checkStockAvailability() {
-  for (var plan in widget.planifications) {
-    if (plan.statut == "waiting_resources") continue;
-    
-    for (var commande in plan.commandes) {
-      for (var modele in commande.modeles) {
-        final key = '${modele.nomModele}_${modele.taille}';
-        final matiereId = _matieresSelectionnees[key];
-        final quantiteNecessaire = _quantitesConsommees[key] ?? 0;
-        
-        if (matiereId != null) {
-          final matiere = _matieres.firstWhere((m) => m.id == matiereId);
-          if (matiere.quantite < quantiteNecessaire) {
-            return false;
+    for (var plan in widget.planifications) {
+      if (plan.statut == "waiting_resources") continue;
+
+      for (var commande in plan.commandes) {
+        for (var modele in commande.modeles) {
+          final key = '${modele.nomModele}_${modele.taille}';
+          final matiereId = _matieresSelectionnees[key];
+          final quantiteNecessaire = _quantitesConsommees[key] ?? 0;
+
+          if (matiereId != null) {
+            final matiere = _matieres.firstWhere((m) => m.id == matiereId);
+            if (matiere.quantite < quantiteNecessaire) {
+              return false;
+            }
           }
         }
       }
     }
+    return true;
   }
-  return true;
-}
   Future<void> _confirmPlanification() async {
     setState(() => _isLoading = true);
     try {
       if (!_checkStockAvailability()) {
-      Fluttertoast.showToast(
-        msg: "Stock insuffisant pour certaines matières. La planification est mise en attente.",
-        backgroundColor: Colors.orange,
-        toastLength: Toast.LENGTH_LONG,
-      );
-      
-      // Mettre les planifications en attente
-      List<Planification> waitingPlans = [];
-      for (var plan in widget.planifications) {
-        waitingPlans.add(Planification(
-          id: plan.id,
-          commandes: plan.commandes,
-          statut: "waiting_resources",
-          createdAt: DateTime.now(), machines: [],
-        ));
-      }
-
-      final success = await ApiService.confirmerPlanification(waitingPlans);
-      if (success) {
         Fluttertoast.showToast(
-          msg: "Planifications mises en attente de stock",
-          backgroundColor: Colors.blue[700],
+          msg: "Stock insuffisant pour certaines matières. La planification est mise en attente.",
+          backgroundColor: Colors.orange,
+          toastLength: Toast.LENGTH_LONG,
         );
-        Navigator.pop(context);
-        return;
+
+        // Mettre les planifications en attente
+        List<Planification> waitingPlans = [];
+        for (var plan in widget.planifications) {
+          waitingPlans.add(Planification(
+            id: plan.id,
+            commandes: plan.commandes,
+            statut: "waiting_resources",
+            createdAt: DateTime.now(), machines: [],
+          ));
+        }
+
+        final success = await ApiService.confirmerPlanification(waitingPlans);
+        if (success) {
+          Fluttertoast.showToast(
+            msg: "Planifications mises en attente de stock",
+            backgroundColor: Colors.blue[700],
+          );
+          Navigator.pop(context);
+          return;
+        }
       }
-    }
       List<Planification> updatedPlanifications = [];
 
       for (int i = 0; i < widget.planifications.length; i++) {
         final plan = widget.planifications[i];
 
-        // Skip validation for "waiting_resources" planifications
         if (plan.statut == "waiting_resources") {
-          updatedPlanifications.add(plan);
+          updatedPlanifications.add(plan); // Keep waiting_resources as is
           continue;
         }
 
@@ -217,7 +215,7 @@ class _PlanificationConfirmationDialogState
           salle: _selectedSalles[i],
           debutPrevue: _startDates[i],
           finPrevue: _endDates[i],
-          statut: "confirmée",
+          statut: "planifiée",
         ));
       }
 
@@ -349,7 +347,6 @@ class _PlanificationConfirmationDialogState
     final theme = Theme.of(context);
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
 
-    // If the planification is "waiting_resources", show a simplified view
     if (planification.statut == "waiting_resources") {
       return Card(
         margin: const EdgeInsets.only(bottom: 16),
@@ -361,7 +358,7 @@ class _PlanificationConfirmationDialogState
             children: [
               Text(
                 "Planification ${index + 1} (En attente de ressources)",
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                style: theme.textTheme.titleMedium?.copyWith(
                   color: Colors.orange[800],
                   fontWeight: FontWeight.bold,
                 ),
@@ -372,7 +369,7 @@ class _PlanificationConfirmationDialogState
               Text("Taille: ${planification.taille ?? 'N/A'}"),
               Text("Couleur: ${planification.couleur ?? 'N/A'}"),
               Text("Quantité: ${planification.quantite ?? 'N/A'}"),
-              Text("Ajoutée le: ${planification.createdAt != null ? DateFormat('dd/MM/yyyy  à HH:mm').format(planification.createdAt!) : 'N/A'}"),
+              Text("Ajoutée le: ${planification.createdAt != null ? DateFormat('dd/MM/yyyy à HH:mm').format(planification.createdAt!) : 'N/A'}"),
             ],
           ),
         ),
@@ -408,7 +405,7 @@ class _PlanificationConfirmationDialogState
                   .toSet()
                   .map((salle) => DropdownMenuItem<Salle>(
                 value: salle,
-                child: Text("${salle.nom} (${salle.type})"),
+                child: Text("${salle?.nom ?? 'N/A'} (${salle?.type ?? 'N/A'})"),
               ))
                   .toList(),
               onChanged: (Salle? newValue) {
@@ -429,25 +426,28 @@ class _PlanificationConfirmationDialogState
                     style: theme.textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 8),
-                  ...planification.machines
-                      .where((m) => m.salle.id == _selectedSalles[index]!.id)
-                      .map((machine) => CheckboxListTile(
-                    title: Text("${machine.nom} (${machine.modele.nom})"),
-                    value: _selectedMachinesForPlanifications[index]
-                        .contains(machine.id),
-                    onChanged: (bool? value) {
-                      setState(() {
-                        if (value == true) {
-                          _selectedMachinesForPlanifications[index]
-                              .add(machine.id);
-                        } else {
-                          _selectedMachinesForPlanifications[index]
-                              .remove(machine.id);
-                        }
-                      });
-                    },
-                  ))
-                      .toList(),
+                  if (planification.machines.isEmpty)
+                    Text(
+                      "Aucune machine disponible",
+                      style: TextStyle(color: Colors.red[700]),
+                    )
+                  else
+                    ...planification.machines
+                        .where((m) => m.salle.id == _selectedSalles[index]!.id)
+                        .map((machine) => CheckboxListTile(
+                      title: Text("${machine.nom} (${machine.modele.nom})"),
+                      value: _selectedMachinesForPlanifications[index].contains(machine.id),
+                      onChanged: (bool? value) {
+                        setState(() {
+                          if (value == true) {
+                            _selectedMachinesForPlanifications[index].add(machine.id);
+                          } else {
+                            _selectedMachinesForPlanifications[index].remove(machine.id);
+                          }
+                        });
+                      },
+                    ))
+                        .toList(),
                 ],
               ),
             const SizedBox(height: 16),
@@ -506,7 +506,6 @@ class _PlanificationConfirmationDialogState
       ),
     );
   }
-
   Future<void> _selectDate(
       BuildContext context, bool isStartDate, int planIndex) async {
     final initialDate =
