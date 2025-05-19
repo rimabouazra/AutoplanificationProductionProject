@@ -4,7 +4,6 @@ import 'package:frontend/models/matiere.dart';
 import 'package:frontend/services/auth_service.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/WaitingPlanification.dart';
 import '../models/machine.dart';
 import '../models/modele.dart';
 import '../models/produits.dart';
@@ -196,7 +195,7 @@ class ApiService {
           : [], // Envoyer une liste vide si pas de base
       }),
     );
-    print("Réponse de l'API: ${response.statusCode} - ${response.body}");
+    //print("Réponse de l'API: ${response.statusCode} - ${response.body}");
     if (response.statusCode != 201) {
       throw Exception("Échec de l'ajout du modèle");
     }
@@ -847,14 +846,14 @@ static Future<void> deleteModele(String id) async {
       throw Exception('Échec de la mise à jour de la quantité réelle');
     }
   }
-  static Future<List<WaitingPlanification>> getWaitingPlanifications({String? commandeId}) async {
+  static Future<List<Planification>> getWaitingPlanifications({String? commandeId}) async {
     final uri = commandeId != null
         ? Uri.parse('$baseUrl/planifications/get/waiting?commandeId=$commandeId')
         : Uri.parse('$baseUrl/planifications/get/waiting');
     final response = await http.get(uri);
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
-      return jsonData.map((json) => WaitingPlanification.fromJson(json)).toList();
+      return jsonData.map((json) => Planification.fromJson(json)).toList();
     } else {
       throw Exception("Erreur lors de la récupération des planifications en attente");
     }
@@ -877,7 +876,7 @@ static Future<void> deleteModele(String id) async {
       throw Exception("Erreur de connexion");
     }
   }
-  static Future<void> updateWaitingPlanificationOrder(List<String> order) async {
+  static Future<void> updateWaitingPlanificationOrder(List<String?> order) async {
     final token = await AuthService.getToken();
     final response = await http.put(
       Uri.parse('$baseUrl/planifications/waiting/order'),

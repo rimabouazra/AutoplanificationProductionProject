@@ -4,7 +4,6 @@ import 'package:frontend/views/LoginPage.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
-import '../models/WaitingPlanification.dart';
 import '../models/planification.dart';
 import '../providers/PlanificationProvider .dart';
 import '../services/api_service.dart';
@@ -24,7 +23,7 @@ class _PlanificationViewState extends State<PlanificationView> {
   int _endHour = 17;
   double _timeScale = 1.0; // Zoom pour l'échelle temporelle
   bool _isDateRangeInitialized = false;
-  List<WaitingPlanification> _waitingPlanifications = [];
+  List<Planification> _waitingPlanifications = [];
 
   @override
   void initState() {
@@ -150,7 +149,7 @@ class _PlanificationViewState extends State<PlanificationView> {
                   child: ListTile(
                     contentPadding: EdgeInsets.all(12),
                     title: Text(
-                      "Client: ${waitingPlan.commande.client.name}",
+                      "Client: ${waitingPlan.commandes.first.client.name}",
                       style: TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 14,
@@ -162,7 +161,7 @@ class _PlanificationViewState extends State<PlanificationView> {
                       children: [
                         SizedBox(height: 4),
                         Text(
-                          "Modèle: ${waitingPlan.modele.nom}",
+                          "Modèle: ${waitingPlan.modele?.nom}",
                           style: TextStyle(fontSize: 12, color: Colors.grey[800]),
                         ),
                         Text(
@@ -177,10 +176,7 @@ class _PlanificationViewState extends State<PlanificationView> {
                           "Quantité: ${waitingPlan.quantite}",
                           style: TextStyle(fontSize: 12, color: Colors.grey[800]),
                         ),
-                        Text(
-                          "Ajouté le: ${DateFormat('dd/MM/yyyy HH:mm').format(waitingPlan.createdAt)}",
-                          style: TextStyle(fontSize: 12, color: Colors.grey[800]),
-                        ),
+
                       ],
                     ),
                   ),
@@ -502,16 +498,7 @@ class _PlanificationViewState extends State<PlanificationView> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton(
-          icon: Icon(Icons.zoom_in, size: 20),
-          onPressed: () => setState(() => _timeScale = (_timeScale + 0.1).clamp(0.5, 2.0)),
-          tooltip: 'Zoomer',
-        ),
-        IconButton(
-          icon: Icon(Icons.zoom_out, size: 20),
-          onPressed: () => setState(() => _timeScale = (_timeScale - 0.1).clamp(0.5, 2.0)),
-          tooltip: 'Dézoomer',
-        ),
+
       ],
     );
   }

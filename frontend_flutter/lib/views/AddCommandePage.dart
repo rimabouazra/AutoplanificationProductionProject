@@ -5,7 +5,6 @@ import 'package:frontend/providers/PlanificationProvider%20.dart';
 import 'package:frontend/providers/modeleProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
-import '../models/WaitingPlanification.dart';
 import '../models/client.dart';
 import '../models/commande.dart';
 import '../models/planification.dart';
@@ -264,7 +263,7 @@ void _addModele() {
   });
 }
 
-  Future _showPlanificationConfirmation(String commandeId) async{
+  Future _showPlanificationConfirmation(String commandeId) async {
     print('Showing planification confirmation for commande: $commandeId');
 
     final planifProvider = Provider.of<PlanificationProvider>(context, listen: false);
@@ -272,15 +271,25 @@ void _addModele() {
       final previews = await ApiService.getPlanificationPreview(commandeId);
       print('Planification previews received:');
       print('- Planifications: ${previews['planifications']?.length ?? 0}');
-      print('- Waiting planifications: ${previews['waitingPlanifications']?.length ?? 0}');
-      final planifications = previews['planifications'] as List<Planification>;
-      final waitingPlanifications = previews['waitingPlanifications'] as List<WaitingPlanification>;
+      print('- Statut: ${previews['statut']}');
 
-      if (planifications.isNotEmpty || waitingPlanifications.isNotEmpty) {
-        bool isValid = planifications.every((p) => p.commandes.isNotEmpty && p.machines.isNotEmpty);
+      final planifications = (previews['planifications'] as List<Planification>?) ?? [];
+
+      // Log planification details for debugging
+      for (var i = 0; i < planifications.length; i++) {
+        print('Planification ${i + 1}:');
+        print('- Commandes: ${planifications[i].commandes.length}');
+        print('- Machines: ${planifications[i].machines.length}');
+        print('- Statut: ${planifications[i].statut}');
+        print('- Machines IDs: ${planifications[i].machines.map((m) => m.id).toList()}');
+      }
+
+      if (planifications.isNotEmpty) {
+        bool isValid = planifications.every((p) =>
+        p.commandes.isNotEmpty && (p.statut == 'waiting_resources' || p.machines.isNotEmpty));
         print('Planification validity check: $isValid');
 
-        if (!isValid && planifications.isNotEmpty) {
+        if (!isValid) {
           Fluttertoast.showToast(msg: "Une ou plusieurs planifications sont incomplètes.");
           return;
         }
@@ -294,7 +303,6 @@ void _addModele() {
         );
 
         if (confirmed == true) {
-          // Send all planifications and waiting planifications in a single request
           bool success = await ApiService.confirmerPlanification(planifications);
 
           if (success) {
@@ -306,16 +314,17 @@ void _addModele() {
                   (route) => false,
             );
           } else {
-            Fluttertoast.showToast(msg: " Erreur lors de la confirmation.");
+            Fluttertoast.showToast(msg: "Erreur lors de la confirmation.");
           }
         } else {
-          Fluttertoast.showToast(msg: " Planification annulée.");
+          Fluttertoast.showToast(msg: "Planification annulée.");
         }
       } else {
         Fluttertoast.showToast(msg: "Aucune planification disponible.");
       }
     } catch (e) {
       Fluttertoast.showToast(msg: "Erreur interne : $e");
+      print('Error in _showPlanificationConfirmation: $e');
     }
   }
 

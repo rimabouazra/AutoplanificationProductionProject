@@ -369,7 +369,7 @@ class _PlanificationConfirmationDialogState
               Text("Taille: ${planification.taille ?? 'N/A'}"),
               Text("Couleur: ${planification.couleur ?? 'N/A'}"),
               Text("Quantité: ${planification.quantite ?? 'N/A'}"),
-              Text("Ajoutée le: ${planification.createdAt != null ? DateFormat('dd/MM/yyyy  à HH:mm').format(planification.createdAt!) : 'N/A'}"),
+              Text("Ajoutée le: ${planification.createdAt != null ? DateFormat('dd/MM/yyyy à HH:mm').format(planification.createdAt!) : 'N/A'}"),
             ],
           ),
         ),
@@ -405,7 +405,7 @@ class _PlanificationConfirmationDialogState
                   .toSet()
                   .map((salle) => DropdownMenuItem<Salle>(
                 value: salle,
-                child: Text("${salle.nom} (${salle.type})"),
+                child: Text("${salle?.nom ?? 'N/A'} (${salle?.type ?? 'N/A'})"),
               ))
                   .toList(),
               onChanged: (Salle? newValue) {
@@ -426,25 +426,28 @@ class _PlanificationConfirmationDialogState
                     style: theme.textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 8),
-                  ...planification.machines
-                      .where((m) => m.salle.id == _selectedSalles[index]!.id)
-                      .map((machine) => CheckboxListTile(
-                    title: Text("${machine.nom} (${machine.modele.nom})"),
-                    value: _selectedMachinesForPlanifications[index]
-                        .contains(machine.id),
-                    onChanged: (bool? value) {
-                      setState(() {
-                        if (value == true) {
-                          _selectedMachinesForPlanifications[index]
-                              .add(machine.id);
-                        } else {
-                          _selectedMachinesForPlanifications[index]
-                              .remove(machine.id);
-                        }
-                      });
-                    },
-                  ))
-                      .toList(),
+                  if (planification.machines.isEmpty)
+                    Text(
+                      "Aucune machine disponible",
+                      style: TextStyle(color: Colors.red[700]),
+                    )
+                  else
+                    ...planification.machines
+                        .where((m) => m.salle.id == _selectedSalles[index]!.id)
+                        .map((machine) => CheckboxListTile(
+                      title: Text("${machine.nom} (${machine.modele.nom})"),
+                      value: _selectedMachinesForPlanifications[index].contains(machine.id),
+                      onChanged: (bool? value) {
+                        setState(() {
+                          if (value == true) {
+                            _selectedMachinesForPlanifications[index].add(machine.id);
+                          } else {
+                            _selectedMachinesForPlanifications[index].remove(machine.id);
+                          }
+                        });
+                      },
+                    ))
+                        .toList(),
                 ],
               ),
             const SizedBox(height: 16),
@@ -503,7 +506,6 @@ class _PlanificationConfirmationDialogState
       ),
     );
   }
-
   Future<void> _selectDate(
       BuildContext context, bool isStartDate, int planIndex) async {
     final initialDate =

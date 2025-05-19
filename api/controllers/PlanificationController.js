@@ -4,15 +4,14 @@ const Salle = require("../models/Salle");
 const Machine = require("../models/Machine");
 const WaitingPlanification = require("../models/WaitingPlanification");
 const moment = require('moment-timezone');
-
-// Default work hours configuration (7 AM to 5 PM, Tunisia timezone)
+const Matiere = require("../models/Matiere");
+// 7 AM to 5 PM, Tunisia timezone
 let workHoursConfig = {
   startHour: 7, // 7 AM
   endHour: 17, // 5 PM
-  timezone: "Tunisia/Monastir"
+  timezone: "CET"
 };
 
-// Helper method to update work hours (e.g., for urgent commands)
 exports.updateWorkHours = async (newStartHour, newEndHour) => {
   try {
     if (newStartHour < 0 || newStartHour > 23 || newEndHour < 0 || newEndHour > 23) {
@@ -33,7 +32,6 @@ exports.updateWorkHours = async (newStartHour, newEndHour) => {
   }
 };
 
-// Helper method to calculate planification dates respecting work hours
 const calculatePlanificationDates = (startDate, hoursRequired, workHours = workHoursConfig) => {
   let currentDate = moment(startDate).tz(workHours.timezone);
   let remainingHours = hoursRequired;
@@ -354,7 +352,6 @@ exports.processWaitingList = async () => {
     const waitingPlans = await Planification.find({ statut: "waiting_resources" })
       .sort({ order: 1, createdAt: 1 })
       .populate('commandes')
-      .populate('modele');
 
     const salles = await Salle.find();
     const machines = await Machine.find().populate("modele").populate("salle");
@@ -610,17 +607,27 @@ exports.getAllPlanifications = async (req, res) => {
 exports.getWaitingPlanifications = async (req, res) => {
   try {
     const { commandeId } = req.query;
-    const query = commandeId ? { commande: commandeId } : {};
-    const waitingPlans = await WaitingPlanification.find(query)
-      .sort({ order: 1, createdAt: 1 }) // Sort by order and createdAt
-      .populate('commande')
-      .populate('modele');
+    const query = {
+      statut: { $in: ["en attente", "waiting_resources"] }
+    };
+    if (commandeId) {
+      query.commandes = commandeId;
+    }
+    const waitingPlans = await Planification.find(query)
+      .sort({ order: 1, createdAt: 1 })
+      .populate({
+        path: 'commandes',
+        populate: { path: 'client' }
+      })
+      .populate({
+        path: 'machines',
+        populate: ['salle', 'modele']
+      });
     res.status(200).json(waitingPlans);
   } catch (error) {
     res.status(500).json({ message: "Erreur serveur", error: error.message });
   }
 };
-
 exports.deletePlanification = async (req, res) => {
   try {
     const { id } = req.params;
@@ -691,10 +698,10 @@ exports.reorderWaitingPlanifications = async (req, res) => {
       return res.status(400).json({ message: "orderedIds must be an array" });
     }
 
-    // Update order for each WaitingPlanification
+    // Update order for each Planification (changed from WaitingPlanification)
     const updates = orderedIds.map((id, index) =>
-      WaitingPlanification.updateOne(
-        { _id: id },
+      Planification.updateOne(
+        { _id: id, statut: { $in: ["en attente", "waiting_resources"] } },
         { $set: { order: index } }
       )
     );
