@@ -202,6 +202,7 @@ exports.autoPlanifierCommande = async (req, res) => {
     const commande = await Commande.findById(commandeId).populate({
       path: 'modeles.modele'
     }).populate('client');
+
     // Vérifier le stock
     const matieres = await Matiere.find();
     let hasInsufficientStock = false;
@@ -226,16 +227,25 @@ exports.autoPlanifierCommande = async (req, res) => {
       // Créer une planification en attente
       const waitingPlan = new Planification({
         commandes: [commande._id],
+        machines: [], // Explicitly set to empty array
         statut: "waiting_resources",
         createdAt: new Date()
       });
       await waitingPlan.save();
 
+      // Populate commandes for the response
+      const populatedWaitingPlan = await Planification.findById(waitingPlan._id)
+        .populate({
+          path: 'commandes',
+          populate: { path: 'client' }
+        });
+
       return res.status(201).json({
-        planifications: [waitingPlan],
+        planifications: [populatedWaitingPlan],
         statut: "en attente"
       });
     }
+
     if (!commande) {
       return res.status(404).json({ message: "Commande non trouvée", id: commandeId });
     }
@@ -266,29 +276,40 @@ exports.autoPlanifierCommande = async (req, res) => {
       }
 
       if (!machine) {
-      const commandePopulated = await Commande.findById(commande._id)
-          .populate('modeles.modele');
         const planification = {
           commandes: [commande._id],
+          machines: [], // Explicitly set to empty array
           taille: modele.taille,
           couleur: modele.couleur,
           quantite: modele.quantite,
           salle: salleCible._id,
           statut: "waiting_resources",
-          createdAt: moment().tz("Europe/Paris").toDate()
+          createdAt: moment().tz("CET").toDate()
         };
+
         if (!preview) {
           const newPlanification = new Planification(planification);
           await newPlanification.save();
-          planifications.push(newPlanification);
+          // Populate commandes for the response
+          const populatedPlanification = await Planification.findById(newPlanification._id)
+            .populate({
+              path: 'commandes',
+              populate: { path: 'client' }
+            });
+          planifications.push(populatedPlanification);
         } else {
+          // For preview, include populated commande
+          const populatedCommande = await Commande.findById(commande._id)
+            .populate('client')
+            .populate('modeles.modele');
+          planification.commandes = [populatedCommande];
           planifications.push(planification);
         }
         continue;
       }
 
       const heures = (modele.quantite / 35) + 2;
-      const now = moment().tz("Europe/Paris").toDate();
+      const now = moment().tz("CET").toDate();
       const { debutPrevue, finPrevue } = calculatePlanificationDates(now, heures);
 
       if (!preview) {
@@ -323,11 +344,21 @@ exports.autoPlanifierCommande = async (req, res) => {
       } else {
         const nouvellePlanification = new Planification(planification);
         await nouvellePlanification.save();
-        planifications.push(nouvellePlanification);
+        // Populate commandes for the response
+        const populatedPlanification = await Planification.findById(nouvellePlanification._id)
+          .populate({
+            path: 'commandes',
+            populate: { path: 'client' }
+          })
+          .populate({
+            path: 'machines',
+            populate: ['salle', 'modele']
+          });
+        planifications.push(populatedPlanification);
       }
     }
 
-    if (!preview && (planifications.length > 0)) {
+    if (!preview && planifications.length > 0) {
       commande.machinesAffectees = allMachinesAssignees;
       commande.salleAffectee = [...allSallesUtilisees][0];
       commande.etat = planifications.some(p => p.statut === "waiting_resources") ? "en attente" : "en attente";
