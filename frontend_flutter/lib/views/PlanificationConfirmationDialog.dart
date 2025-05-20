@@ -6,6 +6,7 @@ import 'package:frontend/views/admin_home_page.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../main.dart';
+import '../models/machine.dart';
 import '../models/matiere.dart';
 import '../models/commande.dart';
 import '../models/planification.dart';
@@ -38,6 +39,7 @@ class _PlanificationConfirmationDialogState
   List<List<String>> _selectedMachinesForPlanifications = [];
   List<DateTime> _startDates = [];
   List<DateTime> _endDates = [];
+  List<List<Machine>> _availableMachines = [];
 
   bool _showStockOptions = false;
 bool _partialPlanning = false;
@@ -55,8 +57,10 @@ String _stockMessage = '';
     _endDates = widget.planifications
         .map((p) => p.finPrevue ?? DateTime.now().add(const Duration(hours: 1)))
         .toList();
+    _availableMachines = List<List<Machine>>.filled(widget.planifications.length, []);
 
     _loadMatieres();
+    _loadSallesAndMachines();
   }
 
   Future<void> _loadMatieres() async {
@@ -94,6 +98,43 @@ String _stockMessage = '';
     }
   }
 
+  Future<void> _loadSallesAndMachines() async {
+    try {
+      final salles = await ApiService.getSalles();
+      for (int i = 0; i < widget.planifications.length; i++) {
+        final plan = widget.planifications[i];
+        setState(() {
+          _selectedSalles[i] = plan.salle ?? salles.firstOrNull;
+          if (_selectedSalles[i] != null) {
+            _loadMachinesForSalle(i, _selectedSalles[i]!.id);
+          }
+        });
+      }
+    } catch (e) {
+      Fluttertoast.showToast(msg: "Erreur lors du chargement des salles");
+    }
+  }
+
+  Future<void> _loadMachinesForSalle(int planIndex, String salleId) async {
+    try {
+      final machines = await ApiService.getMachinesParSalle(salleId);
+      setState(() {
+        _availableMachines[planIndex] = machines.where((m) => m.etat == "disponible").toList();
+        // If current selected machines are not in available machines, reset selection
+        _selectedMachinesForPlanifications[planIndex] = _selectedMachinesForPlanifications[planIndex]
+            .where((id) => _availableMachines[planIndex].any((m) => m.id == id))
+            .toList();
+        // If no machines selected but available, select first available machine
+        if (_selectedMachinesForPlanifications[planIndex].isEmpty &&
+            _availableMachines[planIndex].isNotEmpty) {
+          _selectedMachinesForPlanifications[planIndex] = [_availableMachines[planIndex].first.id];
+        }
+      });
+    } catch (e) {
+      Fluttertoast.showToast(msg: "Erreur lors du chargement des machines");
+    }
+  }
+
   double _calculerConsommation(CommandeModele modele) {
     try {
       if (modele.modele is Modele &&
@@ -110,6 +151,7 @@ String _stockMessage = '';
       return 0;
     }
   }
+
   bool _checkStockAvailability() {
     for (var plan in widget.planifications) {
       if (plan.statut == "waiting_resources") continue;
@@ -131,6 +173,7 @@ String _stockMessage = '';
     }
     return true;
   }
+
   Future<void> _confirmPlanification() async {
     setState(() => _isLoading = true);
     try {
@@ -141,14 +184,14 @@ String _stockMessage = '';
           toastLength: Toast.LENGTH_LONG,
         );
 
-        // Mettre les planifications en attente
         List<Planification> waitingPlans = [];
         for (var plan in widget.planifications) {
           waitingPlans.add(Planification(
             id: plan.id,
             commandes: plan.commandes,
             statut: "waiting_resources",
-            createdAt: DateTime.now(), machines: [],
+            createdAt: DateTime.now(),
+            machines: [],
           ));
         }
 
@@ -168,7 +211,7 @@ String _stockMessage = '';
         final plan = widget.planifications[i];
 
         if (plan.statut == "waiting_resources") {
-          updatedPlanifications.add(plan); // Keep waiting_resources as is
+          updatedPlanifications.add(plan);
           continue;
         }
 
@@ -212,7 +255,7 @@ String _stockMessage = '';
         updatedPlanifications.add(Planification(
           id: plan.id,
           commandes: plan.commandes,
-          machines: plan.machines
+          machines: _availableMachines[i]
               .where((m) => _selectedMachinesForPlanifications[i].contains(m.id))
               .toList(),
           salle: _selectedSalles[i],
@@ -345,7 +388,6 @@ String _stockMessage = '';
       ),
     );
   }
-
   Widget _buildPlanificationItem(int index, Planification planification) {
     final theme = Theme.of(context);
     final dateFormat = DateFormat('dd/MM/yyyy HH:mm');
@@ -396,26 +438,39 @@ String _stockMessage = '';
             ),
             const SizedBox(height: 16),
 
-            DropdownButtonFormField<Salle>(
-              value: _selectedSalles[index],
-              decoration: const InputDecoration(
-                labelText: "Salle",
-                border: OutlineInputBorder(),
-                contentPadding: EdgeInsets.symmetric(horizontal: 12),
-              ),
-              items: planification.machines
-                  .map((m) => m.salle)
-                  .toSet()
-                  .map((salle) => DropdownMenuItem<Salle>(
-                value: salle,
-                child: Text("${salle?.nom ?? 'N/A'} (${salle?.type ?? 'N/A'})"),
-              ))
-                  .toList(),
-              onChanged: (Salle? newValue) {
-                setState(() {
-                  _selectedSalles[index] = newValue;
-                  _selectedMachinesForPlanifications[index] = [];
-                });
+            FutureBuilder<List<Salle>>(
+              future: ApiService.getSalles(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const CircularProgressIndicator();
+                }
+                if (snapshot.hasError) {
+                  return Text("Erreur: ${snapshot.error}");
+                }
+                final salles = snapshot.data ?? [];
+                return DropdownButtonFormField<Salle>(
+                  value: _selectedSalles[index],
+                  decoration: const InputDecoration(
+                    labelText: "Salle",
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                  ),
+                  items: salles
+                      .map((salle) => DropdownMenuItem<Salle>(
+                    value: salle,
+                    child: Text("${salle.nom} (${salle.type})"),
+                  ))
+                      .toList(),
+                  onChanged: (Salle? newValue) {
+                    setState(() {
+                      _selectedSalles[index] = newValue;
+                      _selectedMachinesForPlanifications[index] = [];
+                      if (newValue != null) {
+                        _loadMachinesForSalle(index, newValue.id);
+                      }
+                    });
+                  },
+                );
               },
             ),
             const SizedBox(height: 16),
@@ -429,28 +484,37 @@ String _stockMessage = '';
                     style: theme.textTheme.bodyMedium,
                   ),
                   const SizedBox(height: 8),
-                  if (planification.machines.isEmpty)
+                  if (_availableMachines[index].isEmpty)
                     Text(
                       "Aucune machine disponible",
                       style: TextStyle(color: Colors.red[700]),
                     )
                   else
-                    ...planification.machines
-                        .where((m) => m.salle.id == _selectedSalles[index]!.id)
-                        .map((machine) => CheckboxListTile(
-                      title: Text("${machine.nom} (${machine.modele.nom})"),
-                      value: _selectedMachinesForPlanifications[index].contains(machine.id),
-                      onChanged: (bool? value) {
+                    DropdownButtonFormField<String>(
+                      value: _selectedMachinesForPlanifications[index].isNotEmpty
+                          ? _selectedMachinesForPlanifications[index].first
+                          : null,
+                      decoration: const InputDecoration(
+                        labelText: "Machine",
+                        border: OutlineInputBorder(),
+                        contentPadding: EdgeInsets.symmetric(horizontal: 12),
+                      ),
+                      items: _availableMachines[index]
+                          .map((machine) => DropdownMenuItem<String>(
+                        value: machine.id,
+                        child: Text("${machine.nom} (${machine.modele.nom})"),
+                      ))
+                          .toList(),
+                      onChanged: (String? newValue) {
                         setState(() {
-                          if (value == true) {
-                            _selectedMachinesForPlanifications[index].add(machine.id);
+                          if (newValue != null) {
+                            _selectedMachinesForPlanifications[index] = [newValue];
                           } else {
-                            _selectedMachinesForPlanifications[index].remove(machine.id);
+                            _selectedMachinesForPlanifications[index] = [];
                           }
                         });
                       },
-                    ))
-                        .toList(),
+                    ),
                 ],
               ),
             const SizedBox(height: 16),
@@ -509,6 +573,7 @@ String _stockMessage = '';
       ),
     );
   }
+
   Future<void> _selectDate(
       BuildContext context, bool isStartDate, int planIndex) async {
     final initialDate =
