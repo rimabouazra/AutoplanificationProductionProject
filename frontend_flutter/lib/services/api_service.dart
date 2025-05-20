@@ -218,8 +218,10 @@ class ApiService {
 
   static Future<List<Salle>> getSalles() async {
     final response = await http.get(Uri.parse('$baseUrl/salles'));
+    print('Raw API response for getSalles: ${response.body}');
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
+      print('Parsed salles data: $jsonData');
       return jsonData.map((json) => Salle.fromJson(json)).toList();
     } else {
       throw Exception("Erreur lors de la récupération des salles");

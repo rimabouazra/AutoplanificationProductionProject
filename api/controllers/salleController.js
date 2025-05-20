@@ -75,8 +75,8 @@ exports.getAllSalles = async (req, res) => {
         // Vérifier le vrai nombre de machines dans la base
         for (const salle of salles) {
             const nombreMachinesBDD = await Machine.countDocuments({ salle: salle._id });
-            console.log(`Salle: ${salle.nom}, Machines dans la salle:`, salle.machines.length);
-            console.log(`Salle: ${salle.nom}, NombreMachines BDD:`, nombreMachinesBDD);
+           // console.log(`Salle: ${salle.nom}, Machines dans la salle:`, salle.machines.length);
+            //console.log(`Salle: ${salle.nom}, NombreMachines BDD:`, nombreMachinesBDD);
         }
 
         // Calcul du nombre de machines
@@ -85,7 +85,7 @@ exports.getAllSalles = async (req, res) => {
             nombreMachines: salle.machines.length, 
         }));
 
-        console.log("Salles avec nombreMachines correct:", JSON.stringify(sallesAvecNombreMachines, null, 2));
+        //console.log("Salles avec nombreMachines correct:", JSON.stringify(sallesAvecNombreMachines, null, 2));
         res.status(200).json(sallesAvecNombreMachines);
     } catch (error) {
         console.error("Erreur lors de la récupération des salles:", error);

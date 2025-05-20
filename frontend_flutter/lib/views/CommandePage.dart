@@ -217,8 +217,7 @@ class _CommandePageState extends State<CommandePage> {
               pw.SizedBox(height: 20),
               pw.Text('Client: ${commande.client.name}'),
               pw.Text('Conditionnement: ${commande.conditionnement}'),
-              pw.Text('Salle Affectée: ${commande.salleAffectee ?? 'Non assignée'}'),
-              pw.Text('Machines Affectées: ${commande.machinesAffectees ?? 'Aucune'}'),
+
               pw.SizedBox(height: 20),
               pw.Text('Modèles:',
                   style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold)),
@@ -901,29 +900,14 @@ class _CommandePageState extends State<CommandePage> {
                           ),
                           Expanded(
                             child: Text(
-                              "Conditionnement: ${commande.conditionnement}",
+                              "Conditionnement: ${commande.conditionnement??'aucune conditionnement'}",
                               style: TextStyle(color: Colors.blueGrey[600]),
                             ),
                           ),
                         ],
                       ),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Text(
-                              "Salle affectée: ${commande.salleAffectee ?? 'Non assignée'}",
-                              style: TextStyle(color: Colors.blueGrey[600]),
-                            ),
-                          ),
-                          Expanded(
-                            child: Text(
-                              "Machines affectées: ${commande.machinesAffectees?.join(', ') ?? 'Aucune'}",
-                              style: TextStyle(color: Colors.blueGrey[600]),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 15),
+
+                      const SizedBox(height: 20),
                       const Text(
                         "Modèles:",
                         style: TextStyle(

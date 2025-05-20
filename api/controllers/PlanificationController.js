@@ -36,7 +36,6 @@ const calculatePlanificationDates = (startDate, hoursRequired, workHours = workH
   let remainingHours = hoursRequired;
   let workDayHours = workHours.endHour - workHours.startHour;
 
-  // Start at the next available work hour
   if (currentDate.hour() < workHours.startHour) {
     currentDate.set({ hour: workHours.startHour, minute: 0, second: 0 });
   } else if (currentDate.hour() >= workHours.endHour) {
@@ -154,7 +153,6 @@ exports.mettreAJourMachinesDisponibles = async (req, res) => {
 
     for (const planif of planifs) {
       console.log("update planification statut en cours")
-      // Update planification status
       if (planif.debutPrevue <= now && planif.finPrevue > now && planif.statut !== "en cours") {
         planif.statut = "en cours";
         await planif.save();
@@ -175,8 +173,6 @@ exports.mettreAJourMachinesDisponibles = async (req, res) => {
         await planif.save();
       }
     }
-
-    // Process the waiting list after freeing machines
     await exports.processWaitingList();
 
     res.status(200).json({
@@ -199,22 +195,26 @@ exports.autoPlanifierCommande = async (req, res) => {
       return res.status(400).json({ message: "CommandeId is missing" });
     }
 
-    const commande = await Commande.findById(commandeId).populate({
-      path: 'modeles.modele'
-    }).populate('client');
-
+    const commande = await Commande.findById(commandeId)
+      .populate({
+        path: "modeles.modele",
+      })
+      .populate("client");
     // Vérifier le stock
     const matieres = await Matiere.find();
     let hasInsufficientStock = false;
 
     for (const modele of commande.modeles) {
-      const matiere = matieres.find(m =>
-        m.couleur.toLowerCase() === modele.couleur.toLowerCase());
+      const matiere = matieres.find(
+        (m) => m.couleur.toLowerCase() === modele.couleur.toLowerCase()
+      );
 
       if (matiere) {
-        const consommation = modele.modele.consommation.find(c =>
-          c.taille === modele.taille);
-        const quantiteNecessaire = (consommation?.quantity || 0.5) * modele.quantite;
+        const consommation = modele.modele.consommation.find(
+          (c) => c.taille === modele.taille
+        );
+        const quantiteNecessaire =
+          (consommation?.quantity || 0.5) * modele.quantite;
 
         if (matiere.quantite < quantiteNecessaire) {
           hasInsufficientStock = true;
@@ -224,91 +224,123 @@ exports.autoPlanifierCommande = async (req, res) => {
     }
 
     if (hasInsufficientStock && !preview) {
-      // Créer une planification en attente
       const waitingPlan = new Planification({
         commandes: [commande._id],
-        machines: [], // Explicitly set to empty array
+        machines: [],
         statut: "waiting_resources",
-        createdAt: new Date()
+        createdAt: new Date(),
       });
       await waitingPlan.save();
 
-      // Populate commandes for the response
       const populatedWaitingPlan = await Planification.findById(waitingPlan._id)
         .populate({
-          path: 'commandes',
-          populate: { path: 'client' }
+          path: "commandes",
+          populate: { path: "client" },
         });
-
+      if (waitingPlan.salle) {
+        const salleLight = await Salle.findById(waitingPlan.salle).select(
+          "_id nom type"
+        );
+        populatedWaitingPlan.salle = salleLight
+          ? { _id: salleLight._id, nom: salleLight.nom, type: salleLight.type }
+          : null;
+      }
       return res.status(201).json({
         planifications: [populatedWaitingPlan],
-        statut: "en attente"
+        statut: "en attente",
       });
     }
 
     if (!commande) {
-      return res.status(404).json({ message: "Commande non trouvée", id: commandeId });
+      return res.status(404).json({
+        message: "Commande non trouvée",
+        id: commandeId,
+      });
     }
 
     const salles = await Salle.find();
-    const machines = await Machine.find().populate("modele").populate("salle");
+    const machines = await Machine.find()
+      .populate("modele")
+      .populate("salle");
     const planifications = [];
     const allMachinesAssignees = [];
     const allSallesUtilisees = new Set();
 
     for (const modele of commande.modeles) {
-      const estFoncee = ["noir", "bleu marine", "bleu", "vert"].includes(modele.couleur.toLowerCase());
-      const salleCible = salles.find(s => estFoncee ? s.type === "noir" : s.type === "blanc");
+      const estFoncee = ["noir", "bleu marine", "bleu", "vert"].includes(
+        modele.couleur.toLowerCase()
+      );
+      const salleCible = salles.find((s) =>
+        estFoncee ? s.type === "noir" : s.type === "blanc"
+      );
 
       if (!salleCible) {
-        return res.status(400).json({ message: `Salle de type ${estFoncee ? 'noir' : 'blanc'} introuvable` });
+        return res.status(400).json({
+          message: `Salle de type ${estFoncee ? "noir" : "blanc"} introuvable`,
+        });
       }
 
-      const machinesSalle = machines.filter(m => m.salle._id.equals(salleCible._id));
-      let machine = machinesSalle.find(m =>
-        m.modele && m.modele._id.equals(modele.modele._id) &&
-        m.taille === modele.taille &&
-        m.etat === "disponible"
+      const machinesSalle = machines.filter((m) =>
+        m.salle._id.equals(salleCible._id)
+      );
+      let machine = machinesSalle.find(
+        (m) =>
+          m.modele &&
+          m.modele._id.equals(modele.modele._id) &&
+          m.taille === modele.taille &&
+          m.etat === "disponible"
       );
 
       if (!machine) {
-        machine = machinesSalle.find(m => m.etat === "disponible");
+        machine = machinesSalle.find((m) => m.etat === "disponible");
       }
 
       if (!machine) {
         const planification = {
           commandes: [commande._id],
-          machines: [], // Explicitly set to empty array
+          machines: [],
           taille: modele.taille,
           couleur: modele.couleur,
           quantite: modele.quantite,
           salle: salleCible._id,
           statut: "waiting_resources",
-          createdAt: moment().tz("CET").toDate()
+          createdAt: moment().tz("CET").toDate(),
         };
 
         if (!preview) {
           const newPlanification = new Planification(planification);
           await newPlanification.save();
-          // Populate commandes for the response
-          const populatedPlanification = await Planification.findById(newPlanification._id)
-            .populate({
-              path: 'commandes',
-              populate: { path: 'client' }
-            });
+          const populatedPlanification = await Planification.findById(
+            newPlanification._id
+          ).populate({
+            path: "commandes",
+            populate: { path: "client" },
+          });
+          if (newPlanification.salle) {
+            const salleLight = await Salle.findById(newPlanification.salle).select(
+              "_id nom type"
+            );
+            populatedPlanification.salle = salleLight
+              ? { _id: salleLight._id, nom: salleLight.nom, type: salleLight.type }
+              : null;
+          }
           planifications.push(populatedPlanification);
         } else {
-          // For preview, include populated commande
           const populatedCommande = await Commande.findById(commande._id)
-            .populate('client')
-            .populate('modeles.modele');
+            .populate("client")
+            .populate("modeles.modele");
           planification.commandes = [populatedCommande];
+          planification.salle = {
+            _id: salleCible._id,
+            nom: salleCible.nom,
+            type: salleCible.type,
+          };
           planifications.push(planification);
         }
         continue;
       }
 
-      const heures = (modele.quantite / 35) + 2;
+      const heures = modele.quantite / 35 + 2;
       const now = moment().tz("CET").toDate();
       const { debutPrevue, finPrevue } = calculatePlanificationDates(now, heures);
 
@@ -326,34 +358,49 @@ exports.autoPlanifierCommande = async (req, res) => {
         salle: salleCible._id,
         debutPrevue,
         finPrevue,
-        statut: "en attente"
+        statut: "en attente",
       };
 
       if (preview) {
         const populatedCommande = await Commande.findById(commande._id)
-          .populate('client')
-          .populate('modeles.modele');
+          .populate("client")
+          .populate("modeles.modele");
         const populatedMachine = await Machine.findById(machine._id)
-          .populate('salle')
-          .populate('modele');
+          .populate({ path: "salle", select: "nom type" })
+          .populate("modele");
+        const salleLight = await Salle.findById(salleCible._id).select(
+          "_id nom type"
+        );
         planifications.push({
           ...planification,
           commandes: [populatedCommande],
-          machines: [populatedMachine]
+          machines: [populatedMachine],
+          salle: salleLight
+            ? { _id: salleLight._id, nom: salleLight.nom, type: salleLight.type }
+            : null,
         });
       } else {
         const nouvellePlanification = new Planification(planification);
         await nouvellePlanification.save();
-        // Populate commandes for the response
-        const populatedPlanification = await Planification.findById(nouvellePlanification._id)
+        const populatedPlanification = await Planification.findById(
+          nouvellePlanification._id
+        )
           .populate({
-            path: 'commandes',
-            populate: { path: 'client' }
+            path: "commandes",
+            populate: { path: "client" },
           })
           .populate({
-            path: 'machines',
-            populate: ['salle', 'modele']
+            path: "machines",
+            populate: ["salle", "modele"],
           });
+        if (nouvellePlanification.salle) {
+          const salleLight = await Salle.findById(nouvellePlanification.salle).select(
+            "_id nom type"
+          );
+          populatedPlanification.salle = salleLight
+            ? { _id: salleLight._id, nom: salleLight.nom, type: salleLight.type }
+            : null;
+        }
         planifications.push(populatedPlanification);
       }
     }
@@ -361,22 +408,28 @@ exports.autoPlanifierCommande = async (req, res) => {
     if (!preview && planifications.length > 0) {
       commande.machinesAffectees = allMachinesAssignees;
       commande.salleAffectee = [...allSallesUtilisees][0];
-      commande.etat = planifications.some(p => p.statut === "waiting_resources") ? "en attente" : "en attente";
+      commande.etat = planifications.some((p) => p.statut === "waiting_resources")
+        ? "en attente"
+        : "en attente";
       await commande.save();
     }
 
     const response = {
       planifications,
-      statut: planifications.some(p => p.statut === "waiting_resources") ? "en attente" : "planifiée"
+      statut: planifications.some((p) => p.statut === "waiting_resources")
+        ? "en attente"
+        : "planifiée",
     };
 
     return res.status(preview ? 200 : 201).json(response);
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Erreur lors de la planification automatique", error: err.message });
+    res.status(500).json({
+      message: "Erreur lors de la planification automatique",
+      error: err.message,
+    });
   }
 };
-
 exports.processWaitingList = async () => {
   try {
     const waitingPlans = await Planification.find({ statut: "waiting_resources" })
@@ -483,88 +536,134 @@ exports.confirmPlanification = async (req, res) => {
   try {
     const { planifications } = req.body;
 
-     // Vérifier le stock avant confirmation
-     const matieres = await Matiere.find();
-     let hasInsufficientStock = false;
+    // Vérifier le stock avant confirmation
+    const matieres = await Matiere.find();
+    let hasInsufficientStock = false;
 
-     for (const plan of planifications) {
-       for (const commande of plan.commandes) {
-         const cmd = await Commande.findById(commande._id || commande)
-           .populate('modeles.modele');
+    for (const plan of planifications) {
+      for (const commande of plan.commandes) {
+        const cmd = await Commande.findById(commande._id || commande).populate(
+          "modeles.modele"
+        );
 
-         for (const modele of cmd.modeles) {
-           const matiere = matieres.find(m =>
-             m.couleur.toLowerCase() === modele.couleur.toLowerCase());
+        for (const modele of cmd.modeles) {
+          const matiere = matieres.find(
+            (m) => m.couleur.toLowerCase() === modele.couleur.toLowerCase()
+          );
 
-           if (matiere) {
-             const consommation = modele.modele.consommation.find(c =>
-               c.taille === modele.taille);
-             const quantiteNecessaire = (consommation?.quantity || 0.5) * modele.quantite;
+          if (matiere) {
+            const consommation = modele.modele.consommation.find(
+              (c) => c.taille === modele.taille
+            );
+            const quantiteNecessaire =
+              (consommation?.quantity || 0.5) * modele.quantite;
 
-             if (matiere.quantite < quantiteNecessaire) {
-               hasInsufficientStock = true;
-               break;
-             }
-           }
-         }
-         if (hasInsufficientStock) break;
-       }
-       if (hasInsufficientStock) break;
-     }
+            if (matiere.quantite < quantiteNecessaire) {
+              hasInsufficientStock = true;
+              break;
+            }
+          }
+        }
+        if (hasInsufficientStock) break;
+      }
+      if (hasInsufficientStock) break;
+    }
 
-     // Si stock insuffisant, mettre en attente
-     if (hasInsufficientStock) {
-       const waitingPlans = [];
-       for (const plan of planifications) {
-         const waitingPlan = await Planification.findByIdAndUpdate(
-           plan._id,
-           { statut: "waiting_resources", createdAt: new Date() },
-           { new: true }
-         );
-         waitingPlans.push(waitingPlan);
-       }
+    // Si stock insuffisant, mettre en attente
+    if (hasInsufficientStock) {
+      const waitingPlans = [];
+      for (const plan of planifications) {
+        const waitingPlan = await Planification.findByIdAndUpdate(
+          plan._id,
+          { statut: "waiting_resources", createdAt: new Date() },
+          { new: true }
+        )
+          .populate({
+            path: "commandes",
+            populate: { path: "client" },
+          })
+          .populate({
+            path: "machines",
+            populate: ["salle", "modele"],
+          });
+        if (waitingPlan.salle) {
+          const salleLight = await Salle.findById(waitingPlan.salle).select(
+            "_id nom type"
+          );
+          waitingPlan.salle = salleLight
+            ? { _id: salleLight._id, nom: salleLight.nom, type: salleLight.type }
+            : null;
+        }
+        waitingPlans.push(waitingPlan);
+      }
 
-       return res.status(200).json({
-         message: "Planifications mises en attente - stock insuffisant",
-         planifications: waitingPlans
-       });
-     }
+      return res.status(200).json({
+        message: "Planifications mises en attente - stock insuffisant",
+        planifications: waitingPlans,
+      });
+    }
+
     if (!planifications || !Array.isArray(planifications)) {
-      return res.status(400).json({ message: "Les planifications sont requises sous forme de tableau" });
+      return res.status(400).json({
+        message: "Les planifications sont requises sous forme de tableau",
+      });
     }
 
     const confirmedPlanifications = [];
     const waitingPlanifications = [];
 
-    // Process actual planifications
     for (const plan of planifications) {
       let planification;
       if (plan._id) {
         planification = await Planification.findById(plan._id);
         if (!planification) continue;
 
-        planification.machines = plan.machines.map(m => m._id || m);
+        planification.machines = plan.machines.map((m) => m._id || m);
         planification.salle = plan.salle._id || plan.salle;
-        planification.debutPrevue = new Date(plan.debutPrevue);
-        planification.finPrevue = new Date(plan.finPrevue);
+        if (plan.debutPrevue && !isNaN(new Date(plan.debutPrevue))) {
+          planification.debutPrevue = new Date(plan.debutPrevue);
+        }
+        if (plan.finPrevue && !isNaN(new Date(plan.finPrevue))) {
+          planification.finPrevue = new Date(plan.finPrevue);
+        }
+
         planification.statut = "en attente";
 
         await planification.save();
       } else {
         planification = new Planification({
-          commandes: plan.commandes.map(c => c._id || c),
-          machines: plan.machines.map(m => m._id || m),
+          commandes: plan.commandes.map((c) => c._id || c),
+          machines: plan.machines.map((m) => m._id || m),
           salle: plan.salle._id || plan.salle,
           debutPrevue: new Date(plan.debutPrevue),
           finPrevue: new Date(plan.finPrevue),
-          statut: plan.statut || "en attente"
+          statut: plan.statut || "en attente",
         });
+      }
+
+      let salleLight = null;
+      if (planification.salle) {
+        salleLight = await Salle.findById(planification.salle).select(
+          "_id nom type"
+        );
       }
 
       // Separate planifications based on statut
       if (planification.statut === "waiting_resources") {
         await planification.save();
-        waitingPlanifications.push(planification);
+        const populatedPlan = await Planification.findById(planification._id)
+          .populate({
+            path: "commandes",
+            populate: { path: "client" },
+          })
+          .populate({
+            path: "machines",
+            populate: ["salle", "modele"],
+          });
+        populatedPlan.salle = salleLight
+          ? { _id: salleLight._id, nom: salleLight.nom, type: salleLight.type }
+          : null;
+        waitingPlanifications.push(populatedPlan);
       } else {
         planification.statut = "en attente";
         await planification.save();
@@ -576,7 +675,19 @@ exports.confirmPlanification = async (req, res) => {
             await machine.save();
           }
         }
-        confirmedPlanifications.push(planification);
+        const populatedPlan = await Planification.findById(planification._id)
+          .populate({
+            path: "commandes",
+            populate: { path: "client" },
+          })
+          .populate({
+            path: "machines",
+            populate: ["salle", "modele"],
+          });
+        populatedPlan.salle = salleLight
+          ? { _id: salleLight._id, nom: salleLight.nom, type: salleLight.type }
+          : null;
+        confirmedPlanifications.push(populatedPlan);
       }
     }
 
@@ -586,11 +697,14 @@ exports.confirmPlanification = async (req, res) => {
     res.status(200).json({
       message: "Planifications confirmées",
       confirmedPlanifications,
-      waitingPlanifications
+      waitingPlanifications,
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Erreur lors de la confirmation", error: err.message });
+    res.status(500).json({
+      message: "Erreur lors de la confirmation",
+      error: err.message,
+    });
   }
 };
 
@@ -620,12 +734,12 @@ exports.getAllPlanifications = async (req, res) => {
   try {
     const planifications = await Planification.find()
       .populate({
-        path: 'commandes',
-        populate: { path: 'client' }
+        path: "commandes",
+        populate: { path: "client" },
       })
       .populate({
         path: "machines",
-        populate: ["salle", "modele"]
+        populate: ["salle", "modele"],
       });
 
     res.status(200).json(planifications);
@@ -638,7 +752,7 @@ exports.getWaitingPlanifications = async (req, res) => {
   try {
     const { commandeId } = req.query;
     const query = {
-      statut: { $in: ["en attente", "waiting_resources"] }
+      statut: { $in: ["en attente", "waiting_resources"] },
     };
     if (commandeId) {
       query.commandes = commandeId;
@@ -646,15 +760,53 @@ exports.getWaitingPlanifications = async (req, res) => {
     const waitingPlans = await Planification.find(query)
       .sort({ order: 1, createdAt: 1 })
       .populate({
-        path: 'commandes',
-        populate: { path: 'client' }
+        path: "commandes",
+        populate: { path: "client" },
       })
       .populate({
-        path: 'machines',
-        populate: ['salle', 'modele']
+        path: "machines",
+        populate: ["salle", "modele"],
       });
+    for (const plan of waitingPlans) {
+      if (plan.salle) {
+        const salleLight = await Salle.findById(plan.salle).select("_id nom type");
+        plan.salle = salleLight
+          ? { _id: salleLight._id, nom: salleLight.nom, type: salleLight.type }
+          : null;
+      }
+    }
     res.status(200).json(waitingPlans);
   } catch (error) {
+    res.status(500).json({ message: "Erreur serveur", error: error.message });
+  }
+};
+
+exports.getPlanificationById = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const planification = await Planification.findById(id)
+      .populate({
+        path: "commandes",
+        populate: { path: "client" },
+      })
+      .populate({
+        path: "machines",
+        populate: ["salle", "modele"],
+      });
+    if (!planification) {
+      return res.status(404).json({ message: "Planification non trouvée" });
+    }
+    if (planification.salle) {
+      const salleLight = await Salle.findById(planification.salle).select(
+        "_id nom type"
+      );
+      planification.salle = salleLight
+        ? { _id: salleLight._id, nom: salleLight.nom, type: salleLight.type }
+        : null;
+    }
+    res.status(200).json(planification);
+  } catch (error) {
+    console.error("Erreur lors de la récupération de la planification :", error);
     res.status(500).json({ message: "Erreur serveur", error: error.message });
   }
 };
@@ -695,30 +847,7 @@ exports.updatePlanification = async (req, res) => {
   }
 };
 
-exports.getPlanificationById = async (req, res) => {
-  try {
-    const { id } = req.params;
 
-    const planification = await Planification.findById(id)
-      .populate({
-        path: 'commandes',
-        populate: { path: 'client' }
-      })
-      .populate({
-        path: 'machines',
-        populate: ['salle', 'modele']
-      });
-
-    if (!planification) {
-      return res.status(404).json({ message: "Planification non trouvée" });
-    }
-
-    res.status(200).json(planification);
-  } catch (error) {
-    console.error("Erreur lors de la récupération de la planification :", error);
-    res.status(500).json({ message: "Erreur serveur", error: error.message });
-  }
-};
 
 exports.reorderWaitingPlanifications = async (req, res) => {
   try {

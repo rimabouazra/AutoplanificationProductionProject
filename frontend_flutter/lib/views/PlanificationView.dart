@@ -165,7 +165,10 @@ class _PlanificationViewState extends State<PlanificationView> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         SizedBox(height: 4),
-
+                        Text(
+                          "Modele: ${waitingPlan.taille ?? modeleData?.modele ?? 'Non spécifié'}",
+                          style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                        ),
                         Text(
                           "Taille: ${waitingPlan.taille ?? modeleData?.taille ?? 'Non spécifié'}",
                           style: TextStyle(fontSize: 12, color: Colors.grey[800]),

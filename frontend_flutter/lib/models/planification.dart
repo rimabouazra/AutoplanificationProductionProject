@@ -67,16 +67,15 @@ class Planification {
       }).toList(),
 
       salle: json['salle'] != null
-          ? Salle(
-        id: '', // Empty ID since we don't need it
-        nom: json['salle'] is Map<String, dynamic>
-            ? json['salle']['nom']?.toString() ?? ''
-            : json['salle'].toString(),
-        type: json['salle'] is Map<String, dynamic>
-            ? json['salle']['type']?.toString() ?? ''
-            : '',
-      )
-          : null,      debutPrevue: json['debutPrevue'] != null ? DateTime.parse(json['debutPrevue']) : null,
+          ? (json['salle'] is Map<String, dynamic>
+          ? Salle.fromJson(json['salle'])
+          : Salle(
+        id: json['salle'].toString(),
+        nom: '',
+        type: '',
+      ))
+          : null,
+      debutPrevue: json['debutPrevue'] != null ? DateTime.parse(json['debutPrevue']) : null,
       finPrevue: json['finPrevue'] != null ? DateTime.parse(json['finPrevue']) : null,
       statut: json['statut']?.toString() ?? 'en attente',
       modele: json['modele'] != null ? Modele.fromJson(json['modele']) : null,
