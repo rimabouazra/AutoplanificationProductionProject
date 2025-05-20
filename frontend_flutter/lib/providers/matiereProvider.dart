@@ -45,23 +45,23 @@ class MatiereProvider with ChangeNotifier {
       print("Erreur lors de la suppression de la matière : $e");
     }
   }
-  Future<void> updateMatiere(String id, double newQuantite) async {
+Future<void> updateMatiere(String id, double newQuantite, {String? action}) async {
   try {
-    print("Début de updateMatiere pour l'ID : $id avec quantité : $newQuantite");//DEBUG
-    final updatedMatiere = await ApiService.updateMatiere(id, newQuantite);
-    print("Réponse de l'API (updateMatiere) : $updatedMatiere");//DEBUG
+    print("Début de updateMatiere pour l'ID : $id avec quantité : $newQuantite, action : $action");
+    final updatedMatiere = await ApiService.updateMatiere(id, newQuantite, action: action);
+    print("Réponse de l'API (updateMatiere) : $updatedMatiere");
     if (updatedMatiere != null) {
       int index = _matieres.indexWhere((m) => m.id == id);
-      print("Index trouvé dans _matieres : $index");//DEBUG
+      print("Index trouvé dans _matieres : $index");
       if (index != -1) {
         _matieres[index] = updatedMatiere; // Met à jour la matière
         notifyListeners(); // Rafraîchit la liste
-        print("Matière mise à jour avec succès !");//DEBUG
-      }else {
-        print("Matière non trouvée dans la liste !");//DEBUG
+        print("Matière mise à jour avec succès !");
+      } else {
+        print("Matière non trouvée dans la liste !");
       }
-    }else {
-      print("Erreur : L'API n'a pas retourné la matière mise à jour !");//DEBUG
+    } else {
+      print("Erreur : L'API n'a pas retourné la matière mise à jour !");
     }
   } catch (e) {
     print("Erreur de mise à jour : $e");
@@ -98,15 +98,20 @@ Future<List<Matiere>> getMatieresByDate(DateTime date) async {
 Future<List<Map<String, dynamic>>> fetchCommandes() async {
   try {
     final List<Commande> commandes = await ApiService.getCommandes();
-    return commandes.map((commande) {
-      return commande.modeles.map((modele) {
+    return commandes.asMap().entries.expand((entry) {
+      final int commandeIndex = entry.key;
+      final Commande commande = entry.value;
+      return commande.modeles.asMap().entries.map((modeleEntry) {
+        final int modeleIndex = modeleEntry.key;
+        final modele = modeleEntry.value;
         return {
-          'id': commande.id,
+          'id': '${commande.id}_${commandeIndex}_${modeleIndex}', // ID unique
+          'commandeId': commande.id, // Garder l'ID original pour référence
           'modele': modele.nomModele,
-          'taille': modele.taille, 
+          'taille': modele.taille,
         };
-      }).toList();
-    }).expand((x) => x).toList();
+      });
+    }).toList();
   } catch (e) {
     print("Erreur lors du chargement des commandes : $e");
     return [];

@@ -41,6 +41,9 @@ class _PlanificationConfirmationDialogState
   List<DateTime> _endDates = [];
   List<List<Machine>> _availableMachines = [];
 
+  bool _showStockOptions = false;
+bool _partialPlanning = false;
+String _stockMessage = '';
   @override
   void initState() {
     super.initState();
