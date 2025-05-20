@@ -54,7 +54,9 @@ exports.updateMatiere = async (req, res) => {
     try {
       const { id } = req.params;
       const { quantite, action } = req.body; // action = "ajout" ou "consommation"
-      
+      if (!action || !["ajout", "consommation"].includes(action)) {
+      return res.status(400).json({ message: "Le champ 'action' est requis et doit être 'ajout' ou 'consommation'" });
+    }
       const matiere = await Matiere.findById(id);
       if (!matiere) {
         return res.status(404).json({ message: "Matière introuvable" });

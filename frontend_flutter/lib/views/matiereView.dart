@@ -64,7 +64,8 @@ class _MatiereViewState extends State<MatiereView> {
       Navigator.pop(context);
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text("Erreur : $e"), backgroundColor: Colors.redAccent),
+        SnackBar(
+            content: Text("Erreur : $e"), backgroundColor: Colors.redAccent),
       );
     }
   }
@@ -80,24 +81,28 @@ class _MatiereViewState extends State<MatiereView> {
     );
   }
 
-  void _modifierQuantite(BuildContext context, Matiere matiere, bool ajouter) async {
+  void _modifierQuantite(
+      BuildContext context, Matiere matiere, bool ajouter) async {
     TextEditingController quantiteController = TextEditingController();
     List<Map<String, dynamic>> commandes = [];
     String? selectedCommandeId;
     String? selectedModele;
     String? selectedTaille;
     if (!ajouter) {
-      commandes = await Provider.of<MatiereProvider>(context, listen: false).fetchCommandes();
+      commandes = await Provider.of<MatiereProvider>(context, listen: false)
+          .fetchCommandes();
     }
     showDialog(
       context: context,
       builder: (context) => StatefulBuilder(
         builder: (context, setState) {
           return AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
             title: Text(
               ajouter ? "Ajouter Quantité" : "Consommer Quantité",
-              style: const TextStyle(fontFamily: 'PlayfairDisplay', fontWeight: FontWeight.bold),
+              style: const TextStyle(
+                  fontFamily: 'PlayfairDisplay', fontWeight: FontWeight.bold),
             ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
@@ -106,7 +111,8 @@ class _MatiereViewState extends State<MatiereView> {
                   controller: quantiteController,
                   decoration: InputDecoration(
                     labelText: "Quantité",
-                    prefixIcon: const Icon(Icons.production_quantity_limits, color: Colors.blueGrey),
+                    prefixIcon: const Icon(Icons.production_quantity_limits,
+                        color: Colors.blueGrey),
                     filled: true,
                     fillColor: Colors.white.withOpacity(0.9),
                     border: OutlineInputBorder(
@@ -124,15 +130,22 @@ class _MatiereViewState extends State<MatiereView> {
                     onChanged: (newValue) {
                       setState(() {
                         selectedCommandeId = newValue;
-                        final commande = commandes.firstWhere((cmd) => cmd['id'] == newValue);
-                        selectedModele = commande['modele'];
-                        selectedTaille = commande['taille'];
+                        if (newValue != null) {
+                          final commande = commandes
+                              .firstWhere((cmd) => cmd['id'] == newValue);
+                          selectedModele = commande['modele'];
+                          selectedTaille = commande['taille'];
+                        } else {
+                          selectedModele = null;
+                          selectedTaille = null;
+                        }
                       });
                     },
                     items: commandes.map((commande) {
                       return DropdownMenuItem<String>(
                         value: commande['id'],
-                        child: Text("Modèle: ${commande['modele']} | Taille: ${commande['taille']}"),
+                        child: Text(
+                            "Modèle: ${commande['modele']} | Taille: ${commande['taille']}"),
                       );
                     }).toList(),
                     decoration: InputDecoration(
@@ -144,7 +157,9 @@ class _MatiereViewState extends State<MatiereView> {
                       ),
                     ),
                   ),
-                if (!ajouter && selectedModele != null && selectedTaille != null)
+                if (!ajouter &&
+                    selectedModele != null &&
+                    selectedTaille != null)
                   Padding(
                     padding: const EdgeInsets.only(top: 10),
                     child: Text(
@@ -161,22 +176,25 @@ class _MatiereViewState extends State<MatiereView> {
               ),
               ElevatedButton(
                 onPressed: () async {
-                  if (!ajouter && selectedCommandeId == null) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: const Text("Veuillez sélectionner une commande"),
-                        backgroundColor: Colors.redAccent,
-                      ),
-                    );
-                    return;
-                  }
+                  //if (!ajouter && selectedCommandeId == null) {
+                  //ScaffoldMessenger.of(context).showSnackBar(
+                  //SnackBar(
+                  //content:
+                  //  const Text("Veuillez sélectionner une commande"),
+                  //backgroundColor: Colors.redAccent,
+                  //),
+                  //);
+                  //return;
+                  //}
 
-                  final provider = Provider.of<MatiereProvider>(context, listen: false);
+                  final provider =
+                      Provider.of<MatiereProvider>(context, listen: false);
                   final valeur = int.tryParse(quantiteController.text) ?? 0;
                   if (valeur <= 0) {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
-                        content: const Text("Veuillez entrer une quantité valide"),
+                        content:
+                            const Text("Veuillez entrer une quantité valide"),
                         backgroundColor: Colors.redAccent,
                       ),
                     );
@@ -184,10 +202,15 @@ class _MatiereViewState extends State<MatiereView> {
                   }
 
                   double nouvelleQuantite = ajouter
-                      ? matiere.quantite + valeur.toDouble()
-                      : (matiere.quantite - valeur.toDouble()).clamp(0, double.infinity);
+                      ? valeur.toDouble()
+                      : (valeur.toDouble()).clamp(0, matiere.quantite);
 
-                  await provider.updateMatiere(matiere.id, nouvelleQuantite);
+                  // Passer l'action appropriée ("ajout" ou "consommation")
+                  await provider.updateMatiere(
+                    matiere.id,
+                    nouvelleQuantite,
+                    action: ajouter ? "ajout" : "consommation",
+                  );
 
                   Navigator.pop(context);
                 },
@@ -195,7 +218,8 @@ class _MatiereViewState extends State<MatiereView> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blueGrey[800],
                   foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12)),
                 ),
               ),
             ],
@@ -208,9 +232,11 @@ class _MatiereViewState extends State<MatiereView> {
   List<Matiere> _filtrerMatieres(List<Matiere> matieres) {
     final searchText = searchController.text.toLowerCase();
     return matieres.where((matiere) {
-      final matchesSearch = matiere.reference.toLowerCase().contains(searchText);
+      final matchesSearch =
+          matiere.reference.toLowerCase().contains(searchText);
       final matchesDate = selectedDate == null ||
-          DateFormat('yyyy-MM-dd').format(matiere.dateAjout) == DateFormat('yyyy-MM-dd').format(selectedDate!);
+          DateFormat('yyyy-MM-dd').format(matiere.dateAjout) ==
+              DateFormat('yyyy-MM-dd').format(selectedDate!);
       return matchesSearch && matchesDate;
     }).toList();
   }
@@ -228,7 +254,8 @@ class _MatiereViewState extends State<MatiereView> {
   }
 
   void _afficherFormulaireRenommage(BuildContext context, Matiere matiere) {
-    final TextEditingController referenceController = TextEditingController(text: matiere.reference);
+    final TextEditingController referenceController =
+        TextEditingController(text: matiere.reference);
 
     showDialog(
       context: context,
@@ -236,7 +263,8 @@ class _MatiereViewState extends State<MatiereView> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           "Renommer la matière",
-          style: TextStyle(fontFamily: 'PlayfairDisplay', fontWeight: FontWeight.bold),
+          style: TextStyle(
+              fontFamily: 'PlayfairDisplay', fontWeight: FontWeight.bold),
         ),
         content: TextField(
           controller: referenceController,
@@ -260,7 +288,8 @@ class _MatiereViewState extends State<MatiereView> {
             onPressed: () async {
               final newReference = referenceController.text.trim();
               if (newReference.isNotEmpty) {
-                await Provider.of<MatiereProvider>(context, listen: false).renameMatiere(matiere.id, newReference);
+                await Provider.of<MatiereProvider>(context, listen: false)
+                    .renameMatiere(matiere.id, newReference);
                 Navigator.pop(context);
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -275,7 +304,8 @@ class _MatiereViewState extends State<MatiereView> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blueGrey[800],
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ],
@@ -293,7 +323,8 @@ class _MatiereViewState extends State<MatiereView> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           "Historique de ${matiere.reference}",
-          style: const TextStyle(fontFamily: 'PlayfairDisplay', fontWeight: FontWeight.bold),
+          style: const TextStyle(
+              fontFamily: 'PlayfairDisplay', fontWeight: FontWeight.bold),
         ),
         content: Container(
           width: double.maxFinite,
@@ -305,11 +336,16 @@ class _MatiereViewState extends State<MatiereView> {
               return Card(
                 elevation: 2,
                 margin: const EdgeInsets.symmetric(vertical: 4),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
                 child: ListTile(
                   leading: Icon(
-                    entry.action == 'Ajout' ? Icons.add : Icons.remove,
-                    color: entry.action == 'Ajout' ? Colors.green : Colors.red,
+                    entry.action.toLowerCase() == 'ajout'
+                        ? Icons.add
+                        : Icons.remove,
+                    color: entry.action.toLowerCase() == 'ajout'
+                        ? Colors.green
+                        : Colors.red,
                   ),
                   title: Text(
                     _formatDate(entry.date),
@@ -341,7 +377,8 @@ class _MatiereViewState extends State<MatiereView> {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: const Text(
           "Ajouter une Matière",
-          style: TextStyle(fontFamily: 'PlayfairDisplay', fontWeight: FontWeight.bold),
+          style: TextStyle(
+              fontFamily: 'PlayfairDisplay', fontWeight: FontWeight.bold),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
@@ -364,7 +401,8 @@ class _MatiereViewState extends State<MatiereView> {
               controller: couleurController,
               decoration: InputDecoration(
                 labelText: "Couleur",
-                prefixIcon: const Icon(Icons.color_lens, color: Colors.blueGrey),
+                prefixIcon:
+                    const Icon(Icons.color_lens, color: Colors.blueGrey),
                 filled: true,
                 fillColor: Colors.white.withOpacity(0.9),
                 border: OutlineInputBorder(
@@ -378,7 +416,8 @@ class _MatiereViewState extends State<MatiereView> {
               controller: quantiteController,
               decoration: InputDecoration(
                 labelText: "Quantité",
-                prefixIcon: const Icon(Icons.production_quantity_limits, color: Colors.blueGrey),
+                prefixIcon: const Icon(Icons.production_quantity_limits,
+                    color: Colors.blueGrey),
                 filled: true,
                 fillColor: Colors.white.withOpacity(0.9),
                 border: OutlineInputBorder(
@@ -401,7 +440,8 @@ class _MatiereViewState extends State<MatiereView> {
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.blueGrey[800],
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ],
@@ -439,7 +479,8 @@ class _MatiereViewState extends State<MatiereView> {
                       controller: searchController,
                       decoration: InputDecoration(
                         hintText: "Rechercher une matière...",
-                        prefixIcon: const Icon(Icons.search, color: Colors.blueGrey),
+                        prefixIcon:
+                            const Icon(Icons.search, color: Colors.blueGrey),
                         filled: true,
                         fillColor: Colors.white.withOpacity(0.9),
                         border: OutlineInputBorder(
@@ -461,11 +502,13 @@ class _MatiereViewState extends State<MatiereView> {
                         child: FadeInDown(
                           delay: const Duration(milliseconds: 200),
                           child: ElevatedButton.icon(
-                            icon: const Icon(Icons.calendar_today, color: Colors.white),
+                            icon: const Icon(Icons.calendar_today,
+                                color: Colors.white),
                             label: Text(
                               selectedDate == null
                                   ? "Filtrer par date"
-                                  : DateFormat('yyyy-MM-dd').format(selectedDate!),
+                                  : DateFormat('yyyy-MM-dd')
+                                      .format(selectedDate!),
                               style: const TextStyle(color: Colors.white),
                             ),
                             style: ElevatedButton.styleFrom(
@@ -509,7 +552,8 @@ class _MatiereViewState extends State<MatiereView> {
                 Expanded(
                   child: Consumer<MatiereProvider>(
                     builder: (context, provider, child) {
-                      final filteredMatieres = _filtrerMatieres(provider.matieres);
+                      final filteredMatieres =
+                          _filtrerMatieres(provider.matieres);
 
                       if (filteredMatieres.isEmpty) {
                         return const Center(
@@ -528,7 +572,8 @@ class _MatiereViewState extends State<MatiereView> {
                           return FadeInUp(
                             delay: Duration(milliseconds: index * 100),
                             child: Card(
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
                               elevation: 4,
                               margin: const EdgeInsets.only(bottom: 16),
                               child: ListTile(
@@ -554,8 +599,10 @@ class _MatiereViewState extends State<MatiereView> {
                                 subtitle: Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
-                                    Text("Couleur: ${matiere.couleur}", style: const TextStyle(fontSize: 14)),
-                                    Text("Quantité: ${matiere.quantite}", style: const TextStyle(fontSize: 14)),
+                                    Text("Couleur: ${matiere.couleur}",
+                                        style: const TextStyle(fontSize: 14)),
+                                    Text("Quantité: ${matiere.quantite}",
+                                        style: const TextStyle(fontSize: 14)),
                                     Text(
                                       "Date: ${DateFormat('yyyy-MM-dd').format(matiere.dateAjout)}",
                                       style: const TextStyle(fontSize: 14),
@@ -566,24 +613,35 @@ class _MatiereViewState extends State<MatiereView> {
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
                                     IconButton(
-                                      icon: const Icon(Icons.history, color: Colors.purple),
-                                      onPressed: () => _afficherHistorique(context, matiere),
+                                      icon: const Icon(Icons.history,
+                                          color: Colors.purple),
+                                      onPressed: () =>
+                                          _afficherHistorique(context, matiere),
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.edit, color: Colors.blue),
-                                      onPressed: () => _afficherFormulaireRenommage(context, matiere),
+                                      icon: const Icon(Icons.edit,
+                                          color: Colors.blue),
+                                      onPressed: () =>
+                                          _afficherFormulaireRenommage(
+                                              context, matiere),
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.add, color: Colors.green),
-                                      onPressed: () => _modifierQuantite(context, matiere, true),
+                                      icon: const Icon(Icons.add,
+                                          color: Colors.green),
+                                      onPressed: () => _modifierQuantite(
+                                          context, matiere, true),
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.remove, color: Colors.orange),
-                                      onPressed: () => _modifierQuantite(context, matiere, false),
+                                      icon: const Icon(Icons.remove,
+                                          color: Colors.orange),
+                                      onPressed: () => _modifierQuantite(
+                                          context, matiere, false),
                                     ),
                                     IconButton(
-                                      icon: const Icon(Icons.delete, color: Colors.red),
-                                      onPressed: () => _supprimerMatiere(context, matiere.id),
+                                      icon: const Icon(Icons.delete,
+                                          color: Colors.red),
+                                      onPressed: () => _supprimerMatiere(
+                                          context, matiere.id),
                                     ),
                                   ],
                                 ),

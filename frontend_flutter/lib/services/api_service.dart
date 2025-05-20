@@ -512,8 +512,8 @@ class ApiService {
     }
   }
 
-  static Future<Matiere?> updateMatiere(String id, double newQuantite,
-      {String? action}) async {
+static Future<Matiere?> updateMatiere(String id, double newQuantite, {String? action}) async {
+  try {
     final response = await http.put(
       Uri.parse('$baseUrl/matieres/update/$id'),
       headers: {"Content-Type": "application/json"},
@@ -523,13 +523,31 @@ class ApiService {
       }),
     );
 
+    print("Requête API - URL: $baseUrl/matieres/update/$id");
+    print("Requête API - Body envoyé: ${jsonEncode({
+      "quantite": newQuantite,
+      if (action != null) "action": action,
+    })}");
+    print("Réponse API - Status: ${response.statusCode}");
+    print("Réponse API - Body: ${response.body}");
+
     if (response.statusCode == 200) {
-      return Matiere.fromJson(jsonDecode(response.body));
+      final responseData = jsonDecode(response.body);
+      if (responseData != null) {
+        return Matiere.fromJson(responseData);
+      }
+      print("Erreur : responseData est null");
+      return null;
     } else {
+      print("Erreur API - Status: ${response.statusCode}");
+      print("Erreur API - Body: ${response.body}");
       return null;
     }
+  } catch (e) {
+    print("Erreur réseau lors de la mise à jour: $e");
+    return null;
   }
-
+}
   static Future<List<Historique>> getHistoriqueMatiere(String matiereId) async {
     final response =
         await http.get(Uri.parse('$baseUrl/matieres/historique/$matiereId'));
