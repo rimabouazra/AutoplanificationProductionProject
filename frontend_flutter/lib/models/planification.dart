@@ -68,11 +68,12 @@ class Planification {
 
       salle: json['salle'] != null
           ? (json['salle'] is Map<String, dynamic>
-          ? Salle.fromJson(json['salle'])
+          ? Salle.fromJson(json['salle'] as Map<String, dynamic>)
           : Salle(
         id: json['salle'].toString(),
-        nom: '',
-        type: '',
+        nom: 'Unknown',
+        type: 'Unknown',
+        machines: [],
       ))
           : null,
       debutPrevue: json['debutPrevue'] != null ? DateTime.parse(json['debutPrevue']) : null,

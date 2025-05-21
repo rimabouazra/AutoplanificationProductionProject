@@ -23,8 +23,14 @@ class Machine {
       id: json['_id'] as String,
       nom: json['nom'],
       etat: json['etat'],
-      salle: Salle.fromJson(json['salle']),
-      modele: json['modele'] != null ? Modele.fromJson(json['modele']) : Modele(id: '', nom: '', tailles: [], consommation: []),
+      salle: json['salle'] is String
+          ? Salle(id: json['salle'], nom: 'Unknown', type: 'Unknown', machines: [])
+          : Salle.fromJson(json['salle']),
+      modele: json['modele'] != null
+          ? (json['modele'] is String
+          ? Modele(id: json['modele'], nom: 'Unknown', tailles: [], consommation: [])
+          : Modele.fromJson(json['modele']))
+          : Modele(id: '', nom: '', tailles: [], consommation: []),
       taille: json['taille'],
     );
   }

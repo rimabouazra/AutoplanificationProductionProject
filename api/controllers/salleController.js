@@ -93,6 +93,19 @@ exports.getAllSalles = async (req, res) => {
     }
 };
 
+exports.getSalleById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const salle = await Salle.findById(id).populate("machines");
+        if (!salle) {
+            return res.status(404).json({ message: "Salle non trouvée" });
+        }
+        res.status(200).json(salle);
+    } catch (error) {
+        console.error("Erreur lors de la récupération de la salle:", error);
+        res.status(500).json({ message: "Erreur lors de la récupération de la salle", error });
+    }
+};
 
 //Ajouter une machine à une salle
 exports.ajouterMachine = [

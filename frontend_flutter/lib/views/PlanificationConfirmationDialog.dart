@@ -40,6 +40,7 @@ class _PlanificationConfirmationDialogState
   List<DateTime> _startDates = [];
   List<DateTime> _endDates = [];
   List<List<Machine>> _availableMachines = [];
+  List<Salle> _salles = []; // Added missing field
 
   bool _showStockOptions = false;
 bool _partialPlanning = false;
@@ -65,76 +66,51 @@ String _stockMessage = '';
 
   Future<void> _loadSallesAndMachines() async {
     try {
-      print("Starting _loadSallesAndMachines...");
-      final salles = await ApiService.getSalles();
-      print('Fetched ${salles.length} salles: ${salles.map((s) => 'ID: ${s.id}, Nom: ${s.nom}').join(', ')}');
+      print('Starting _loadSallesAndMachines...');
+      final sallesData = await ApiService.getSalles();
+      final salleMap = {for (var s in sallesData) s.id: s};
+      print('Fetched ${sallesData.length} salles: ${sallesData.map((s) => 'ID: ${s.id}, Nom: ${s.nom}').join(', ')}');
 
-      for (int i = 0; i < widget.planifications.length; i++) {
-        final plan = widget.planifications[i];
-        print('Processing Planification $i:');
-        print('  Salle field type: ${plan.salle.runtimeType}');
-        print('  Salle field value: ${plan.salle}');
+      setState(() {
+        _salles = sallesData; // Store the fetched salles in state
+        _selectedSalles = List.generate(widget.planifications.length, (_) => null);
 
-        Salle? matchedSalle;
-        String? salleId;
+        for (var i = 0; i < widget.planifications.length; i++) {
+          final planification = widget.planifications[i];
+          print('Processing Planification $i:');
 
-        // Handle salle as string, Salle object, or null
-        if (plan.salle is String) {
-          salleId = plan.salle as String;
-          print('  Salle is String, ID: $salleId');
-        } else if (plan.salle is Salle && (plan.salle as Salle).id.isNotEmpty) {
-          salleId = (plan.salle as Salle).id;
-          print('  Salle is Salle object, ID: $salleId, Nom: ${(plan.salle as Salle).nom}');
-        } else {
-          print('  Salle is null or invalid: ${plan.salle}');
-        }
+          Salle? salle = planification.salle;
+          print('Salle field type: ${salle.runtimeType}');
+          print('Salle field value: $salle');
 
-        if (salleId != null && salleId.isNotEmpty) {
-          try {
-            print('  Searching for salle with ID: $salleId');
-            matchedSalle = salles.firstWhere(
-                  (s) => s.id == salleId,
-              orElse: () {
-                print('  No salle found for ID: $salleId');
-                return null as Salle; // Explicitly return null
-              },
-            );
-            print('  Matched salle: ${matchedSalle?.id ?? 'null'}, Nom: ${matchedSalle?.nom ?? 'N/A'}');
-          } catch (e) {
-            print('  Error matching salle ID $salleId: $e');
-            matchedSalle = null;
+          if (salle != null) {
+            print('Salle is Salle object, ID: ${salle.id}, Nom: ${salle.nom}');
+            final matchedSalle = salleMap[salle.id] ??
+                Salle(id: salle.id, nom: 'Unknown', type: 'Unknown', machines: []);
+            print('Matched salle: ${matchedSalle.id}, Nom: ${matchedSalle.nom}');
+            _selectedSalles[i] = salleMap[salle.id]; // Use the Salle instance from salleMap
+            print('Selected salle for index $i: ${matchedSalle.nom} (ID: ${matchedSalle.id})');
+          } else {
+            print('Salle is null for planification $i');
+            _selectedSalles[i] = null;
           }
-        } else {
-          print('  No valid salleId for planification $i');
-        }
 
-        // Fallback to a salle named "blanc" if no match is found
-        matchedSalle ??= salles.firstWhere(
-              (s) => s.nom.toLowerCase() == 'blanc',
-          orElse: () {
-            print('  No "blanc" salle found');
-            return null as Salle;
-          },
-        );
-
-        if (matchedSalle != null) {
-          print('  Selected salle for index $i: ${matchedSalle.nom} (ID: ${matchedSalle.id})');
-          setState(() {
-            _selectedSalles[i] = matchedSalle;
-          });
-          print('  Loading machines for salle ID: ${matchedSalle.id}');
-          await _loadMachinesForSalle(i, matchedSalle.id);
-        } else {
-          print('  No salle available for planification ${i + 1}');
-          Fluttertoast.showToast(
-            msg: "Aucune salle disponible pour la planification ${i + 1}",
-          );
+          final machines = planification.machines;
+          print('Found ${machines.length} machines for planification $i');
+          for (var machine in machines) {
+            print('Machine: ID=${machine.id}, Nom=${machine.nom}, Salle ID=${machine.salle.id}');
+            final matchedSalle = salleMap[machine.salle.id] ??
+                Salle(id: machine.salle.id, nom: 'Unknown', type: 'Unknown', machines: []);
+            machine.salle.nom = matchedSalle.nom;
+            machine.salle.type = matchedSalle.type;
+            print('Updated machine salle: Nom=${machine.salle.nom}, Type=${matchedSalle.type}');
+          }
         }
-      }
+      });
     } catch (e, stackTrace) {
       print('Error in _loadSallesAndMachines: $e');
       print('Stack trace: $stackTrace');
-      Fluttertoast.showToast(msg: "Erreur lors du chargement des salles: $e");
+      Fluttertoast.showToast(msg: "Erreur lors du chargement des salles et machines");
     }
   }
 
@@ -495,39 +471,30 @@ String _stockMessage = '';
               ),
             ),
             const SizedBox(height: 16),
-            FutureBuilder<List<Salle>>(
-              future: ApiService.getSalles(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const CircularProgressIndicator();
-                }
-                if (snapshot.hasError) {
-                  return Text("Erreur: ${snapshot.error}");
-                }
-                final salles = snapshot.data ?? [];
-                return DropdownButtonFormField<Salle>(
-                  value: _selectedSalles[index],
-                  decoration: const InputDecoration(
-                    labelText: "Salle",
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(horizontal: 12),
-                  ),
-                  items: salles
-                      .map((salle) => DropdownMenuItem<Salle>(
-                    value: salle,
-                    child: Text("${salle.nom} (${salle.type})"),
-                  ))
-                      .toList(),
-                  onChanged: (Salle? newValue) {
-                    setState(() {
-                      _selectedSalles[index] = newValue;
-                      _selectedMachinesForPlanifications[index] = [];
-                      if (newValue != null) {
-                        _loadMachinesForSalle(index, newValue.id);
-                      }
-                    });
-                  },
-                );
+            // Use the shared _salles list instead of making a new API call
+            _salles.isEmpty
+                ? const CircularProgressIndicator()
+                : DropdownButtonFormField<Salle>(
+              value: _selectedSalles[index],
+              decoration: const InputDecoration(
+                labelText: "Salle",
+                border: OutlineInputBorder(),
+                contentPadding: EdgeInsets.symmetric(horizontal: 12),
+              ),
+              items: _salles
+                  .map((salle) => DropdownMenuItem<Salle>(
+                value: salle,
+                child: Text("${salle.nom} (${salle.type})"),
+              ))
+                  .toList(),
+              onChanged: (Salle? newValue) {
+                setState(() {
+                  _selectedSalles[index] = newValue;
+                  _selectedMachinesForPlanifications[index] = [];
+                  if (newValue != null) {
+                    _loadMachinesForSalle(index, newValue.id);
+                  }
+                });
               },
             ),
             const SizedBox(height: 16),
