@@ -821,7 +821,7 @@ class _CommandePageState extends State<CommandePage> {
         int totalQuantite = commande.modeles.fold(0, (sum, m) => sum + m.quantite);
 
         return FadeInUp(
-          delay: Duration(milliseconds: entry.key * 100),
+          delay: Duration(milliseconds: entry.key * 50),
           child: Card(
             elevation: 5,
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

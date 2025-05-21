@@ -475,7 +475,7 @@ void _addModele() {
                       _buildModeleForm(),
                       const SizedBox(height: 20),
                       ...modeles.asMap().entries.map((entry) => FadeInUp(
-                            delay: Duration(milliseconds: entry.key * 100),
+                            delay: Duration(milliseconds: entry.key * 50),
                             child: Card(
                               margin: const EdgeInsets.symmetric(vertical: 5),
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
