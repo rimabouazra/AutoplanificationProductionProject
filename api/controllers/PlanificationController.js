@@ -2,6 +2,7 @@ const Planification = require("../models/Planification");
 const Commande = require("../models/Commande");
 const Salle = require("../models/Salle");
 const Machine = require("../models/Machine");
+const Modele = require("../models/Modele");
 const moment = require('moment-timezone');
 const Matiere = require("../models/Matiere");
 // 7 AM to 5 PM, Tunisia timezone
@@ -152,7 +153,7 @@ exports.mettreAJourMachinesDisponibles = async (req, res) => {
     let commandesTerminees = [];
 
     for (const planif of planifs) {
-      console.log("update planification statut en cours")
+      console.log("cron job : update planification statut en cours")
       if (planif.debutPrevue <= now && planif.finPrevue > now && planif.statut !== "en cours") {
         planif.statut = "en cours";
         await planif.save();
@@ -186,7 +187,7 @@ exports.mettreAJourMachinesDisponibles = async (req, res) => {
     res.status(500).json({ message: "Erreur lors de la mise à jour", error: error.message });
   }
 };
-
+//we need to populate the base in the modele
 exports.autoPlanifierCommande = async (req, res) => {
   try {
     const { commandeId, preview } = req.body;
@@ -198,8 +199,10 @@ exports.autoPlanifierCommande = async (req, res) => {
     const commande = await Commande.findById(commandeId)
       .populate({
         path: "modeles.modele",
+        populate: { path: "bases" },
       })
       .populate("client");
+
     // Vérifier le stock
     const matieres = await Matiere.find();
     let hasInsufficientStock = false;
@@ -208,10 +211,37 @@ exports.autoPlanifierCommande = async (req, res) => {
       const matiere = matieres.find(
         (m) => m.couleur.toLowerCase() === modele.couleur.toLowerCase()
       );
-
       if (matiere) {
-        const consommation = modele.modele.consommation.find(
-          (c) => c.taille === modele.taille
+        let targetModele = modele.modele;
+        let targetTaille = modele.taille;
+
+        if (modele.modele.bases && modele.modele.bases.length > 0) {
+          const baseModele = await Modele.findById(modele.modele.bases[0]);
+          if (!baseModele) {
+            console.warn(`Base model with ID ${modele.modele.bases[0]} not found, using original model`);
+            continue; // Skip to original model if base model is not found
+          }
+          targetModele = baseModele;
+
+          // Find the tailleBase entry, ensuring baseId exists
+          const tailleBaseEntry = modele.modele.taillesBases.find(
+            (tb) => tb.baseId && tb.baseId.equals(targetModele._id)
+          );
+          if (!tailleBaseEntry) {
+            console.warn(
+              `No valid tailleBase entry found for base model ${targetModele._id}, falling back to original taille`
+            );
+            targetTaille = modele.taille;
+          } else {
+            const tailleIndex = modele.modele.tailles.indexOf(modele.taille);
+            targetTaille =
+              tailleIndex >= 0 && tailleBaseEntry.tailles[tailleIndex]
+                ? tailleBaseEntry.tailles[tailleIndex]
+                : modele.taille;
+          }
+        }
+        const consommation = targetModele.consommation.find(
+          (c) => c.taille === targetTaille
         );
         const quantiteNecessaire =
           (consommation?.quantity || 0.5) * modele.quantite;
@@ -283,11 +313,42 @@ exports.autoPlanifierCommande = async (req, res) => {
       const machinesSalle = machines.filter((m) =>
         m.salle._id.equals(salleCible._id)
       );
+       //the planification is done withe the base
+      // Determine which model and size to use for machine selection
+      let targetModele = modele.modele;
+      let targetTaille = modele.taille;
+
+      if (modele.modele.bases && modele.modele.bases.length > 0) {
+        const baseModele = await Modele.findById(modele.modele.bases[0]);
+        if (!baseModele) {
+          console.warn(`Base model with ID ${modele.modele.bases[0]} not found, using original model`);
+        } else {
+          targetModele = baseModele;
+
+          // Find the tailleBase entry, ensuring baseId exists
+          const tailleBaseEntry = modele.modele.taillesBases.find(
+            (tb) => tb.baseId && tb.baseId.equals(targetModele._id)
+          );
+          if (!tailleBaseEntry) {
+            console.warn(
+              `No valid tailleBase entry found for base model ${targetModele._id}, falling back to original taille`
+            );
+            targetTaille = modele.taille;
+          } else {
+            const tailleIndex = modele.modele.tailles.indexOf(modele.taille);
+            targetTaille =
+              tailleIndex >= 0 && tailleBaseEntry.tailles[tailleIndex]
+                ? tailleBaseEntry.tailles[tailleIndex]
+                : modele.taille;
+          }
+        }
+      }
+
       let machine = machinesSalle.find(
         (m) =>
           m.modele &&
-          m.modele._id.equals(modele.modele._id) &&
-          m.taille === modele.taille &&
+          m.modele._id.equals(targetModele._id) &&
+          m.taille === targetTaille &&
           m.etat === "disponible"
       );
 
@@ -359,6 +420,10 @@ exports.autoPlanifierCommande = async (req, res) => {
         debutPrevue,
         finPrevue,
         statut: "en attente",
+        // Store the original model details for reference
+        taille: modele.taille,
+        couleur: modele.couleur,
+        quantite: modele.quantite,
       };
 
       if (preview) {
@@ -430,11 +495,12 @@ exports.autoPlanifierCommande = async (req, res) => {
     });
   }
 };
+
 exports.processWaitingList = async () => {
   try {
     const waitingPlans = await Planification.find({ statut: "waiting_resources" })
       .sort({ order: 1, createdAt: 1 })
-      .populate('commandes')
+      .populate('commandes');
 
     const salles = await Salle.find();
     const machines = await Machine.find().populate("modele").populate("salle");
@@ -443,20 +509,33 @@ exports.processWaitingList = async () => {
     });
 
     for (const plan of waitingPlans) {
-      // Récupérer la commande avec les modèles peuplés
       const commande = await Commande.findById(plan.commandes[0])
-        .populate('modeles.modele');
+        .populate({
+          path: 'modeles.modele',
+          populate: { path: 'bases' },
+        });
 
       if (!commande || commande.modeles.length === 0) {
         console.log("Commande ou modèles non trouvés");
         continue;
       }
 
-      // Prendre le premier modèle de la commande (vous pouvez adapter cette logique selon vos besoins)
       const modeleCommande = commande.modeles[0].modele;
       const tailleCommande = commande.modeles[0].taille;
       const couleurCommande = commande.modeles[0].couleur;
       const quantiteCommande = commande.modeles[0].quantite;
+
+      // Determine which model and size to use
+      let targetModele = modeleCommande;
+      let targetTaille = tailleCommande;
+
+      if (modeleCommande.bases && modeleCommande.bases.length > 0) {
+        targetModele = await Modele.findById(modeleCommande.bases[0]);
+        const tailleBaseEntry = modeleCommande.taillesBases.find(
+          (tb) => tb.baseId.equals(targetModele._id)
+        );
+        targetTaille = tailleBaseEntry ? tailleBaseEntry.tailles[modeleCommande.tailles.indexOf(tailleCommande)] : tailleCommande;
+      }
 
       const estFoncee = ["noir", "bleu marine", "bleu", "vert"].includes(couleurCommande.toLowerCase());
       const salleCible = salles.find(s => estFoncee ? s.type === "noir" : s.type === "blanc");
@@ -468,8 +547,8 @@ exports.processWaitingList = async () => {
 
       const machinesSalle = machines.filter(m => m.salle._id.equals(salleCible._id));
       let machine = machinesSalle.find(m =>
-        m.modele && m.modele._id.equals(modeleCommande._id) &&
-        m.taille === tailleCommande &&
+        m.modele && m.modele._id.equals(targetModele._id) &&
+        m.taille === targetTaille &&
         m.etat === "disponible"
       );
 
@@ -501,8 +580,8 @@ exports.processWaitingList = async () => {
           }
         }
 
-        machine.modele = modeleCommande._id;
-        machine.taille = tailleCommande;
+        machine.modele = targetModele._id;
+        machine.taille = targetTaille;
         machine.etat = "occupee";
         await machine.save();
       } else {
@@ -531,7 +610,6 @@ exports.processWaitingList = async () => {
     console.error("Erreur lors du traitement de la file d'attente :", err);
   }
 };
-
 exports.confirmPlanification = async (req, res) => {
   try {
     const { planifications } = req.body;
@@ -542,9 +620,10 @@ exports.confirmPlanification = async (req, res) => {
 
     for (const plan of planifications) {
       for (const commande of plan.commandes) {
-        const cmd = await Commande.findById(commande._id || commande).populate(
-          "modeles.modele"
-        );
+        const cmd = await Commande.findById(commande._id || commande).populate({
+          path: "modeles.modele",
+          populate: { path: "bases" },
+        });
 
         for (const modele of cmd.modeles) {
           const matiere = matieres.find(
@@ -552,8 +631,19 @@ exports.confirmPlanification = async (req, res) => {
           );
 
           if (matiere) {
-            const consommation = modele.modele.consommation.find(
-              (c) => c.taille === modele.taille
+            let targetModele = modele.modele;
+            let targetTaille = modele.taille;
+
+            if (modele.modele.bases && modele.modele.bases.length > 0) {
+              targetModele = await Modele.findById(modele.modele.bases[0]);
+              const tailleBaseEntry = modele.modele.taillesBases.find(
+                (tb) => tb.baseId.equals(targetModele._id)
+              );
+              targetTaille = tailleBaseEntry ? tailleBaseEntry.tailles[modele.modele.tailles.indexOf(modele.taille)] : modele.taille;
+            }
+
+            const consommation = targetModele.consommation.find(
+              (c) => c.taille === targetTaille
             );
             const quantiteNecessaire =
               (consommation?.quantity || 0.5) * modele.quantite;
@@ -648,7 +738,6 @@ exports.confirmPlanification = async (req, res) => {
         );
       }
 
-      // Separate planifications based on statut
       if (planification.statut === "waiting_resources") {
         await planification.save();
         const populatedPlan = await Planification.findById(planification._id)
@@ -691,7 +780,6 @@ exports.confirmPlanification = async (req, res) => {
       }
     }
 
-    // Trigger processing of waiting list
     await exports.processWaitingList();
 
     res.status(200).json({
@@ -707,7 +795,6 @@ exports.confirmPlanification = async (req, res) => {
     });
   }
 };
-
 exports.addPlanification = async (req, res) => {
   try {
     const { commandes, machinesIds, debutPrevue, finPrevue } = req.body;
