@@ -1,8 +1,11 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:frontend/models/modele.dart';
 import 'package:frontend/providers/PlanificationProvider .dart';
 import 'package:frontend/views/admin_home_page.dart';
+import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../main.dart';
@@ -16,10 +19,14 @@ import '../services/api_service.dart';
 class PlanificationConfirmationDialog extends StatefulWidget {
   final List<Planification> planifications;
   final String commandeId;
+  final bool hasInsufficientStock;
+  final bool partialAvailable;
 
   const PlanificationConfirmationDialog({
     required this.planifications,
     required this.commandeId,
+    this.hasInsufficientStock = false,
+    this.partialAvailable = false,
     Key? key,
   }) : super(key: key);
 

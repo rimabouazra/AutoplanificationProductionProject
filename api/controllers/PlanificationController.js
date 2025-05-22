@@ -225,7 +225,8 @@ exports.autoPlanifierCommande = async (req, res) => {
           const baseModele = await Modele.findById(modele.modele.bases[0]);
           if (!baseModele) {
             console.warn(`Base model with ID ${modele.modele.bases[0]} not found, using original model`);
-            continue; // Skip to original model if base model is not found
+            targetModele = modele.modele;
+            targetTaille = modele.taille;
           }
           targetModele = baseModele;
 
@@ -249,8 +250,6 @@ exports.autoPlanifierCommande = async (req, res) => {
         const consommation = targetModele.consommation.find(
           (c) => c.taille === targetTaille
         );
-        const quantiteNecessaire =
-          (consommation?.quantity || 0.5) * modele.quantite;
 
         if (matiere.quantite < quantiteNecessaire) {
           hasInsufficientStock = true;
@@ -299,7 +298,6 @@ exports.autoPlanifierCommande = async (req, res) => {
     const planifications = [];
     const allMachinesAssignees = [];
     const allSallesUtilisees = new Set();
-    let hasInsufficientStock = false;
     const partialPlanifications = [];
 
     for (const modele of commande.modeles) {
@@ -416,7 +414,7 @@ exports.autoPlanifierCommande = async (req, res) => {
           allMachinesAssignees.push(machine._id);
           allSallesUtilisees.add(String(salleCible._id));
 
-      const planification = {
+        const planification = {
         commandes: [commande._id],
         machines: [machine._id],
         salle: salleCible._id,
@@ -427,18 +425,8 @@ exports.autoPlanifierCommande = async (req, res) => {
         taille: modele.taille,
         couleur: modele.couleur,
         quantite: modele.quantite,
-      };
-          const planification = {
-            commandes: [commande._id],
-            machines: [machine._id],
-            salle: salleCible._id,
-            debutPrevue,
-            finPrevue,
-            quantite: quantitePlanifiee,
-            taille: modele.taille,
-            couleur: modele.couleur,
-            statut: "en attente"
-          };
+        };
+
 
           if (preview) {
             const populatedCommande = await Commande.findById(commande._id)
@@ -476,8 +464,8 @@ exports.autoPlanifierCommande = async (req, res) => {
             }
             planifications.push(populatedPlanification);
           }
-        }
-      }
+
+
 
       if (quantiteEnAttente > 0) {
         const waitingPlan = {
@@ -597,9 +585,7 @@ exports.processWaitingList = async () => {
         (m) => m.couleur.toLowerCase() === modeleCommande.couleur.toLowerCase()
       );
 
-      const consommation = modeleCommande.modele.consommation?.find(
-        (c) => c.taille === modeleCommande.taille
-      );
+
 
       const quantiteNecessaire = (consommation?.quantity || 0.5) * modeleCommande.quantite;
 
@@ -607,7 +593,7 @@ exports.processWaitingList = async () => {
         console.log(`Insufficient stock for planification ${plan._id}: ${quantiteNecessaire} needed, ${matiere?.quantite || 0} available`);
         continue;
       }
- // Determine which model and size to use
+      // Determine which model and size to use
       let targetModele = modeleCommande;
       let targetTaille = tailleCommande;
 
@@ -684,11 +670,7 @@ exports.processWaitingList = async () => {
         continue;
       }
 
-      // Calculate planification dates
-      const heures = (modeleCommande.quantite / 35) + 2;
-      const { debutPrevue: calculatedDebut, finPrevue } = calculatePlanificationDates(debutPrevue, heures);
 
-      // Update machine state
       machine.etat = "occupee";
       await machine.save({ session });
 
@@ -761,10 +743,9 @@ exports.confirmPlanification = async (req, res) => {
             }
 
             const consommation = targetModele.consommation.find(
-              (c) => c.taille === targetTaille
-            const consommation = modele.modele.consommation.find(
-                          (c) => c.taille === modele.taille
-                        );
+              (c) => c.taille === targetTaille);
+
+
             const quantiteNecessaire =
               (consommation?.quantity || 0.5) * modele.quantite;
 

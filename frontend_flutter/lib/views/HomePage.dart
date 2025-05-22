@@ -44,9 +44,7 @@ class _HomePageState extends State<HomePage> {
   final List<Map<String, String>> carouselItems = [
     {
       'image': 'assets/images/hero1.jpg',
-      'title': 'Timeless Elegance',
-      'subtitle': 'Découvrez notre dernière collection de lingerie.',
-      'title': 'Sustainable StyleSustainable Style',
+      "title": 'Sustainable Style',
       'subtitle': 'Eco-conscious designs for a better tomorrow.',
     },
     {
@@ -56,8 +54,7 @@ class _HomePageState extends State<HomePage> {
     },
     {
       'image': 'assets/images/hero3.jpg',
-      'title': 'Sustainable Style',
-      'subtitle': 'Des conceptions éco-responsables pour un avenir meilleur.',
+
       'title': 'Timeless Elegance',
       'subtitle': 'Discover our latest lingerie collection.',
     },
