@@ -570,6 +570,31 @@ class _PlanificationConfirmationDialogState
               if (planification.machines.isNotEmpty)
                 Text(
                     "Machine assignée: ${planification.machines.first.nom ?? 'N/A'}"),
+              Text(
+                "Matières sélectionnées:",
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              ...planification.commandes.expand((c) => c.modeles).map((m) {
+                final key = '${m.nomModele}_${m.taille}';
+                final matiereId = _matieresSelectionnees[key];
+                final matiere = matiereId != null
+                    ? _matieres.firstWhere((m) => m.id == matiereId,
+                        orElse: () => Matiere(
+                              id: '',
+                              reference: 'Non sélectionnée',
+                              couleur: m.couleur,
+                              quantite: 0,
+                              dateAjout: DateTime.now(),
+                              historique: [],
+                            ))
+                    : null;
+                return Text(
+                  "- ${m.nomModele} (${m.taille}): ${matiere?.reference ?? 'Non sélectionnée'}",
+                  style: theme.textTheme.bodySmall,
+                );
+              }).toList(),
             ],
           ),
         ),
@@ -817,10 +842,10 @@ class _PlanificationConfirmationDialogState
                     const SizedBox(height: 8),
                     ...{
                       for (var p in widget.planifications)
-                        if (p.statut != "waiting_resources")
-                          for (var c in p.commandes)
-                            for (var m in c.modeles)
-                              '${m.nomModele}_${m.taille}_${m.couleur}': m
+                        //if (p.statut != "waiting_resources")
+                        for (var c in p.commandes)
+                          for (var m in c.modeles)
+                            '${m.nomModele}_${m.taille}_${m.couleur}': m
                     }.values.map(_buildMatiereSelector),
                     const SizedBox(height: 20),
                   ],
