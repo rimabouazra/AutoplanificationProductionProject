@@ -606,7 +606,30 @@ exports.confirmPlanification = async (req, res) => {
 
     for (const plan of planifications) {
       let planification;
-      if (plan._id && plan._id !== "null" && plan._id !== null) {
+
+      // Check for existing planification to prevent duplication
+      const existingPlanification = await Planification.findOne({
+        commandes: { $all: plan.commandes.map((c) => c._id || c) },
+        salle: plan.salle._id || plan.salle,
+        taille: plan.taille || "",
+        couleur: plan.couleur || "",
+        quantite: plan.quantite || 0,
+        statut: { $in: ["en attente", "waiting_resources"] }, // Only match non-completed planifications
+      });
+
+      if (existingPlanification) {
+        console.log(`Found existing planification for command: ${existingPlanification._id}`);
+        planification = existingPlanification;
+        // Update fields if necessary
+        planification.machines = plan.machines.map((m) => m._id || m);
+        if (plan.debutPrevue && !isNaN(new Date(plan.debutPrevue))) {
+          planification.debutPrevue = new Date(plan.debutPrevue);
+        }
+        if (plan.finPrevue && !isNaN(new Date(plan.finPrevue))) {
+          planification.finPrevue = new Date(plan.finPrevue);
+        }
+        planification.statut = plan.statut || "en attente";
+      } else if (plan._id && plan._id !== "null" && plan._id !== null) {
         planification = await Planification.findById(plan._id);
         if (!planification) {
           console.warn(`Planification with ID ${plan._id} not found, creating new`);
@@ -633,14 +656,22 @@ exports.confirmPlanification = async (req, res) => {
             planification.finPrevue = new Date(plan.finPrevue);
           }
           planification.statut = plan.statut || "en attente";
-          planification.quantite = plan.quantite || 0;
-          planification.taille = plan.taille || "";
-          planification.couleur = plan.couleur || "";
         }
       } else {
-        // Skip creating new planifications for null IDs to avoid duplicates
-        console.warn(`Planification with null ID skipped: ${JSON.stringify(plan)}`);
-        continue;
+        // Create new planification for null ID
+        console.log(`Creating new planification for null ID: ${JSON.stringify(plan)}`);
+        planification = new Planification({
+          commandes: plan.commandes.map((c) => c._id || c),
+          machines: plan.machines.map((m) => m._id || m),
+          salle: plan.salle._id || plan.salle,
+          debutPrevue: plan.debutPrevue ? new Date(plan.debutPrevue) : new Date(),
+          finPrevue: plan.finPrevue ? new Date(plan.finPrevue) : new Date(),
+          statut: plan.statut || "en attente",
+          quantite: plan.quantite || 0,
+          taille: plan.taille || "",
+          couleur: plan.couleur || "",
+          createdAt: plan.createdAt ? new Date(plan.createdAt) : new Date(),
+        });
       }
 
       let salleLight = null;
