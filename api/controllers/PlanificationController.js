@@ -3,7 +3,9 @@ const Commande = require("../models/Commande");
 const Salle = require("../models/Salle");
 const Machine = require("../models/Machine");
 const moment = require('moment-timezone');
-const Matiere = require("../models/Matiere");
+const Matiere = require("../models/matiere");
+const mongoose = require('mongoose');
+
 // 7 AM to 5 PM, Tunisia timezone
 let workHoursConfig = {
   startHour: 7, // 7 AM
@@ -186,10 +188,9 @@ exports.mettreAJourMachinesDisponibles = async (req, res) => {
     res.status(500).json({ message: "Erreur lors de la mise à jour", error: error.message });
   }
 };
-
 exports.autoPlanifierCommande = async (req, res) => {
   try {
-    const { commandeId, preview } = req.body;
+    const { commandeId, preview, partial } = req.body;
 
     if (!commandeId) {
       return res.status(400).json({ message: "CommandeId is missing" });
@@ -200,79 +201,23 @@ exports.autoPlanifierCommande = async (req, res) => {
         path: "modeles.modele",
       })
       .populate("client");
-    // Vérifier le stock
-    const matieres = await Matiere.find();
-    let hasInsufficientStock = false;
-
-    for (const modele of commande.modeles) {
-      const matiere = matieres.find(
-        (m) => m.couleur.toLowerCase() === modele.couleur.toLowerCase()
-      );
-
-      if (matiere) {
-        const consommation = modele.modele.consommation.find(
-          (c) => c.taille === modele.taille
-        );
-        const quantiteNecessaire =
-          (consommation?.quantity || 0.5) * modele.quantite;
-
-        if (matiere.quantite < quantiteNecessaire) {
-          hasInsufficientStock = true;
-          break;
-        }
-      }
-    }
-
-    if (hasInsufficientStock && !preview) {
-      const waitingPlan = new Planification({
-        commandes: [commande._id],
-        machines: [],
-        statut: "waiting_resources",
-        createdAt: new Date(),
-      });
-      await waitingPlan.save();
-
-      const populatedWaitingPlan = await Planification.findById(waitingPlan._id)
-        .populate({
-          path: "commandes",
-          populate: { path: "client" },
-        });
-      if (waitingPlan.salle) {
-        const salleLight = await Salle.findById(waitingPlan.salle).select(
-          "_id nom type"
-        );
-        populatedWaitingPlan.salle = salleLight
-          ? { _id: salleLight._id, nom: salleLight.nom, type: salleLight.type }
-          : null;
-      }
-      return res.status(201).json({
-        planifications: [populatedWaitingPlan],
-        statut: "en attente",
-      });
-    }
 
     if (!commande) {
-      return res.status(404).json({
-        message: "Commande non trouvée",
-        id: commandeId,
-      });
+      return res.status(404).json({ message: "Commande non trouvée", id: commandeId });
     }
 
+    const matieres = await Matiere.find();
     const salles = await Salle.find();
-    const machines = await Machine.find()
-      .populate("modele")
-      .populate("salle");
+    const machines = await Machine.find().populate("modele").populate("salle");
     const planifications = [];
     const allMachinesAssignees = [];
     const allSallesUtilisees = new Set();
+    let hasInsufficientStock = false;
+    const partialPlanifications = [];
 
     for (const modele of commande.modeles) {
-      const estFoncee = ["noir", "bleu marine", "bleu", "vert"].includes(
-        modele.couleur.toLowerCase()
-      );
-      const salleCible = salles.find((s) =>
-        estFoncee ? s.type === "noir" : s.type === "blanc"
-      );
+      const estFoncee = ["noir", "bleu marine", "bleu", "vert"].includes(modele.couleur.toLowerCase());
+      const salleCible = salles.find((s) => estFoncee ? s.type === "noir" : s.type === "blanc");
 
       if (!salleCible) {
         return res.status(400).json({
@@ -280,145 +225,160 @@ exports.autoPlanifierCommande = async (req, res) => {
         });
       }
 
-      const machinesSalle = machines.filter((m) =>
-        m.salle._id.equals(salleCible._id)
-      );
-      let machine = machinesSalle.find(
-        (m) =>
-          m.modele &&
-          m.modele._id.equals(modele.modele._id) &&
-          m.taille === modele.taille &&
-          m.etat === "disponible"
-      );
+      const matiere = matieres.find((m) => m.couleur.toLowerCase() === modele.couleur.toLowerCase());
+      const consommation = modele.modele.consommation.find((c) => c.taille === modele.taille);
+      const quantiteNecessaire = (consommation?.quantity || 0.5) * modele.quantite;
 
-      if (!machine) {
-        machine = machinesSalle.find((m) => m.etat === "disponible");
+      let quantitePlanifiee = modele.quantite;
+      let quantiteEnAttente = 0;
+
+      if (matiere && matiere.quantite < quantiteNecessaire) {
+        hasInsufficientStock = true;
+        if (partial) {
+          const quantiteRealisable = Math.floor(matiere.quantite / (consommation?.quantity || 0.5));
+          quantitePlanifiee = Math.min(quantiteRealisable, modele.quantite);
+          quantiteEnAttente = modele.quantite - quantitePlanifiee;
+        } else {
+          quantitePlanifiee = 0;
+          quantiteEnAttente = modele.quantite;
+        }
       }
 
-      if (!machine) {
-        const planification = {
+      if (quantitePlanifiee > 0) {
+        const machinesSalle = machines.filter((m) => m.salle._id.equals(salleCible._id));
+        let machine = machinesSalle.find(
+          (m) =>
+            m.modele &&
+            m.modele._id.equals(modele.modele._id) &&
+            m.taille === modele.taille &&
+            m.etat === "disponible"
+        );
+
+        if (!machine) {
+          machine = machinesSalle.find((m) => m.etat === "disponible");
+        }
+
+        if (!machine) {
+          quantiteEnAttente += quantitePlanifiee;
+          quantitePlanifiee = 0;
+        } else {
+          const heures = (quantitePlanifiee / 35) + 2;
+          const now = moment().tz("CET").toDate();
+          const { debutPrevue, finPrevue } = calculatePlanificationDates(now, heures);
+
+          if (!preview) {
+            machine.etat = "occupee";
+            await machine.save();
+          }
+
+          allMachinesAssignees.push(machine._id);
+          allSallesUtilisees.add(String(salleCible._id));
+
+          const planification = {
+            commandes: [commande._id],
+            machines: [machine._id],
+            salle: salleCible._id,
+            debutPrevue,
+            finPrevue,
+            quantite: quantitePlanifiee,
+            taille: modele.taille,
+            couleur: modele.couleur,
+            statut: "en attente"
+          };
+
+          if (preview) {
+            const populatedCommande = await Commande.findById(commande._id)
+              .populate("client")
+              .populate("modeles.modele");
+            const populatedMachine = await Machine.findById(machine._id)
+              .populate({ path: "salle", select: "nom type" })
+              .populate("modele");
+            const salleLight = await Salle.findById(salleCible._id).select("_id nom type");
+            planifications.push({
+              ...planification,
+              commandes: [populatedCommande],
+              machines: [populatedMachine],
+              salle: salleLight
+                ? { _id: salleLight._id, nom: salleLight.nom, type: salleLight.type }
+                : null,
+            });
+          } else {
+            const nouvellePlanification = new Planification(planification);
+            await nouvellePlanification.save();
+            const populatedPlanification = await Planification.findById(nouvellePlanification._id)
+              .populate({
+                path: "commandes",
+                populate: { path: "client" },
+              })
+              .populate({
+                path: "machines",
+                populate: ["salle", "modele"],
+              });
+            if (nouvellePlanification.salle) {
+              const salleLight = await Salle.findById(nouvellePlanification.salle).select("_id nom type");
+              populatedPlanification.salle = salleLight
+                ? { _id: salleLight._id, nom: salleLight.nom, type: salleLight.type }
+                : null;
+            }
+            planifications.push(populatedPlanification);
+          }
+        }
+      }
+
+      if (quantiteEnAttente > 0) {
+        const waitingPlan = {
           commandes: [commande._id],
           machines: [],
+          salle: salleCible._id,
+          quantite: quantiteEnAttente,
           taille: modele.taille,
           couleur: modele.couleur,
-          quantite: modele.quantite,
-          salle: salleCible._id,
           statut: "waiting_resources",
           createdAt: moment().tz("CET").toDate(),
         };
 
         if (!preview) {
-          const newPlanification = new Planification(planification);
-          await newPlanification.save();
-          const populatedPlanification = await Planification.findById(
-            newPlanification._id
-          ).populate({
-            path: "commandes",
-            populate: { path: "client" },
-          });
-          if (newPlanification.salle) {
-            const salleLight = await Salle.findById(newPlanification.salle).select(
-              "_id nom type"
-            );
-            populatedPlanification.salle = salleLight
+          const newWaitingPlan = new Planification(waitingPlan);
+          await newWaitingPlan.save();
+          const populatedWaitingPlan = await Planification.findById(newWaitingPlan._id)
+            .populate({
+              path: "commandes",
+              populate: { path: "client" },
+            });
+          if (newWaitingPlan.salle) {
+            const salleLight = await Salle.findById(newWaitingPlan.salle).select("_id nom type");
+            populatedWaitingPlan.salle = salleLight
               ? { _id: salleLight._id, nom: salleLight.nom, type: salleLight.type }
               : null;
           }
-          planifications.push(populatedPlanification);
+          partialPlanifications.push(populatedWaitingPlan);
         } else {
           const populatedCommande = await Commande.findById(commande._id)
             .populate("client")
             .populate("modeles.modele");
-          planification.commandes = [populatedCommande];
-          planification.salle = {
+          waitingPlan.commandes = [populatedCommande];
+          waitingPlan.salle = {
             _id: salleCible._id,
             nom: salleCible.nom,
             type: salleCible.type,
           };
-          planifications.push(planification);
+          partialPlanifications.push(waitingPlan);
         }
-        continue;
-      }
-
-      const heures = modele.quantite / 35 + 2;
-      const now = moment().tz("CET").toDate();
-      const { debutPrevue, finPrevue } = calculatePlanificationDates(now, heures);
-
-      if (!preview) {
-        machine.etat = "occupee";
-        await machine.save();
-      }
-
-      allMachinesAssignees.push(machine._id);
-      allSallesUtilisees.add(String(salleCible._id));
-
-      const planification = {
-        commandes: [commande._id],
-        machines: [machine._id],
-        salle: salleCible._id,
-        debutPrevue,
-        finPrevue,
-        statut: "en attente",
-      };
-
-      if (preview) {
-        const populatedCommande = await Commande.findById(commande._id)
-          .populate("client")
-          .populate("modeles.modele");
-        const populatedMachine = await Machine.findById(machine._id)
-          .populate({ path: "salle", select: "nom type" })
-          .populate("modele");
-        const salleLight = await Salle.findById(salleCible._id).select(
-          "_id nom type"
-        );
-        planifications.push({
-          ...planification,
-          commandes: [populatedCommande],
-          machines: [populatedMachine],
-          salle: salleLight
-            ? { _id: salleLight._id, nom: salleLight.nom, type: salleLight.type }
-            : null,
-        });
-      } else {
-        const nouvellePlanification = new Planification(planification);
-        await nouvellePlanification.save();
-        const populatedPlanification = await Planification.findById(
-          nouvellePlanification._id
-        )
-          .populate({
-            path: "commandes",
-            populate: { path: "client" },
-          })
-          .populate({
-            path: "machines",
-            populate: ["salle", "modele"],
-          });
-        if (nouvellePlanification.salle) {
-          const salleLight = await Salle.findById(nouvellePlanification.salle).select(
-            "_id nom type"
-          );
-          populatedPlanification.salle = salleLight
-            ? { _id: salleLight._id, nom: salleLight.nom, type: salleLight.type }
-            : null;
-        }
-        planifications.push(populatedPlanification);
       }
     }
 
-    if (!preview && planifications.length > 0) {
+    if (!preview && (planifications.length > 0 || partialPlanifications.length > 0)) {
       commande.machinesAffectees = allMachinesAssignees;
       commande.salleAffectee = [...allSallesUtilisees][0];
-      commande.etat = planifications.some((p) => p.statut === "waiting_resources")
-        ? "en attente"
-        : "en attente";
+      commande.etat = (hasInsufficientStock || partialPlanifications.length > 0) ? "en attente" : "en attente";
       await commande.save();
     }
 
     const response = {
-      planifications,
-      statut: planifications.some((p) => p.statut === "waiting_resources")
-        ? "en attente"
-        : "planifiée",
+      planifications: [...planifications, ...partialPlanifications],
+      statut: hasInsufficientStock ? "en attente" : "planifiée",
+      hasInsufficientStock,
+      partialAvailable: hasInsufficientStock
     };
 
     return res.status(preview ? 200 : 201).json(response);
@@ -430,56 +390,92 @@ exports.autoPlanifierCommande = async (req, res) => {
     });
   }
 };
+
 exports.processWaitingList = async () => {
+  const session = await mongoose.startSession();
   try {
+    session.startTransaction();
+
     const waitingPlans = await Planification.find({ statut: "waiting_resources" })
       .sort({ order: 1, createdAt: 1 })
       .populate('commandes')
+      .populate('salle')
+      .session(session);
 
-    const salles = await Salle.find();
-    const machines = await Machine.find().populate("modele").populate("salle");
+    const salles = await Salle.find().session(session);
+    const machines = await Machine.find().populate("modele").populate("salle").session(session);
     const activePlanifications = await Planification.find({
       statut: { $ne: "terminée" }
-    });
+    }).session(session);
+    const matieres = await Matiere.find().session(session);
 
     for (const plan of waitingPlans) {
-      // Récupérer la commande avec les modèles peuplés
-      const commande = await Commande.findById(plan.commandes[0])
-        .populate('modeles.modele');
-
-      if (!commande || commande.modeles.length === 0) {
-        console.log("Commande ou modèles non trouvés");
+      // Skip if already has machines assigned
+      if (plan.machines.length > 0) {
+        console.log(`Planification ${plan._id} already has machines assigned`);
         continue;
       }
 
-      // Prendre le premier modèle de la commande (vous pouvez adapter cette logique selon vos besoins)
-      const modeleCommande = commande.modeles[0].modele;
-      const tailleCommande = commande.modeles[0].taille;
-      const couleurCommande = commande.modeles[0].couleur;
-      const quantiteCommande = commande.modeles[0].quantite;
+      const commande = await Commande.findById(plan.commandes[0])
+        .populate('modeles.modele')
+        .session(session);
 
-      const estFoncee = ["noir", "bleu marine", "bleu", "vert"].includes(couleurCommande.toLowerCase());
+      if (!commande || commande.modeles.length === 0) {
+        console.log(`Commande ou modèles non trouvés pour planification ${plan._id}`);
+        continue;
+      }
+
+      // Find the specific modele for this planification
+      const modeleCommande = commande.modeles.find(
+        (m) => m.taille === plan.taille && m.couleur.toLowerCase() === plan.couleur.toLowerCase()
+      );
+
+      if (!modeleCommande) {
+        console.log(`Modèle non trouvé pour planification ${plan._id}`);
+        continue;
+      }
+
+      // Check stock availability
+      const matiere = matieres.find(
+        (m) => m.couleur.toLowerCase() === modeleCommande.couleur.toLowerCase()
+      );
+
+      const consommation = modeleCommande.modele.consommation?.find(
+        (c) => c.taille === modeleCommande.taille
+      );
+
+      const quantiteNecessaire = (consommation?.quantity || 0.5) * modeleCommande.quantite;
+
+      if (!matiere || matiere.quantite < quantiteNecessaire) {
+        console.log(`Insufficient stock for planification ${plan._id}: ${quantiteNecessaire} needed, ${matiere?.quantite || 0} available`);
+        continue;
+      }
+
+      const estFoncee = ["noir", "bleu marine", "bleu", "vert"].includes(modeleCommande.couleur.toLowerCase());
       const salleCible = salles.find(s => estFoncee ? s.type === "noir" : s.type === "blanc");
 
       if (!salleCible) {
-        console.log(`Salle de type ${estFoncee ? 'noir' : 'blanc'} introuvable`);
+        console.log(`Salle de type ${estFoncee ? 'noir' : 'blanc'} introuvable pour planification ${plan._id}`);
         continue;
       }
 
       const machinesSalle = machines.filter(m => m.salle._id.equals(salleCible._id));
+
+      // Find available machine that matches the model and size
       let machine = machinesSalle.find(m =>
-        m.modele && m.modele._id.equals(modeleCommande._id) &&
-        m.taille === tailleCommande &&
-        m.etat === "disponible"
+        m.etat === "disponible" &&
+        m.modele?._id.equals(modeleCommande.modele._id) &&
+        m.taille === modeleCommande.taille
       );
 
       let debutPrevue = new Date();
-      let finPrevue;
 
+      // If no exact match, find an available machine and configure it
       if (!machine) {
         machine = machinesSalle.find(m => m.etat === "disponible");
 
         if (!machine) {
+          // Check for soon-to-be-available machines
           let earliestFinPrevue = null;
           let targetMachine = null;
 
@@ -495,43 +491,73 @@ exports.processWaitingList = async () => {
 
           if (targetMachine && earliestFinPrevue) {
             machine = targetMachine;
-            debutPrevue = new Date(earliestFinPrevue.getTime() + 15 * 60 * 1000);
+            debutPrevue = new Date(earliestFinPrevue.getTime() + 15 * 60 * 1000); // 15-minute buffer
           } else {
+            console.log(`No available machine in salle ${salleCible.nom} for planification ${plan._id}`);
             continue;
           }
         }
 
-        machine.modele = modeleCommande._id;
-        machine.taille = tailleCommande;
-        machine.etat = "occupee";
-        await machine.save();
-      } else {
-        machine.etat = "occupee";
-        await machine.save();
+        // Configure machine to match planification requirements
+        machine.modele = modeleCommande.modele._id;
+        machine.taille = modeleCommande.taille;
       }
 
-      const heures = (quantiteCommande / 35) + 2;
-      const { debutPrevue: calculatedDebut, finPrevue: calculatedFin } = calculatePlanificationDates(debutPrevue, heures);
-      debutPrevue = calculatedDebut;
-      finPrevue = calculatedFin;
+      // Check for scheduling conflicts
+      const conflictingPlan = activePlanifications.find(p =>
+        p.machines.includes(machine._id) &&
+        p.statut !== "terminée" &&
+        (
+          (debutPrevue >= p.debutPrevue && debutPrevue <= p.finPrevue) ||
+          (p.debutPrevue >= debutPrevue && p.debutPrevue <= finPrevue)
+        )
+      );
 
+      if (conflictingPlan) {
+        console.log(`Scheduling conflict for machine ${machine._id} in planification ${plan._id}`);
+        continue;
+      }
+
+      // Calculate planification dates
+      const heures = (modeleCommande.quantite / 35) + 2;
+      const { debutPrevue: calculatedDebut, finPrevue } = calculatePlanificationDates(debutPrevue, heures);
+
+      // Update machine state
+      machine.etat = "occupee";
+      await machine.save({ session });
+
+      // Update planification
       plan.machines = [machine._id];
       plan.salle = salleCible._id;
-      plan.debutPrevue = debutPrevue;
+      plan.debutPrevue = calculatedDebut;
       plan.finPrevue = finPrevue;
       plan.statut = "en attente";
-      await plan.save();
+      await plan.save({ session });
 
+      // Update commande
       commande.machinesAffectees = [machine._id];
       commande.salleAffectee = salleCible._id;
       commande.etat = "en attente";
-      await commande.save();
+      await commande.save({ session });
+
+      // Update material stock
+      matiere.quantite -= quantiteNecessaire;
+      matiere.historique.push({
+        action: "consommation",
+        quantite: quantiteNecessaire,
+        date: new Date()
+      });
+      await matiere.save({ session });
     }
+
+    await session.commitTransaction();
   } catch (err) {
+    await session.abortTransaction();
     console.error("Erreur lors du traitement de la file d'attente :", err);
+  } finally {
+    session.endSession();
   }
 };
-
 exports.confirmPlanification = async (req, res) => {
   try {
     const { planifications } = req.body;
@@ -569,40 +595,6 @@ exports.confirmPlanification = async (req, res) => {
       if (hasInsufficientStock) break;
     }
 
-    // Si stock insuffisant, mettre en attente
-    if (hasInsufficientStock) {
-      const waitingPlans = [];
-      for (const plan of planifications) {
-        const waitingPlan = await Planification.findByIdAndUpdate(
-          plan._id,
-          { statut: "waiting_resources", createdAt: new Date() },
-          { new: true }
-        )
-          .populate({
-            path: "commandes",
-            populate: { path: "client" },
-          })
-          .populate({
-            path: "machines",
-            populate: ["salle", "modele"],
-          });
-        if (waitingPlan.salle) {
-          const salleLight = await Salle.findById(waitingPlan.salle).select(
-            "_id nom type"
-          );
-          waitingPlan.salle = salleLight
-            ? { _id: salleLight._id, nom: salleLight.nom, type: salleLight.type }
-            : null;
-        }
-        waitingPlans.push(waitingPlan);
-      }
-
-      return res.status(200).json({
-        message: "Planifications mises en attente - stock insuffisant",
-        planifications: waitingPlans,
-      });
-    }
-
     if (!planifications || !Array.isArray(planifications)) {
       return res.status(400).json({
         message: "Les planifications sont requises sous forme de tableau",
@@ -614,31 +606,41 @@ exports.confirmPlanification = async (req, res) => {
 
     for (const plan of planifications) {
       let planification;
-      if (plan._id) {
+      if (plan._id && plan._id !== "null" && plan._id !== null) {
         planification = await Planification.findById(plan._id);
-        if (!planification) continue;
-
-        planification.machines = plan.machines.map((m) => m._id || m);
-        planification.salle = plan.salle._id || plan.salle;
-        if (plan.debutPrevue && !isNaN(new Date(plan.debutPrevue))) {
-          planification.debutPrevue = new Date(plan.debutPrevue);
+        if (!planification) {
+          console.warn(`Planification with ID ${plan._id} not found, creating new`);
+          planification = new Planification({
+            commandes: plan.commandes.map((c) => c._id || c),
+            machines: plan.machines.map((m) => m._id || m),
+            salle: plan.salle._id || plan.salle,
+            debutPrevue: plan.debutPrevue ? new Date(plan.debutPrevue) : new Date(),
+            finPrevue: plan.finPrevue ? new Date(plan.finPrevue) : new Date(),
+            statut: plan.statut || "en attente",
+            quantite: plan.quantite || 0,
+            taille: plan.taille || "",
+            couleur: plan.couleur || "",
+            createdAt: plan.createdAt ? new Date(plan.createdAt) : new Date(),
+          });
+        } else {
+          // Update existing planification
+          planification.machines = plan.machines.map((m) => m._id || m);
+          planification.salle = plan.salle._id || plan.salle;
+          if (plan.debutPrevue && !isNaN(new Date(plan.debutPrevue))) {
+            planification.debutPrevue = new Date(plan.debutPrevue);
+          }
+          if (plan.finPrevue && !isNaN(new Date(plan.finPrevue))) {
+            planification.finPrevue = new Date(plan.finPrevue);
+          }
+          planification.statut = plan.statut || "en attente";
+          planification.quantite = plan.quantite || 0;
+          planification.taille = plan.taille || "";
+          planification.couleur = plan.couleur || "";
         }
-        if (plan.finPrevue && !isNaN(new Date(plan.finPrevue))) {
-          planification.finPrevue = new Date(plan.finPrevue);
-        }
-
-        planification.statut = "en attente";
-
-        await planification.save();
       } else {
-        planification = new Planification({
-          commandes: plan.commandes.map((c) => c._id || c),
-          machines: plan.machines.map((m) => m._id || m),
-          salle: plan.salle._id || plan.salle,
-          debutPrevue: new Date(plan.debutPrevue),
-          finPrevue: new Date(plan.finPrevue),
-          statut: plan.statut || "en attente",
-        });
+        // Skip creating new planifications for null IDs to avoid duplicates
+        console.warn(`Planification with null ID skipped: ${JSON.stringify(plan)}`);
+        continue;
       }
 
       let salleLight = null;
@@ -646,9 +648,10 @@ exports.confirmPlanification = async (req, res) => {
         salleLight = await Salle.findById(planification.salle).select(
           "_id nom type"
         );
+      } else {
+        console.warn(`No salle assigned to planification ${planification._id || 'new'}`);
       }
 
-      // Separate planifications based on statut
       if (planification.statut === "waiting_resources") {
         await planification.save();
         const populatedPlan = await Planification.findById(planification._id)
@@ -691,8 +694,10 @@ exports.confirmPlanification = async (req, res) => {
       }
     }
 
-    // Trigger processing of waiting list
-    await exports.processWaitingList();
+    // Only process waiting list for non-waiting planifications
+    if (confirmedPlanifications.length > 0) {
+      await exports.processWaitingList();
+    }
 
     res.status(200).json({
       message: "Planifications confirmées",
