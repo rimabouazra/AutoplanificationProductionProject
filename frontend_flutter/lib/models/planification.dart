@@ -47,7 +47,7 @@ class Planification {
           if (machineJson["salle"] is Map<String, dynamic>) {
             var salleJson = machineJson["salle"];
             machineJson["salle"] = {
-              "_id": salleJson["_id"],  // Extract only the ID from salle
+              "_id": salleJson["_id"],
               "type": salleJson["type"] ?? "",
               "nom": salleJson["nom"] ?? "",
             };
@@ -71,8 +71,8 @@ class Planification {
           ? Salle.fromJson(json['salle'] as Map<String, dynamic>)
           : Salle(
         id: json['salle'].toString(),
-        nom: 'Unknown',
-        type: 'Unknown',
+        nom: '',
+        type: '',
         machines: [],
       ))
           : null,

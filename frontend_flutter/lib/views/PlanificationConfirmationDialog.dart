@@ -77,33 +77,26 @@ String _stockMessage = '';
 
         for (var i = 0; i < widget.planifications.length; i++) {
           final planification = widget.planifications[i];
-          print('Processing Planification $i:');
+          //print('Processing Planification $i:');
 
           Salle? salle = planification.salle;
-          print('Salle field type: ${salle.runtimeType}');
-          print('Salle field value: $salle');
+
 
           if (salle != null) {
-            print('Salle is Salle object, ID: ${salle.id}, Nom: ${salle.nom}');
             final matchedSalle = salleMap[salle.id] ??
-                Salle(id: salle.id, nom: 'Unknown', type: 'Unknown', machines: []);
-            print('Matched salle: ${matchedSalle.id}, Nom: ${matchedSalle.nom}');
+                Salle(id: salle.id, nom: '', type: '', machines: []);
             _selectedSalles[i] = salleMap[salle.id]; // Use the Salle instance from salleMap
-            print('Selected salle for index $i: ${matchedSalle.nom} (ID: ${matchedSalle.id})');
           } else {
             print('Salle is null for planification $i');
             _selectedSalles[i] = null;
           }
 
           final machines = planification.machines;
-          print('Found ${machines.length} machines for planification $i');
           for (var machine in machines) {
-            print('Machine: ID=${machine.id}, Nom=${machine.nom}, Salle ID=${machine.salle.id}');
             final matchedSalle = salleMap[machine.salle.id] ??
-                Salle(id: machine.salle.id, nom: 'Unknown', type: 'Unknown', machines: []);
+                Salle(id: machine.salle.id, nom: '', type: '', machines: []);
             machine.salle.nom = matchedSalle.nom;
             machine.salle.type = matchedSalle.type;
-            print('Updated machine salle: Nom=${machine.salle.nom}, Type=${matchedSalle.type}');
           }
         }
       });
