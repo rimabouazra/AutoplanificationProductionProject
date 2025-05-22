@@ -14,5 +14,5 @@ router.post('/confirm', planificationController.confirmPlanification);
 
 router.get("/:id", planificationController.getPlanificationById);
 router.get('/active/:machineId', planificationController.checkActivePlanification);
-
+router.put("/waiting/order", planificationController.reorderWaitingPlanifications);
 module.exports = router;

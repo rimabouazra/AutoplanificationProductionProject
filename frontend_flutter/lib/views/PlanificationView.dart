@@ -77,7 +77,6 @@ class _PlanificationViewState extends State<PlanificationView> {
       ),
     );
   }
-  // Récupérer les planifications en attente
   Future<void> _fetchWaitingPlanifications() async {
     try {
       final waitingPlans = await ApiService.getWaitingPlanifications();
@@ -90,7 +89,6 @@ class _PlanificationViewState extends State<PlanificationView> {
     }
   }
 
-  // Mettre à jour l'ordre des planifications en attente
   Future<void> _updateWaitingPlanificationOrder() async {
     try {
       final order = _waitingPlanifications.map((wp) => wp.id).toList();
@@ -327,8 +325,6 @@ class _PlanificationViewState extends State<PlanificationView> {
           statusMatch;
     }).toList();
   }
-
-  // Calculer la plage de dates
   void _calculateDateRange(List<Planification> planifications) {
     if (planifications.isEmpty || _isDateRangeInitialized) return;
 
@@ -693,25 +689,17 @@ class _PlanificationViewState extends State<PlanificationView> {
         return Colors.grey;
     }
   }
-
-  // Formatage de l'heure
   String _formatTime(DateTime? date) {
     return date != null ? DateFormat('HH:mm').format(date) : '--:--';
   }
-
-  // Formatage de la date
   String _formatDate(DateTime? date) {
     return date != null ? DateFormat('dd/MM/yyyy').format(date) : '--/--/----';
   }
-
-  // Formatage de la date et heure
   String _formatDateTime(DateTime? date) {
     return date != null
         ? DateFormat('dd/MM/yyyy HH:mm').format(date)
         : '--/--/---- --:--';
   }
-
-  // Badge de statut
   Widget _buildStatusBadge(String statut) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),

@@ -935,17 +935,27 @@ static Future<void> deleteModele(String id) async {
     }
   }
   static Future<void> updateWaitingPlanificationOrder(List<String?> order) async {
-    final token = await AuthService.getToken();
-    final response = await http.put(
-      Uri.parse('$baseUrl/planifications/waiting/order'),
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": "Bearer $token",
-      },
-      body: jsonEncode({"order": order}),
-    );
-    if (response.statusCode != 200) {
-      throw Exception("Erreur lors de la mise à jour de l'ordre des planifications en attente");
+    try {
+      final token = await AuthService.getToken();
+
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/planifications/waiting/order'),
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": "Bearer $token",
+        },
+        body: jsonEncode({"orderedIds": order}),
+      );
+
+
+
+      if (response.statusCode != 200) {
+        throw Exception("Erreur lors de la mise à jour de l'ordre des planifications en attente: ${response.statusCode} - ${response.body}");
+      }
+    } catch (e) {
+      print('Error in updateWaitingPlanificationOrder: $e');
+      throw Exception("Erreur lors de la mise à jour de l'ordre des planifications en attente: $e");
     }
   }
 }

@@ -208,7 +208,6 @@ exports.autoPlanifierCommande = async (req, res) => {
       return res.status(404).json({ message: "Commande non trouvée", id: commandeId });
     }
 
-
     // Vérifier le stock
     const matieres = await Matiere.find();
     let hasInsufficientStock = false;
@@ -225,10 +224,9 @@ exports.autoPlanifierCommande = async (req, res) => {
           const baseModele = await Modele.findById(modele.modele.bases[0]);
           if (!baseModele) {
             console.warn(`Base model with ID ${modele.modele.bases[0]} not found, using original model`);
-            targetModele = modele.modele;
-            targetTaille = modele.taille;
+          } else {
+            targetModele = baseModele;
           }
-          targetModele = baseModele;
 
           // Find the tailleBase entry, ensuring baseId exists
           const tailleBaseEntry = modele.modele.taillesBases.find(
@@ -247,14 +245,23 @@ exports.autoPlanifierCommande = async (req, res) => {
                 : modele.taille;
           }
         }
+
         const consommation = targetModele.consommation.find(
           (c) => c.taille === targetTaille
         );
+        if (!consommation) {
+          console.warn(`No consommation found for modele ${targetModele._id} with taille ${targetTaille}`);
+        }
+        const quantiteNecessaire = (consommation?.quantity || 0.5) * modele.quantite;
 
         if (matiere.quantite < quantiteNecessaire) {
           hasInsufficientStock = true;
           break;
         }
+      } else {
+        console.warn(`No matiere found for couleur ${modele.couleur}`);
+        hasInsufficientStock = true;
+        break;
       }
     }
 
@@ -286,13 +293,6 @@ exports.autoPlanifierCommande = async (req, res) => {
       });
     }
 
-    if (!commande) {
-      return res.status(404).json({
-        message: "Commande non trouvée",
-        id: commandeId,
-      });
-    }
-
     const salles = await Salle.find();
     const machines = await Machine.find().populate("modele").populate("salle");
     const planifications = [];
@@ -302,7 +302,7 @@ exports.autoPlanifierCommande = async (req, res) => {
 
     for (const modele of commande.modeles) {
       const estFoncee = ["noir", "bleu marine", "bleu", "vert"].includes(modele.couleur.toLowerCase());
-      const salleCible = salles.find((s) => estFoncee ? s.type === "noir" : s.type === "blanc");
+      const salleCible = salles.find((s) => (estFoncee ? s.type === "noir" : s.type === "blanc"));
 
       if (!salleCible) {
         return res.status(400).json({
@@ -310,10 +310,8 @@ exports.autoPlanifierCommande = async (req, res) => {
         });
       }
 
-      const machinesSalle = machines.filter((m) =>
-        m.salle._id.equals(salleCible._id)
-      );
-       //the planification is done withe the base
+      const machinesSalle = machines.filter((m) => m.salle._id.equals(salleCible._id));
+
       // Determine which model and size to use for machine selection
       let targetModele = modele.modele;
       let targetTaille = modele.taille;
@@ -325,7 +323,6 @@ exports.autoPlanifierCommande = async (req, res) => {
         } else {
           targetModele = baseModele;
 
-          // Find the tailleBase entry, ensuring baseId exists
           const tailleBaseEntry = modele.modele.taillesBases.find(
             (tb) => tb.baseId && tb.baseId.equals(targetModele._id)
           );
@@ -351,9 +348,10 @@ exports.autoPlanifierCommande = async (req, res) => {
           m.taille === targetTaille &&
           m.etat === "disponible"
       );
+
       const matiere = matieres.find((m) => m.couleur.toLowerCase() === modele.couleur.toLowerCase());
       const consommation = modele.modele.consommation.find((c) => c.taille === modele.taille);
-      const quantiteNecessaire = (consommation?.quantity || 0.5) * modele.quantite;
+      const quantiteNecessaire = (consommation?.quantity || 0.5) * modele.quantite; // Define quantiteNecessaire here
 
       let quantitePlanifiee = modele.quantite;
       let quantiteEnAttente = 0;
@@ -371,15 +369,6 @@ exports.autoPlanifierCommande = async (req, res) => {
       }
 
       if (quantitePlanifiee > 0) {
-        const machinesSalle = machines.filter((m) => m.salle._id.equals(salleCible._id));
-        let machine = machinesSalle.find(
-          (m) =>
-            m.modele &&
-            m.modele._id.equals(modele.modele._id) &&
-            m.taille === modele.taille &&
-            m.etat === "disponible"
-        );
-
         if (!machine) {
           machine = machinesSalle.find((m) => m.etat === "disponible");
         }
@@ -388,23 +377,9 @@ exports.autoPlanifierCommande = async (req, res) => {
           quantiteEnAttente += quantitePlanifiee;
           quantitePlanifiee = 0;
         } else {
-          const populatedCommande = await Commande.findById(commande._id)
-            .populate("client")
-            .populate("modeles.modele");
-          planification.commandes = [populatedCommande];
-          planification.salle = {
-            _id: salleCible._id,
-            nom: salleCible.nom,
-            type: salleCible.type,
-          };
-          planifications.push(planification);
-        }
-        continue;
-      }
-
-      const heures = modele.quantite / 35 + 2;
-      const now = moment().tz("CET").toDate();
-      const { debutPrevue, finPrevue } = calculatePlanificationDates(now, heures);
+          const heures = quantitePlanifiee / 35 + 2;
+          const now = moment().tz("CET").toDate();
+          const { debutPrevue, finPrevue } = calculatePlanificationDates(now, heures);
 
           if (!preview) {
             machine.etat = "occupee";
@@ -414,19 +389,17 @@ exports.autoPlanifierCommande = async (req, res) => {
           allMachinesAssignees.push(machine._id);
           allSallesUtilisees.add(String(salleCible._id));
 
-        const planification = {
-        commandes: [commande._id],
-        machines: [machine._id],
-        salle: salleCible._id,
-        debutPrevue,
-        finPrevue,
-        statut: "en attente",
-        // Store the original model details for reference
-        taille: modele.taille,
-        couleur: modele.couleur,
-        quantite: modele.quantite,
-        };
-
+          const planification = {
+            commandes: [commande._id],
+            machines: [machine._id],
+            salle: salleCible._id,
+            debutPrevue,
+            finPrevue,
+            statut: "en attente",
+            taille: modele.taille,
+            couleur: modele.couleur,
+            quantite: quantitePlanifiee,
+          };
 
           if (preview) {
             const populatedCommande = await Commande.findById(commande._id)
@@ -464,9 +437,8 @@ exports.autoPlanifierCommande = async (req, res) => {
             }
             planifications.push(populatedPlanification);
           }
-
-
-
+        }
+      }
       if (quantiteEnAttente > 0) {
         const waitingPlan = {
           commandes: [commande._id],
@@ -512,7 +484,7 @@ exports.autoPlanifierCommande = async (req, res) => {
     if (!preview && (planifications.length > 0 || partialPlanifications.length > 0)) {
       commande.machinesAffectees = allMachinesAssignees;
       commande.salleAffectee = [...allSallesUtilisees][0];
-      commande.etat = (hasInsufficientStock || partialPlanifications.length > 0) ? "en attente" : "en attente";
+      commande.etat = hasInsufficientStock || partialPlanifications.length > 0 ? "en attente" : "planifiée";
       await commande.save();
     }
 
@@ -520,7 +492,7 @@ exports.autoPlanifierCommande = async (req, res) => {
       planifications: [...planifications, ...partialPlanifications],
       statut: hasInsufficientStock ? "en attente" : "planifiée",
       hasInsufficientStock,
-      partialAvailable: hasInsufficientStock
+      partialAvailable: hasInsufficientStock,
     };
 
     return res.status(preview ? 200 : 201).json(response);
@@ -1024,22 +996,23 @@ exports.reorderWaitingPlanifications = async (req, res) => {
     const { orderedIds } = req.body;
 
     if (!orderedIds || !Array.isArray(orderedIds)) {
+      console.log('Invalid orderedIds:', orderedIds);
       return res.status(400).json({ message: "orderedIds must be an array" });
     }
 
-    // Update order for each Planification (changed from WaitingPlanification)
-    const updates = orderedIds.map((id, index) =>
-      Planification.updateOne(
+    const updates = orderedIds.map((id, index) => {
+      return Planification.updateOne(
         { _id: id, statut: { $in: ["en attente", "waiting_resources"] } },
         { $set: { order: index } }
-      )
-    );
+      );
+    });
 
-    await Promise.all(updates);
+    const results = await Promise.all(updates);
+    console.log('Update results:', results);
 
     res.status(200).json({ message: "Waiting planifications reordered successfully" });
   } catch (error) {
-    console.error("Erreur lors du réordonnancement des planifications en attente :", error);
+    console.error("Error in reorderWaitingPlanifications:", error);
     res.status(500).json({ message: "Erreur serveur", error: error.message });
   }
 };
