@@ -386,40 +386,33 @@ class ApiService {
       throw Exception('Erreur lors de la récupération des prévisualisations');
     }
   }
-  static Future<bool> confirmerPlanification(List<Planification> planifications) async {
-    try {
-      if (planifications.isEmpty) return false;
-      final validPlanifications = planifications.where((p) => p.id != null).toList();
-    if (validPlanifications.length < planifications.length) {
-      debugPrint('Warning: ${planifications.length - validPlanifications.length} planifications with null IDs were filtered out');
-      planifications.forEach((p) {
-        if (p.id == null) {
-          debugPrint('Invalid planification: ${p.toJson()}');
-        }
-      });
-    }
-      final response = await http.post(
-        Uri.parse('$baseUrl/planifications/confirm'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'planifications': planifications.map((p) {
-            if (p.id == null) {
-              debugPrint("Planification with null id: ${p.toJson()}");
-            }
-            return p.toJson();
-          }).toList(),
-        }),
-      );
+static Future<bool> confirmerPlanification(List<Planification> planifications) async {
+  try {
+    if (planifications.isEmpty) return false;
 
-      debugPrint('Status confirmation: ${response.statusCode}');
-      debugPrint('Body confirmation: ${response.body}');
+    // Log planifications for debugging
+    debugPrint('Planifications to confirm: ${planifications.length}');
+    planifications.forEach((p) {
+      debugPrint('Planification: id=${p.id}, statut=${p.statut}, machines=${p.machines.length}');
+    });
 
-      return response.statusCode == 200 || response.statusCode == 201;
-    } catch (e) {
-      debugPrint('Exception in confirmerPlanification: $e');
-      return false;
-    }
+    final response = await http.post(
+      Uri.parse('$baseUrl/planifications/confirm'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'planifications': planifications.map((p) => p.toJson()).toList(),
+      }),
+    );
+
+    debugPrint('Status confirmation: ${response.statusCode}');
+    debugPrint('Body confirmation: ${response.body}');
+
+    return response.statusCode == 200 || response.statusCode == 201;
+  } catch (e) {
+    debugPrint('Exception in confirmerPlanification: $e');
+    return false;
   }
+}
 
   static Future<bool> addPlanification(Planification planification) async {
     final response = await http.post(
