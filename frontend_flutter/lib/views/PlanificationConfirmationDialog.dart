@@ -43,25 +43,66 @@ class _PlanificationConfirmationDialogState
   List<Salle> _salles = []; // Added missing field
 
   bool _showStockOptions = false;
-bool _partialPlanning = false;
-String _stockMessage = '';
+  bool _partialPlanning = false;
+  String _stockMessage = '';
   @override
   void initState() {
     super.initState();
     _selectedSalles = List<Salle?>.filled(widget.planifications.length, null);
     _selectedMachinesForPlanifications = List<List<String>>.generate(
         widget.planifications.length,
-            (index) => widget.planifications[index].machines.map((m) => m.id).toList());
+        (index) =>
+            widget.planifications[index].machines.map((m) => m.id).toList());
     _startDates = widget.planifications
         .map((p) => p.debutPrevue ?? DateTime.now())
         .toList();
     _endDates = widget.planifications
         .map((p) => p.finPrevue ?? DateTime.now().add(const Duration(hours: 1)))
         .toList();
-    _availableMachines = List<List<Machine>>.filled(widget.planifications.length, []);
+    _availableMachines =
+        List<List<Machine>>.filled(widget.planifications.length, []);
 
     _loadMatieres();
     _loadSallesAndMachines();
+    if (widget.hasInsufficientStock && widget.partialAvailable) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _showStockChoiceDialog();
+      });
+    }
+  }
+
+  Future<void> _showStockChoiceDialog() async {
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text("Stock Insuffisant"),
+        content: const Text(
+          "Le stock de matières est insuffisant pour cette commande. Voulez-vous :\n"
+          "- Planifier la quantité réalisable et mettre le reste en attente ?\n"
+          "- Mettre toute la commande en attente ?",
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _partialPlanning = true;
+              });
+              Navigator.pop(context);
+            },
+            child: const Text("Planifier partiellement"),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _partialPlanning = false;
+              });
+              Navigator.pop(context);
+            },
+            child: const Text("Mettre en attente"),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _loadSallesAndMachines() async {
@@ -73,7 +114,8 @@ String _stockMessage = '';
 
       setState(() {
         _salles = sallesData; // Store the fetched salles in state
-        _selectedSalles = List.generate(widget.planifications.length, (_) => null);
+        _selectedSalles =
+            List.generate(widget.planifications.length, (_) => null);
 
         for (var i = 0; i < widget.planifications.length; i++) {
           final planification = widget.planifications[i];
@@ -121,33 +163,34 @@ String _stockMessage = '';
                     (m) => m.couleur.toLowerCase() == modele.couleur.toLowerCase(),
                 orElse: () => Matiere(
                   id: '',
-                  reference: '',
-                  couleur: '',
+                  reference: 'Non disponible',
+                  couleur: modele.couleur,
                   quantite: 0,
                   dateAjout: DateTime.now(),
                   historique: [],
                 ),
               );
 
-              if (matiereCorrespondante.id.isNotEmpty) {
-                _matieresSelectionnees[modeleKey] = matiereCorrespondante.id;
-                _quantitesConsommees[modeleKey] = _calculerConsommation(modele);
-              }
+              _matieresSelectionnees[modeleKey] =
+                  matiereCorrespondante.id.isNotEmpty
+                      ? matiereCorrespondante.id
+                      : null;
+              _quantitesConsommees[modeleKey] = _calculerConsommation(modele);
             }
           }
         }
       });
     } catch (e) {
-      Fluttertoast.showToast(msg: "Erreur lors du chargement des matières");
+      Fluttertoast.showToast(msg: "Erreur lors du chargement des matières: $e");
     }
   }
-
 
   Future<void> _loadMachinesForSalle(int planIndex, String salleId) async {
     try {
       final machines = await ApiService.getMachinesParSalle(salleId);
       setState(() {
-        _availableMachines[planIndex] = machines.where((m) => m.etat == "disponible").toList();
+        _availableMachines[planIndex] =
+            machines.where((m) => m.etat == "disponible").toList();
         // If current selected machines are not in available machines, reset selection
         _selectedMachinesForPlanifications[planIndex] = _selectedMachinesForPlanifications[planIndex]
             .where((id) => _availableMachines[planIndex].any((m) => m.id == id))
@@ -169,8 +212,8 @@ String _stockMessage = '';
           (modele.modele as Modele).consommation.isNotEmpty) {
         final consommation = (modele.modele as Modele).consommation.firstWhere(
               (c) => c.taille == modele.taille,
-          orElse: () => Consommation(taille: modele.taille, quantity: 0),
-        );
+              orElse: () => Consommation(taille: modele.taille, quantity: 0),
+            );
         return consommation.quantity * modele.quantite;
       }
       return modele.quantite * 0.5;
@@ -205,22 +248,31 @@ String _stockMessage = '';
   Future<void> _confirmPlanification() async {
     setState(() => _isLoading = true);
     try {
-      if (!_checkStockAvailability()) {
-        Fluttertoast.showToast(
-          msg: "Stock insuffisant pour certaines matières. La planification est mise en attente.",
-          backgroundColor: Colors.orange,
-          toastLength: Toast.LENGTH_LONG,
-        );
-
+      final existingPlanifications = await ApiService.getWaitingPlanifications(
+          commandeId: widget.commandeId);
+      final Map<String, Planification> existingPlanMap = {
+        for (var p in existingPlanifications) p.id!: p
+      };
+      if (widget.hasInsufficientStock && !_partialPlanning) {
         List<Planification> waitingPlans = [];
         for (var plan in widget.planifications) {
-          waitingPlans.add(Planification(
-            id: plan.id,
-            commandes: plan.commandes,
-            statut: "waiting_resources",
-            createdAt: DateTime.now(),
-            machines: [],
-          ));
+          // Check if planification already exists
+          final existingPlan = existingPlanMap[plan.id ?? ''];
+          if (existingPlan != null) {
+            waitingPlans.add(existingPlan);
+          } else {
+            waitingPlans.add(Planification(
+              id: plan.id ?? '',
+              commandes: plan.commandes,
+              machines: [],
+              salle: plan.salle,
+              quantite: plan.quantite,
+              taille: plan.taille,
+              couleur: plan.couleur,
+              statut: "waiting_resources",
+              createdAt: DateTime.now(),
+            ));
+          }
         }
 
         final success = await ApiService.confirmerPlanification(waitingPlans);
@@ -233,11 +285,36 @@ String _stockMessage = '';
           return;
         }
       }
+
+      if (!_checkStockAvailability() && _partialPlanning) {
+        final response = await http.post(
+          Uri.parse('${ApiService.baseUrl}/planifications/auto'),
+          headers: {"Content-Type": "application/json"},
+          body: jsonEncode({
+            "commandeId": widget.commandeId,
+            "partial": true,
+            "preview": false,
+          }),
+        );
+
+        if (response.statusCode == 201) {
+          final jsonData = json.decode(response.body);
+          widget.planifications.clear();
+          widget.planifications.addAll(
+            (jsonData['planifications'] as List<dynamic>)
+                .map((json) => Planification.fromJson(json))
+                .toList(),
+          );
+        } else {
+          throw Exception("Erreur lors de la planification partielle");
+        }
+      }
+
       List<Planification> updatedPlanifications = [];
 
       for (int i = 0; i < widget.planifications.length; i++) {
         final plan = widget.planifications[i];
-
+        final existingPlan = existingPlanMap[plan.id ?? ''];
         if (plan.statut == "waiting_resources") {
           updatedPlanifications.add(plan);
           continue;
@@ -281,7 +358,7 @@ String _stockMessage = '';
         }
 
         updatedPlanifications.add(Planification(
-          id: plan.id,
+          id: existingPlan?.id ?? plan.id ?? '',
           commandes: plan.commandes,
           machines: _availableMachines[i]
               .where((m) => _selectedMachinesForPlanifications[i].contains(m.id))
@@ -289,6 +366,9 @@ String _stockMessage = '';
           salle: _selectedSalles[i],
           debutPrevue: _startDates[i],
           finPrevue: _endDates[i],
+          quantite: plan.quantite,
+          taille: plan.taille,
+          couleur: plan.couleur,
           statut: "planifiée",
         ));
       }
@@ -312,7 +392,9 @@ String _stockMessage = '';
       if (!success) {
         throw Exception("Failed to confirm planifications");
       }
-
+      widget.planifications.clear();
+      widget.planifications.addAll(await ApiService.getWaitingPlanifications(
+          commandeId: widget.commandeId));
       Fluttertoast.showToast(
         msg: "Planifications confirmées !",
         backgroundColor: Colors.blue[700],
@@ -442,7 +524,11 @@ String _stockMessage = '';
               Text("Taille: ${planification.taille ?? 'N/A'}"),
               Text("Couleur: ${planification.couleur ?? 'N/A'}"),
               Text("Quantité: ${planification.quantite ?? 'N/A'}"),
-              Text("Ajoutée le: ${planification.createdAt != null ? DateFormat('dd/MM/yyyy à HH:mm').format(planification.createdAt!) : 'N/A'}"),
+              Text(
+                  "Ajoutée le: ${planification.createdAt != null ? DateFormat('dd/MM/yyyy à HH:mm').format(planification.createdAt!) : 'N/A'}"),
+              if (planification.machines.isNotEmpty)
+                Text(
+                    "Machine assignée: ${planification.machines.first.nom ?? 'N/A'}"),
             ],
           ),
         ),
@@ -720,20 +806,21 @@ String _stockMessage = '';
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.blue[700],
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 12),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8),
                       ),
                     ),
                     child: _isLoading
                         ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              color: Colors.white,
+                            ),
+                          )
                         : const Text("Confirmer la planification"),
                   ),
                 ],

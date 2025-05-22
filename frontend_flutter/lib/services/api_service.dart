@@ -389,6 +389,15 @@ class ApiService {
   static Future<bool> confirmerPlanification(List<Planification> planifications) async {
     try {
       if (planifications.isEmpty) return false;
+      final validPlanifications = planifications.where((p) => p.id != null).toList();
+    if (validPlanifications.length < planifications.length) {
+      debugPrint('Warning: ${planifications.length - validPlanifications.length} planifications with null IDs were filtered out');
+      planifications.forEach((p) {
+        if (p.id == null) {
+          debugPrint('Invalid planification: ${p.toJson()}');
+        }
+      });
+    }
       final response = await http.post(
         Uri.parse('$baseUrl/planifications/confirm'),
         headers: {'Content-Type': 'application/json'},
@@ -431,7 +440,7 @@ class ApiService {
     }
   }
 
-  static Future<bool> addCommande(Commande commande) async {
+  static Future<Map<String, dynamic>> addCommande(Commande commande) async {
     final response = await http.post(
       Uri.parse('$baseUrl/commandes/add'),
       headers: {"Content-Type": "application/json"},
@@ -439,10 +448,38 @@ class ApiService {
     );
 
     if (response.statusCode == 201) {
-      return true;
+      final commandeData = jsonDecode(response.body);
+      final commandeId = commandeData['_id'];
+      // Obtenir la prévisualisation de la planification
+      final planificationResponse = await http.post(
+        Uri.parse('$baseUrl/planifications/auto'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "commandeId": commandeId,
+          "preview": true,
+        }),
+      );
+
+      if (planificationResponse.statusCode == 200) {
+        final planificationData = jsonDecode(planificationResponse.body);
+        return {
+          'success': true,
+          'commandeId': commandeId,
+          'planifications': (planificationData['planifications'] as List)
+              .map((json) => Planification.fromJson(json))
+              .toList(),
+          'hasInsufficientStock': planificationData['hasInsufficientStock'] ?? false,
+          'partialAvailable': planificationData['partialAvailable'] ?? false,
+        };
+      } else {
+        return {
+          'success': false,
+          'message': 'Erreur lors de la prévisualisation de la planification',
+        };
+      }
     } else {
       print("Erreur lors de l'ajout de la commande: ${response.body}");
-      return false;
+      return {'success': false, 'message': response.body};
     }
   }
 

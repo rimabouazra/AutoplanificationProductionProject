@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:frontend/providers/PlanificationProvider%20.dart';
+import 'package:frontend/providers/matiereProvider.dart';
 import 'package:frontend/providers/modeleProvider.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
@@ -28,7 +29,8 @@ class _AddCommandePageState extends State<AddCommandePage> {
 
   final _formKey = GlobalKey<FormState>();
   final TextEditingController clientController = TextEditingController();
-  final TextEditingController conditionnementController = TextEditingController();
+  final TextEditingController conditionnementController =
+      TextEditingController();
   DateTime? selectedDate;
   bool isLoading = false;
 
@@ -44,7 +46,8 @@ class _AddCommandePageState extends State<AddCommandePage> {
   @override
   void initState() {
     super.initState();
-    final commandeProvider = Provider.of<CommandeProvider>(context, listen: false);
+    final commandeProvider =
+        Provider.of<CommandeProvider>(context, listen: false);
     final modeleProvider = Provider.of<ModeleProvider>(context, listen: false);
 
     commandeProvider.fetchCommandes().then((_) {
@@ -67,9 +70,8 @@ class _AddCommandePageState extends State<AddCommandePage> {
           if (textEditingValue.text.isEmpty) {
             return const Iterable<String>.empty();
           }
-          return clientProvider.clients
-              .map((c) => c.name)
-              .where((name) => name.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+          return clientProvider.clients.map((c) => c.name).where((name) =>
+              name.toLowerCase().contains(textEditingValue.text.toLowerCase()));
         },
         onSelected: (String selection) {
           setState(() {
@@ -81,7 +83,8 @@ class _AddCommandePageState extends State<AddCommandePage> {
             controller: clientController,
             focusNode: focusNode,
             onFieldSubmitted: (value) async {
-              if (!clientProvider.clients.any((c) => c.name.toLowerCase() == value.toLowerCase())) {
+              if (!clientProvider.clients
+                  .any((c) => c.name.toLowerCase() == value.toLowerCase())) {
                 final newClient = await clientProvider.addClient(value);
                 setState(() {
                   clientController.text = newClient.name;
@@ -111,12 +114,15 @@ class _AddCommandePageState extends State<AddCommandePage> {
           if (textEditingValue.text.isEmpty) {
             return const Iterable<String>.empty();
           }
-          return modele.where((modele) => modele.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+          return modele.where((modele) => modele
+              .toLowerCase()
+              .contains(textEditingValue.text.toLowerCase()));
         },
         onSelected: (String selection) {
           setState(() {
             modeleController.text = selection;
-            tailles = Provider.of<ModeleProvider>(context, listen: false).getTaillesByModele(selection);
+            tailles = Provider.of<ModeleProvider>(context, listen: false)
+                .getTaillesByModele(selection);
           });
         },
         fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
@@ -146,7 +152,9 @@ class _AddCommandePageState extends State<AddCommandePage> {
           if (textEditingValue.text.isEmpty || tailles.isEmpty) {
             return const Iterable<String>.empty();
           }
-          return tailles.where((taille) => taille.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+          return tailles.where((taille) => taille
+              .toLowerCase()
+              .contains(textEditingValue.text.toLowerCase()));
         },
         onSelected: (String selection) {
           setState(() {
@@ -204,7 +212,8 @@ class _AddCommandePageState extends State<AddCommandePage> {
   }
 
   Widget _buildTextField(
-      TextEditingController controller, String label, IconData icon, {bool isNumber = false, bool isOptional = false}) {
+      TextEditingController controller, String label, IconData icon,
+      {bool isNumber = false, bool isOptional = false}) {
     return FadeInUp(
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -237,60 +246,74 @@ class _AddCommandePageState extends State<AddCommandePage> {
     );
   }
 
-void _addModele() {
-  if (modeleController.text.isEmpty ||
-      couleurController.text.isEmpty ||
-      tailleController.text.isEmpty ||
-      quantiteController.text.isEmpty) {
-    Fluttertoast.showToast(
-        msg: "Veuillez remplir tous les champs pour le modèle.",
-        backgroundColor: Colors.redAccent,
-        textColor: Colors.white);
-    return;
-  }
+  void _addModele() {
+    if (modeleController.text.isEmpty ||
+        couleurController.text.isEmpty ||
+        tailleController.text.isEmpty ||
+        quantiteController.text.isEmpty) {
+      Fluttertoast.showToast(
+          msg: "Veuillez remplir tous les champs pour le modèle.",
+          backgroundColor: Colors.redAccent,
+          textColor: Colors.white);
+      return;
+    }
 
-  setState(() {
-    modeles.add(CommandeModele(
-      nomModele: modeleController.text,
-      taille: tailleController.text,
-      couleur: couleurController.text,
-      quantite: int.parse(quantiteController.text),
-    ));
-    modeleController.clear();
-    tailleController.clear();
-    //couleurController.clear();
-    //quantiteController.clear();
-  });
-}
+    setState(() {
+      modeles.add(CommandeModele(
+        nomModele: modeleController.text,
+        taille: tailleController.text,
+        couleur: couleurController.text,
+        quantite: int.parse(quantiteController.text),
+      ));
+      modeleController.clear();
+      tailleController.clear();
+      //couleurController.clear();
+      //quantiteController.clear();
+    });
+  }
 
   Future _showPlanificationConfirmation(String commandeId) async {
     print('Showing planification confirmation for commande: $commandeId');
 
-    final planifProvider = Provider.of<PlanificationProvider>(context, listen: false);
+    final planifProvider =
+        Provider.of<PlanificationProvider>(context, listen: false);
     try {
       final previews = await ApiService.getPlanificationPreview(commandeId);
       print('Planification previews received:');
       print('- Planifications: ${previews['planifications']?.length ?? 0}');
       print('- Statut: ${previews['statut']}');
 
-      final planifications = (previews['planifications'] as List<Planification>?) ?? [];
-
+      final planifications =
+          (previews['planifications'] as List<Planification>?) ?? [];
+      if (planifications.isEmpty) {
+        Fluttertoast.showToast(msg: "Aucune planification disponible.");
+        return;
+      }
       // Log planification details for debugging
       for (var i = 0; i < planifications.length; i++) {
         print('Planification ${i + 1}:');
         print('- Commandes: ${planifications[i].commandes.length}');
         print('- Machines: ${planifications[i].machines.length}');
         print('- Statut: ${planifications[i].statut}');
-        print('- Machines IDs: ${planifications[i].machines.map((m) => m.id).toList()}');
+        print(
+            '- Machines IDs: ${planifications[i].machines.map((m) => m.id).toList()}');
       }
-
+      // Wait for material and salle data to load
+      final matiereProvider =
+          Provider.of<MatiereProvider>(context, listen: false);
+      await matiereProvider.fetchMatieres();
+      await Future.wait(planifications.map((p) => p.salle != null
+          ? ApiService.getMachinesParSalle(p.salle!.id)
+          : Future.value([])));
       if (planifications.isNotEmpty) {
         bool isValid = planifications.every((p) =>
-        p.commandes.isNotEmpty && (p.statut == 'waiting_resources' || p.machines.isNotEmpty));
+            p.commandes.isNotEmpty &&
+            (p.statut == 'waiting_resources' || p.machines.isNotEmpty));
         print('Planification validity check: $isValid');
 
         if (!isValid) {
-          Fluttertoast.showToast(msg: "Une ou plusieurs planifications sont incomplètes.");
+          Fluttertoast.showToast(
+              msg: "Une ou plusieurs planifications sont incomplètes.");
           return;
         }
 
@@ -299,19 +322,23 @@ void _addModele() {
           builder: (context) => PlanificationConfirmationDialog(
             planifications: planifications,
             commandeId: commandeId,
+            hasInsufficientStock: previews['hasInsufficientStock'] ?? false,
+            partialAvailable: previews['partialAvailable'] ?? false,
           ),
         );
 
         if (confirmed == true) {
-          bool success = await ApiService.confirmerPlanification(planifications);
+          bool success =
+              await ApiService.confirmerPlanification(planifications);
 
           if (success) {
-            Fluttertoast.showToast(msg: "✅ Toutes les planifications ont été confirmées !");
+            Fluttertoast.showToast(
+                msg: "✅ Toutes les planifications ont été confirmées !");
             await planifProvider.fetchPlanifications();
 
             Navigator.of(context).pushAndRemoveUntil(
               MaterialPageRoute(builder: (_) => AdminHomePage()),
-                  (route) => false,
+              (route) => false,
             );
           } else {
             Fluttertoast.showToast(msg: "Erreur lors de la confirmation.");
@@ -333,14 +360,16 @@ void _addModele() {
         selectedDate == null ||
         modeles.isEmpty) {
       Fluttertoast.showToast(
-          msg: "Veuillez remplir tous les champs et ajouter au moins un modèle.",
+          msg:
+              "Veuillez remplir tous les champs et ajouter au moins un modèle.",
           backgroundColor: Colors.redAccent,
           textColor: Colors.white);
       return;
     }
 
     setState(() => isLoading = true);
-    final commandeProvider = Provider.of<CommandeProvider>(context, listen: false);
+    final commandeProvider =
+        Provider.of<CommandeProvider>(context, listen: false);
 
     List<CommandeModele> modelesWithId = [];
 
@@ -374,8 +403,10 @@ void _addModele() {
     );
 
     if (newCommande.client.id.isEmpty) {
-      final clientProvider = Provider.of<ClientProvider>(context, listen: false);
-      newCommande.client = await clientProvider.addClient(newCommande.client.name);
+      final clientProvider =
+          Provider.of<ClientProvider>(context, listen: false);
+      newCommande.client =
+          await clientProvider.addClient(newCommande.client.name);
     }
 
     bool success = await commandeProvider.addCommande(newCommande);
@@ -429,7 +460,8 @@ void _addModele() {
           child: Padding(
             padding: const EdgeInsets.all(20.0),
             child: Card(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20)),
               elevation: 5,
               color: Colors.white.withOpacity(0.95),
               child: Padding(
@@ -441,21 +473,23 @@ void _addModele() {
                     children: [
                       _buildClientField(clientProvider),
                       const SizedBox(height: 16),
-                      _buildTextField(
-                          conditionnementController, "Conditionnement", Icons.inventory,
+                      _buildTextField(conditionnementController,
+                          "Conditionnement", Icons.inventory,
                           isOptional: true),
                       const SizedBox(height: 16),
                       FadeInUp(
                         child: ListTile(
                           tileColor: Colors.blueGrey[100],
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
                           title: Text(
                             selectedDate == null
                                 ? "Sélectionner une date de livraison"
                                 : "Date: ${DateFormat('dd/MM/yyyy', 'fr_FR').format(selectedDate!)}",
                             style: const TextStyle(color: Colors.blueGrey),
                           ),
-                          trailing: const Icon(Icons.calendar_today, color: Colors.blueGrey),
+                          trailing: const Icon(Icons.calendar_today,
+                              color: Colors.blueGrey),
                           onTap: () => _selectDate(context),
                         ),
                       ),
@@ -478,21 +512,27 @@ void _addModele() {
                             delay: Duration(milliseconds: entry.key * 50),
                             child: Card(
                               margin: const EdgeInsets.symmetric(vertical: 5),
-                              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
                               elevation: 2,
                               child: ListTile(
                                 title: Text(
                                   "${entry.value.nomModele} - Taille: ${entry.value.taille} - Quantité: ${entry.value.quantite}",
-                                  style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey),
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.blueGrey),
                                 ),
                                 subtitle: Text(
                                   "Couleur: ${entry.value.couleur}",
-                                  style: const TextStyle(color: Colors.blueGrey),
+                                  style:
+                                      const TextStyle(color: Colors.blueGrey),
                                 ),
                                 trailing: ZoomIn(
                                   child: IconButton(
-                                    icon: const Icon(Icons.delete, color: Colors.red),
-                                    onPressed: () => setState(() => modeles.remove(entry.value)),
+                                    icon: const Icon(Icons.delete,
+                                        color: Colors.red),
+                                    onPressed: () => setState(
+                                        () => modeles.remove(entry.value)),
                                   ),
                                 ),
                               ),
@@ -500,10 +540,12 @@ void _addModele() {
                           )),
                       const SizedBox(height: 20),
                       isLoading
-                          ? const CircularProgressIndicator(color: Colors.blueGrey)
+                          ? const CircularProgressIndicator(
+                              color: Colors.blueGrey)
                           : FadeInUp(
                               child: Row(
-                                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
                                 children: [
                                   ZoomIn(
                                     child: ElevatedButton(
@@ -511,7 +553,8 @@ void _addModele() {
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.red[600],
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                         ),
                                       ),
                                       child: const Text(
@@ -526,7 +569,8 @@ void _addModele() {
                                       style: ElevatedButton.styleFrom(
                                         backgroundColor: Colors.blueGrey[800],
                                         shape: RoundedRectangleBorder(
-                                          borderRadius: BorderRadius.circular(12),
+                                          borderRadius:
+                                              BorderRadius.circular(12),
                                         ),
                                       ),
                                       child: const Text(
@@ -556,7 +600,8 @@ void _addModele() {
         const SizedBox(height: 16),
         _buildTailleField(),
         const SizedBox(height: 16),
-        _buildTextField(quantiteController, "Quantité", Icons.numbers, isNumber: true),
+        _buildTextField(quantiteController, "Quantité", Icons.numbers,
+            isNumber: true),
         const SizedBox(height: 16),
         _buildTextField(couleurController, "Couleur", Icons.colorize),
         const SizedBox(height: 16),
@@ -571,7 +616,8 @@ void _addModele() {
               ),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blueGrey[800],
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
               ),
             ),
           ),
