@@ -308,7 +308,7 @@ class _AddCommandePageState extends State<AddCommandePage> {
       if (planifications.isNotEmpty) {
         bool isValid = planifications.every((p) =>
             p.commandes.isNotEmpty &&
-            (p.statut == 'waiting_resources' || p.machines.isNotEmpty));
+            (p.machines.isNotEmpty || p.statut == "waiting_resources"));
         print('Planification validity check: $isValid');
 
         if (!isValid) {
