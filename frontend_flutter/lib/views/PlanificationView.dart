@@ -21,7 +21,6 @@ class _PlanificationViewState extends State<PlanificationView> {
   String _selectedStatus = 'tous';
   int _startHour = 7;
   int _endHour = 17;
-  double _timeScale = 1.0; // Zoom pour l'échelle temporelle
   bool _isDateRangeInitialized = false;
   List<Planification> _waitingPlanifications = [];
 
@@ -138,7 +137,7 @@ class _PlanificationViewState extends State<PlanificationView> {
               final waitingPlan = entry.value;
               // Safely access commande and modele data
               final commande = waitingPlan.commandes.isNotEmpty ? waitingPlan.commandes.first : null;
-              final modeleData = commande?.modeles?.isNotEmpty == true ? commande!.modeles.first : null;
+              final modeleData = commande?.modeles.isNotEmpty == true ? commande!.modeles.first : null;
 
               return FadeInUp(
                 key: ValueKey(waitingPlan.id),

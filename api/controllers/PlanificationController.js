@@ -484,7 +484,7 @@ exports.autoPlanifierCommande = async (req, res) => {
     if (!preview && (planifications.length > 0 || partialPlanifications.length > 0)) {
       commande.machinesAffectees = allMachinesAssignees;
       commande.salleAffectee = [...allSallesUtilisees][0];
-      commande.etat = hasInsufficientStock || partialPlanifications.length > 0 ? "en attente" : "planifiée";
+      commande.etat = hasInsufficientStock || partialPlanifications.length > 0 ? "en attente" : "en moulage";
       await commande.save();
     }
 
