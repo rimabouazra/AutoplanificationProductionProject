@@ -50,7 +50,8 @@ dependencies:
   fl_chart: ^0.71.0
   animate_do: ^4.2.0
   carousel_slider: ^5.0.0
-
+  flutter_svg: ^2.0.7
+  page_route_transition: ^3.1.2
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -104,6 +105,8 @@ flutter:
     - assets/images/hero2.jpg
     - assets/images/hero3.jpg
     - assets/images/About.jpg
+    - assets/images/login_illustration.svg
+    - assets/images/register_illustration.svg
 
 
 

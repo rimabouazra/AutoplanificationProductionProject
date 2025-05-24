@@ -4,6 +4,7 @@ import 'package:frontend/views/LoginPage.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:animate_do/animate_do.dart';
+import '../models/modele.dart';
 import '../models/planification.dart';
 import '../providers/PlanificationProvider .dart';
 import '../services/api_service.dart';
@@ -103,7 +104,10 @@ class _PlanificationViewState extends State<PlanificationView> {
   }
 
   // Afficher le dialogue des planifications en attente
-  void _showWaitingPlanificationsDialog(BuildContext context) {
+  void _showWaitingPlanificationsDialog(BuildContext context) async {
+    // Fetch waiting planifications (assuming _waitingPlanifications is populated)
+    // If needed, ensure _waitingPlanifications is populated with proper data
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -139,6 +143,20 @@ class _PlanificationViewState extends State<PlanificationView> {
               final commande = waitingPlan.commandes.isNotEmpty ? waitingPlan.commandes.first : null;
               final modeleData = commande?.modeles.isNotEmpty == true ? commande!.modeles.first : null;
 
+              // Future to fetch model name if needed
+              Future<String?> getModelName() async {
+                if (modeleData?.modele != null) {
+                  if (modeleData!.modele is String) {
+                    // Fetch name from API if modele is a string (ID)
+                    return await ApiService().getModeleNom(modeleData.modele as String);
+                  } else if (modeleData!.modele is Modele) {
+                    // Use name if modele is a Modele object
+                    return (modeleData.modele as Modele).nom;
+                  }
+                }
+                return 'Non spécifié';
+              }
+
               return FadeInUp(
                 key: ValueKey(waitingPlan.id),
                 duration: Duration(milliseconds: 300 + index * 100),
@@ -148,38 +166,44 @@ class _PlanificationViewState extends State<PlanificationView> {
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
                   ),
-                  child: ListTile(
-                    contentPadding: EdgeInsets.all(12),
-                    title: Text(
-                      "Client: ${commande?.client.name ?? 'Inconnu'}",
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: Colors.deepPurple,
-                      ),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        SizedBox(height: 4),
-                        Text(
-                          "Modele: ${waitingPlan.taille ?? modeleData?.modele ?? 'Non spécifié'}",
-                          style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                  child: FutureBuilder<String?>(
+                    future: getModelName(),
+                    builder: (context, snapshot) {
+                      final modelName = snapshot.data ?? 'Chargement...';
+                      return ListTile(
+                        contentPadding: EdgeInsets.all(12),
+                        title: Text(
+                          "Client: ${commande?.client.name ?? 'Inconnu'}",
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Colors.deepPurple,
+                          ),
                         ),
-                        Text(
-                          "Taille: ${waitingPlan.taille ?? modeleData?.taille ?? 'Non spécifié'}",
-                          style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                        subtitle: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            SizedBox(height: 4),
+                            Text(
+                              "Modele: $modelName",
+                              style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                            ),
+                            Text(
+                              "Taille: ${waitingPlan.taille ?? modeleData?.taille ?? 'Non spécifié'}",
+                              style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                            ),
+                            Text(
+                              "Couleur: ${waitingPlan.couleur ?? modeleData?.couleur ?? 'Non spécifié'}",
+                              style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                            ),
+                            Text(
+                              "Quantité: ${waitingPlan.quantite?.toString() ?? modeleData?.quantite?.toString() ?? 'Non spécifié'}",
+                              style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                            ),
+                          ],
                         ),
-                        Text(
-                          "Couleur: ${waitingPlan.couleur ?? modeleData?.couleur ?? 'Non spécifié'}",
-                          style: TextStyle(fontSize: 12, color: Colors.grey[800]),
-                        ),
-                        Text(
-                          "Quantité: ${waitingPlan.quantite?.toString() ?? modeleData?.quantite?.toString() ?? 'Non spécifié'}",
-                          style: TextStyle(fontSize: 12, color: Colors.grey[800]),
-                        ),
-                      ],
-                    ),
+                      );
+                    },
                   ),
                 ),
               );
