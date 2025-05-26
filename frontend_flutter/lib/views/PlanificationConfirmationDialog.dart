@@ -38,6 +38,7 @@ class PlanificationConfirmationDialog extends StatefulWidget {
 class _PlanificationConfirmationDialogState
     extends State<PlanificationConfirmationDialog> {
   bool _isLoading = false;
+  bool _hasError = false;
   List<Matiere> _matieres = [];
   final Map<String, String?> _matieresSelectionnees = {};
   final Map<String, double> _quantitesConsommees = {};

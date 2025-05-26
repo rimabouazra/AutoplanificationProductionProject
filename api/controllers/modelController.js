@@ -2,43 +2,45 @@ const Modele = require("../models/Modele");
 const Matiere = require("../models/matiere");
 
 exports.addModele = async (req, res) => {
-    try {
-        const { nom, tailles, base, consommation, taillesBases } = req.body;
+  try {
+    const { nom, tailles, bases, consommation, taillesBases } = req.body;
 
-        // Vérifier si la base existe
-        let baseModel = null;
-        if (base) {
-            baseModel = await Modele.findOne({ nom: base });
-            if (!baseModel) {
-                return res.status(404).json({ message: "Base non trouvée" });
-            }
-        }
-
-        // Formater les taillesBases
-        const formattedTaillesBases = baseModel && taillesBases 
-        ? taillesBases.map(tb => ({
-            baseId: baseModel._id|| null,
-            tailles: tb.tailles
-        }))
-        : [];
-
-        const newModele = new Modele({
-            nom,
-            tailles,
-            bases: baseModel ? [baseModel._id] : [],
-            taillesBases: formattedTaillesBases,
-            consommation: consommation || tailles.map(taille => ({
-                taille: taille,
-                quantite: 0
-            }))
-        });
-
-        await newModele.save();
-        res.status(201).json(newModele);
-    } catch (error) {
-        res.status(500).json({ message: "Erreur serveur", error: error.message });
+    // Vérifier si les bases existent
+    let baseModels = [];
+    if (bases && bases.length > 0) {
+      baseModels = await Modele.find({ nom: { $in: bases } });
+      if (baseModels.length !== bases.length) {
+        return res.status(404).json({ message: "Une ou plusieurs bases non trouvées" });
+      }
     }
+
+    // Formater les taillesBases
+    const formattedTaillesBases = taillesBases.map(tb => {
+      const baseModel = baseModels.find(b => b._id.toString() === tb.baseId);
+      return {
+        baseId: baseModel ? baseModel._id : null,
+        tailles: tb.tailles
+      };
+    });
+
+    const newModele = new Modele({
+      nom,
+      tailles,
+      bases: baseModels.map(b => b._id),
+      taillesBases: formattedTaillesBases,
+      consommation: consommation || tailles.map(taille => ({
+        taille: taille,
+        quantite: 0
+      }))
+    });
+
+    await newModele.save();
+    res.status(201).json(newModele);
+  } catch (error) {
+    res.status(500).json({ message: "Erreur serveur", error: error.message });
+  }
 };
+
 exports.getModeleById = async (req, res) => {
     try {
         const { id } = req.params;
