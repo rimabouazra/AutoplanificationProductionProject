@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:frontend/services/api_service.dart';
 import 'package:frontend/services/auth_service.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:frontend/views/RegisterPage.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -42,7 +44,6 @@ class _LoginPageState extends State<LoginPage> {
             throw Exception('Role non défini dans la réponse');
           }
 
-          //await cinéma;        
           await AuthService.saveUserData(
             result['token'],
             utilisateur['_id'],
@@ -101,183 +102,221 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            decoration: BoxDecoration(
-              image: DecorationImage(
-                image: AssetImage("assets/auth_bg.jpeg"),
-                fit: BoxFit.cover,
-                colorFilter: ColorFilter.mode(
-                  Colors.black.withOpacity(0.4),
-                  BlendMode.darken,
-                ),
-              ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [Colors.blueGrey[50]!, Colors.blueGrey[200]!],
+          ),
+        ),
+        child: Center(
+          child: SingleChildScrollView(
+            padding: EdgeInsets.symmetric(horizontal: 16, vertical: 20),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                bool isWideScreen = constraints.maxWidth > 800;
+                return Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    FadeInUp(
+                      child: Text(
+                        'Welcome Back',
+                        style: TextStyle(
+                          fontFamily: 'Roboto',
+                          fontSize: 32,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.blueGrey[900],
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 30),
+                    isWideScreen
+                        ? Container(
+                      width: 1000,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: FadeInLeft(
+                              child: SvgPicture.asset(
+                                'images/login_illustration.svg',
+                                height: 500,
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 40),
+                          Expanded(
+                            child: _buildForm(context),
+                          ),
+                        ],
+                      ),
+                    )
+                        : Column(
+                      children: [
+                        FadeInDown(
+                          child: SvgPicture.asset(
+                            'images/login_illustration.svg',
+                            height: 300,
+                          ),
+                        ),
+                        SizedBox(height: 30),
+                        _buildForm(context),
+                      ],
+                    ),
+                  ],
+                );
+              },
             ),
           ),
-          Center(
-            child: SingleChildScrollView(
-              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 40),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildForm(BuildContext context) {
+    return FadeInUp(
+      delay: Duration(milliseconds: 200),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(maxWidth: 450),
+        child: Card(
+          elevation: 8,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          color: Colors.white,
+          child: Padding(
+            padding: EdgeInsets.all(30),
+            child: Form(
+              key: _formKey,
               child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  FadeInDown(
-                    child: Image.asset(
-                      'assets/logo.jpg',
-                      height: 100,
+                  TextFormField(
+                    controller: emailController,
+                    decoration: InputDecoration(
+                      labelText: 'Email',
+                      prefixIcon: Icon(Icons.email, color: Colors.blueGrey[600]),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      labelStyle: TextStyle(
+                        color: Colors.blueGrey[600],
+                        fontSize: 16,
+                      ),
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                    validator: (value) =>
+                    value!.isEmpty || !value.contains('@') ? 'Email invalide' : null,
+                  ),
+                  SizedBox(height: 20),
+                  TextFormField(
+                    controller: passwordController,
+                    decoration: InputDecoration(
+                      labelText: 'Password',
+                      prefixIcon: Icon(Icons.lock, color: Colors.blueGrey[600]),
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility : Icons.visibility_off,
+                          color: Colors.blueGrey[600],
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            _obscurePassword = !_obscurePassword;
+                          });
+                        },
+                      ),
+                      filled: true,
+                      fillColor: Colors.grey[100],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      labelStyle: TextStyle(
+                        color: Colors.blueGrey[600],
+                        fontSize: 16,
+                      ),
+                    ),
+                    obscureText: _obscurePassword,
+                    validator: (value) =>
+                    value!.length < 6 ? 'Au moins 6 caractères' : null,
+                  ),
+                  SizedBox(height: 30),
+                  isLoading
+                      ? CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.blueGrey[700]!),
+                  )
+                      : ZoomIn(
+                    child: ElevatedButton(
+                      onPressed: handleLogin,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blueGrey[700],
+                        foregroundColor: Colors.white,
+                        padding: EdgeInsets.symmetric(vertical: 16, horizontal: 40),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        elevation: 4,
+                      ),
+                      child: Text(
+                        'Se connecter',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
                     ),
                   ),
                   SizedBox(height: 20),
                   FadeInUp(
-                    child: Text(
-                      'Welcome Back',
-                      style: TextStyle(
-                        fontFamily: 'PlayfairDisplay',
-                        fontSize: 32,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-                  SizedBox(height: 40),
-                  FadeInUp(
-                    delay: Duration(milliseconds: 200),
-                    child: Card(
-                      elevation: 10,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Padding(
-                        padding: EdgeInsets.all(32),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            children: [
-                              TextFormField(
-                                controller: emailController,
-                                decoration: InputDecoration(
-                                  labelText: 'Email',
-                                  prefixIcon: Icon(Icons.email, color: Colors.blueGrey[700]),
-                                  filled: true,
-                                  fillColor: Colors.white.withOpacity(0.9),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  labelStyle: TextStyle(color: Colors.blueGrey[700]),
-                                ),
-                                keyboardType: TextInputType.emailAddress,
-                                validator: (value) =>
-                                    value!.isEmpty || !value.contains('@') ? 'Email invalide' : null,
-                              ),
-                              SizedBox(height: 20),
-                              TextFormField(
-                                controller: passwordController,
-                                decoration: InputDecoration(
-                                  labelText: 'Password',
-                                  prefixIcon: Icon(Icons.lock, color: Colors.blueGrey[700]),
-                                  suffixIcon: IconButton(
-                                    icon: Icon(
-                                      _obscurePassword ? Icons.visibility : Icons.visibility_off,
-                                      color: Colors.blueGrey[700],
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        _obscurePassword = !_obscurePassword;
-                                      });
-                                    },
-                                  ),
-                                  filled: true,
-                                  fillColor: Colors.white.withOpacity(0.9),
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                    borderSide: BorderSide.none,
-                                  ),
-                                  labelStyle: TextStyle(color: Colors.blueGrey[700]),
-                                ),
-                                obscureText: _obscurePassword,
-                                validator: (value) =>
-                                    value!.length < 6 ? 'Au moins 6 caractères' : null,
-                              ),
-                              SizedBox(height: 30),
-                              isLoading
-                                  ? CircularProgressIndicator(
-                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.blueGrey[800]!),
-                                    )
-                                  : ZoomIn(
-                                      child: ElevatedButton(
-                                        onPressed: handleLogin,
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: Colors.blueGrey[800],
-                                          foregroundColor: Colors.white,
-                                          padding: EdgeInsets.symmetric(vertical: 16, horizontal: 40),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(12),
-                                          ),
-                                          elevation: 5,
-                                        ),
-                                        child: Text(
-                                          'Sign In',
-                                          style: TextStyle(
-                                            fontSize: 16,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                              SizedBox(height: 20),
-                              FadeInUp(
-                                delay: Duration(milliseconds: 400),
-                                child: TextButton(
-                                  onPressed: () {
-                                    // TODO: Implement password reset navigation
-                                  },
-                                  child: Text(
-                                    'Forgot Password?',
-                                    style: TextStyle(
-                                      color: Colors.blueGrey[200],
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: 10),
-                              FadeInUp(
-                                delay: Duration(milliseconds: 600),
-                                child: Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Text(
-                                      "Don't have an account? ",
-                                      style: TextStyle(color: const Color.fromARGB(179, 113, 111, 111)),
-                                    ),
-                                    TextButton(
-                                      onPressed: () {
-                                        Navigator.pushNamed(context, '/register');
-                                      },
-                                      child: Text(
-                                        'Sign Up',
-                                        style: TextStyle(
-                                          color: Colors.blueGrey[200],
-                                          fontWeight: FontWeight.w600,
-                                          decoration: TextDecoration.underline,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
+                    delay: Duration(milliseconds: 600),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          "pas de compte? ",
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            fontSize: 16,
                           ),
                         ),
-                      ),
+                        TextButton(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              PageRouteBuilder(
+                                pageBuilder: (context, animation, secondaryAnimation) => const RegisterPage(),
+                                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                  return FadeTransition(
+                                    opacity: animation,
+                                    child: child,
+                                  );
+                                },
+                                transitionDuration: Duration(milliseconds: 400),
+                              ),
+                            );
+                          },
+                          child: Text(
+                            'Se connecter',
+                            style: TextStyle(
+                              color: Colors.blueGrey[700],
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
             ),
           ),
-        ],
+        ),
       ),
     );
   }
