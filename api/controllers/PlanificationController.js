@@ -11,7 +11,7 @@ const mongoose = require('mongoose');
 let workHoursConfig = {
   startHour: 7, // 7 AM
   endHour: 17, // 5 PM
-  timezone: "CET"
+  timezone: "Africa/Tunis"
 };
 
 exports.updateWorkHours = async (newStartHour, newEndHour) => {
@@ -35,7 +35,7 @@ exports.updateWorkHours = async (newStartHour, newEndHour) => {
 };
 
 const calculatePlanificationDates = (startDate, hoursRequired, workHours = workHoursConfig) => {
-  let currentDate = moment(startDate).tz(workHours.timezone);
+  let currentDate = moment(startDate).tz(workHours.timezone).startOf('minute');
   let remainingHours = hoursRequired;
   let workDayHours = workHours.endHour - workHours.startHour;
 
@@ -51,23 +51,18 @@ const calculatePlanificationDates = (startDate, hoursRequired, workHours = workH
   let finPrevue;
 
   while (remainingHours > 0) {
-    // Calculate remaining hours in the current workday
     let hoursUntilEndOfDay = workHours.endHour - currentDate.hour();
     if (hoursUntilEndOfDay <= 0) {
       currentDate.add(1, 'day').set({ hour: workHours.startHour, minute: 0, second: 0 });
       hoursUntilEndOfDay = workDayHours;
     }
-
-    // Use the minimum of remaining hours or hours until end of day
     let hoursToUse = Math.min(remainingHours, hoursUntilEndOfDay);
     remainingHours -= hoursToUse;
 
     if (remainingHours <= 0) {
-      // Set finPrevue to the end of this work period
       currentDate.add(hoursToUse, 'hours');
       finPrevue = currentDate.toDate();
     } else {
-      // Move to the next workday
       currentDate.add(1, 'day').set({ hour: workHours.startHour, minute: 0, second: 0 });
     }
   }
@@ -79,7 +74,7 @@ exports.checkActivePlanification = async (req, res) => {
   try {
     const { machineId } = req.params;
 
-    const now = new Date();
+    const now = moment().tz("Africa/Tunis").toDate();
     const activePlanification = await Planification.findOne({
       machines: machineId,
       statut: { $ne: "terminée" },
@@ -101,8 +96,7 @@ exports.checkActivePlanification = async (req, res) => {
 
 exports.mettreAJourCommandesEnCours = async (req, res) => {
   try {
-    const now = new Date();
-
+const now = moment().tz("Africa/Tunis").toDate();
     const planifs = await Planification.find({
       debutPrevue: { $lte: now },
       finPrevue: { $gt: now },
@@ -136,8 +130,7 @@ exports.mettreAJourCommandesEnCours = async (req, res) => {
 
 exports.mettreAJourMachinesDisponibles = async (req, res) => {
   try {
-    const now = new Date();
-
+    const now = moment().tz("Africa/Tunis").toDate();
     const planifs = await Planification.find({
       $or: [
         { finPrevue: { $lte: now } },
@@ -246,13 +239,13 @@ exports.autoPlanifierCommande = async (req, res) => {
           }
         }
 
-        const consommation = targetModele.consommation.find(
-          (c) => c.taille === targetTaille
-        );
-        if (!consommation) {
-          console.warn(`No consommation found for modele ${targetModele._id} with taille ${targetTaille}`);
-        }
-        const quantiteNecessaire = (consommation?.quantity || 0.5) * modele.quantite;
+       const consommation = targetModele.consommation.find(
+         (c) => c.taille === targetTaille
+       );
+       const quantiteNecessaire = ((consommation?.quantity ?? 0.5) * modele.quantite); // Use nullish coalescing operator
+       if (!consommation) {
+         console.warn(`No consommation found for modele ${targetModele._id} with taille ${targetTaille}, using default 0.5`);
+       }
 
         if (matiere.quantite < quantiteNecessaire) {
           hasInsufficientStock = true;
@@ -270,7 +263,7 @@ exports.autoPlanifierCommande = async (req, res) => {
         commandes: [commande._id],
         machines: [],
         statut: "waiting_resources",
-        createdAt: new Date(),
+        createdAt: moment().tz("Africa/Tunis").toDate(),
       });
       await waitingPlan.save();
 
@@ -378,7 +371,8 @@ exports.autoPlanifierCommande = async (req, res) => {
           quantitePlanifiee = 0;
         } else {
           const heures = quantitePlanifiee / 35 + 2;
-          const now = moment().tz("CET").toDate();
+          const now = moment().tz("Africa/Tunis").toDate();
+          console.log("Current time in Africa/Tunis:", moment().tz("Africa/Tunis").format());
           const { debutPrevue, finPrevue } = calculatePlanificationDates(now, heures);
 
           if (!preview) {
@@ -448,7 +442,7 @@ exports.autoPlanifierCommande = async (req, res) => {
           taille: modele.taille,
           couleur: modele.couleur,
           statut: "waiting_resources",
-          createdAt: moment().tz("CET").toDate(),
+          createdAt: moment().tz("Africa/Tunis").toDate(),
         };
 
         if (!preview) {
@@ -516,15 +510,14 @@ exports.processWaitingList = async () => {
       .populate('salle')
       .session(session);
 
-
     const salles = await Salle.find().session(session);
     const machines = await Machine.find().populate("modele").populate("salle").session(session);
+    const matieres = await Matiere.find().session(session);
     const activePlanifications = await Planification.find({
       statut: { $ne: "terminée" }
-    });
+    }).session(session);
 
     for (const plan of waitingPlans) {
-      // Skip if already has machines assigned
       if (plan.machines.length > 0) {
         console.log(`Planification ${plan._id} already has machines assigned`);
         continue;
@@ -538,7 +531,7 @@ exports.processWaitingList = async () => {
         .session(session);
 
       if (!commande || commande.modeles.length === 0) {
-        console.log(`Commande ou modèles non trouvés pour planification ${plan._id}`);
+        console.log(`Commande or models not found for planification ${plan._id}`);
         continue;
       }
 
@@ -548,8 +541,33 @@ exports.processWaitingList = async () => {
       );
 
       if (!modeleCommande) {
-        console.log(`Modèle non trouvé pour planification ${plan._id}`);
+        console.log(`Model not found for planification ${plan._id} with taille ${plan.taille} and couleur ${plan.couleur}`);
         continue;
+      }
+
+      // Determine target model and size
+      let targetModele = modeleCommande.modele;
+      let targetTaille = modeleCommande.taille;
+
+      if (modeleCommande.modele.bases && modeleCommande.modele.bases.length > 0) {
+        const baseModele = await Modele.findById(modeleCommande.modele.bases[0]).session(session);
+        if (!baseModele) {
+          console.warn(`Base model with ID ${modeleCommande.modele.bases[0]} not found for planification ${plan._id}`);
+          continue;
+        }
+        targetModele = baseModele;
+
+        const tailleBaseEntry = modeleCommande.modele.taillesBases.find(
+          (tb) => tb.baseId && tb.baseId.equals(targetModele._id)
+        );
+        if (tailleBaseEntry) {
+          const tailleIndex = modeleCommande.modele.tailles.indexOf(modeleCommande.taille);
+          targetTaille = tailleIndex >= 0 && tailleBaseEntry.tailles[tailleIndex]
+            ? tailleBaseEntry.tailles[tailleIndex]
+            : modeleCommande.taille;
+        } else {
+          console.warn(`No valid tailleBase entry found for base model ${targetModele._id} in planification ${plan._id}`);
+        }
       }
 
       // Check stock availability
@@ -557,30 +575,28 @@ exports.processWaitingList = async () => {
         (m) => m.couleur.toLowerCase() === modeleCommande.couleur.toLowerCase()
       );
 
-
-
-      const quantiteNecessaire = (consommation?.quantity || 0.5) * modeleCommande.quantite;
-
-      if (!matiere || matiere.quantite < quantiteNecessaire) {
-        console.log(`Insufficient stock for planification ${plan._id}: ${quantiteNecessaire} needed, ${matiere?.quantite || 0} available`);
+      if (!matiere) {
+        console.log(`No matiere found for couleur ${modeleCommande.couleur} in planification ${plan._id}`);
         continue;
       }
-      // Determine which model and size to use
-      let targetModele = modeleCommande;
-      let targetTaille = tailleCommande;
 
-      if (modeleCommande.bases && modeleCommande.bases.length > 0) {
-        targetModele = await Modele.findById(modeleCommande.bases[0]);
-        const tailleBaseEntry = modeleCommande.taillesBases.find(
-          (tb) => tb.baseId.equals(targetModele._id)
-        );
-        targetTaille = tailleBaseEntry ? tailleBaseEntry.tailles[modeleCommande.tailles.indexOf(tailleCommande)] : tailleCommande;
+      // Define consommation before using it
+      const consommation = targetModele.consommation.find(
+        (c) => c.taille === targetTaille
+      );
+      const quantiteNecessaire = (consommation?.quantity ?? 0.5) * modeleCommande.quantite;
+
+      if (matiere.quantite < quantiteNecessaire) {
+        console.log(`Insufficient stock for planification ${plan._id}: ${quantiteNecessaire} needed, ${matiere.quantite} available`);
+        continue;
       }
+
+      // Rest of the function (machine selection, scheduling, etc.) remains unchanged
       const estFoncee = ["noir", "bleu marine", "bleu", "vert"].includes(modeleCommande.couleur.toLowerCase());
       const salleCible = salles.find(s => estFoncee ? s.type === "noir" : s.type === "blanc");
 
       if (!salleCible) {
-        console.log(`Salle de type ${estFoncee ? 'noir' : 'blanc'} introuvable`);
+        console.log(`Salle de type ${estFoncee ? 'noir' : 'blanc'} not found for planification ${plan._id}`);
         continue;
       }
 
@@ -591,14 +607,13 @@ exports.processWaitingList = async () => {
         m.etat === "disponible"
       );
 
-      let debutPrevue = new Date();
+      let debutPrevue =moment().tz("Africa/Tunis").toDate();
       let finPrevue;
 
       if (!machine) {
         machine = machinesSalle.find(m => m.etat === "disponible");
 
         if (!machine) {
-          // Check for soon-to-be-available machines
           let earliestFinPrevue = null;
           let targetMachine = null;
 
@@ -621,7 +636,6 @@ exports.processWaitingList = async () => {
           }
         }
 
-
         // Configure machine to match planification requirements
         machine.modele = targetModele._id;
         machine.taille = targetTaille;
@@ -642,11 +656,10 @@ exports.processWaitingList = async () => {
         continue;
       }
 
-
       machine.etat = "occupee";
       await machine.save({ session });
 
-      const heures = (quantiteCommande / 35) + 2;
+      const heures = (modeleCommande.quantite / 35) + 2;
       const { debutPrevue: calculatedDebut, finPrevue: calculatedFin } = calculatePlanificationDates(debutPrevue, heures);
       debutPrevue = calculatedDebut;
       finPrevue = calculatedFin;
@@ -654,7 +667,7 @@ exports.processWaitingList = async () => {
       plan.machines = [machine._id];
       plan.salle = salleCible._id;
       plan.debutPrevue = calculatedDebut;
-      plan.finPrevue = finPrevue;
+      plan.finPrevue = calculatedFin;
       plan.statut = "en attente";
       await plan.save({ session });
 
@@ -668,7 +681,7 @@ exports.processWaitingList = async () => {
       matiere.historique.push({
         action: "consommation",
         quantite: quantiteNecessaire,
-        date: new Date()
+        date: moment().tz("Africa/Tunis").toDate()
       });
       await matiere.save({ session });
     }
@@ -676,7 +689,7 @@ exports.processWaitingList = async () => {
     await session.commitTransaction();
   } catch (err) {
     await session.abortTransaction();
-    console.error("Erreur lors du traitement de la file d'attente :", err);
+    console.error(`Erreur lors du traitement de la file d attente: ${err.message}`, err);
   } finally {
     session.endSession();
   }
@@ -774,13 +787,13 @@ exports.confirmPlanification = async (req, res) => {
             commandes: plan.commandes.map((c) => c._id || c),
             machines: plan.machines.map((m) => m._id || m),
             salle: plan.salle._id || plan.salle,
-            debutPrevue: plan.debutPrevue ? new Date(plan.debutPrevue) : new Date(),
-            finPrevue: plan.finPrevue ? new Date(plan.finPrevue) : new Date(),
+            debutPrevue: plan.debutPrevue ? new Date(plan.debutPrevue) : moment().tz("Africa/Tunis").toDate(),
+            finPrevue: plan.finPrevue ? new Date(plan.finPrevue) : moment().tz("Africa/Tunis").toDate(),
             statut: plan.statut || "en attente",
             quantite: plan.quantite || 0,
             taille: plan.taille || "",
             couleur: plan.couleur || "",
-            createdAt: plan.createdAt ? new Date(plan.createdAt) : new Date(),
+            createdAt: plan.createdAt ? new Date(plan.createdAt) : moment().tz("Africa/Tunis").toDate(),
           });
         } else {
           // Update existing planification
@@ -801,13 +814,13 @@ exports.confirmPlanification = async (req, res) => {
           commandes: plan.commandes.map((c) => c._id || c),
           machines: plan.machines.map((m) => m._id || m),
           salle: plan.salle._id || plan.salle,
-          debutPrevue: plan.debutPrevue ? new Date(plan.debutPrevue) : new Date(),
-          finPrevue: plan.finPrevue ? new Date(plan.finPrevue) : new Date(),
+          debutPrevue: plan.debutPrevue ? new Date(plan.debutPrevue) : moment().tz("Africa/Tunis").toDate(),
+          finPrevue: plan.finPrevue ? new Date(plan.finPrevue) : moment().tz("Africa/Tunis").toDate(),
           statut: plan.statut || "en attente",
           quantite: plan.quantite || 0,
           taille: plan.taille || "",
           couleur: plan.couleur || "",
-          createdAt: plan.createdAt ? new Date(plan.createdAt) : new Date(),
+          createdAt: plan.createdAt ? new Date(plan.createdAt) : moment().tz("Africa/Tunis").toDate(),
         });
       }
 

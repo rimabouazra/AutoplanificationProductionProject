@@ -17,7 +17,7 @@ class PlanificationView extends StatefulWidget {
 class _PlanificationViewState extends State<PlanificationView> {
   DateTime? _startDate;
   DateTime? _endDate;
-  String? _selectedSalleType = 'blanc';
+  String? _selectedSalleType = 'tous';
   String _selectedViewMode = 'journée';
   String _selectedStatus = 'tous';
   int _startHour = 7;
@@ -28,11 +28,10 @@ class _PlanificationViewState extends State<PlanificationView> {
   @override
   void initState() {
     super.initState();
-    // Charger les planifications au démarrage
+      _startDate = DateTime.now();
     final provider = Provider.of<PlanificationProvider>(context, listen: false);
     provider.fetchPlanifications();
     _fetchWaitingPlanifications();
-    // Initialiser la plage de dates après le premier rendu
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!_isDateRangeInitialized && provider.planifications.isNotEmpty) {
         _calculateDateRange(provider.planifications);
@@ -44,23 +43,25 @@ class _PlanificationViewState extends State<PlanificationView> {
   void dispose() {
     super.dispose();
   }
+
   void _showStockAlert(BuildContext context) {
-  showDialog(
-    context: context,
-    builder: (context) => AlertDialog(
-      title: Text("Stock Insuffisant"),
-      content: Text(
-          "Certaines matières premières sont en quantité insuffisante. "
-          "Les commandes concernées ont été mises en attente."),
-      actions: [
-        TextButton(
-          onPressed: () => Navigator.pop(context),
-          child: Text("OK"),
-        ),
-      ],
-    ),
-  );
-}
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text("Stock Insuffisant"),
+        content: Text(
+            "Certaines matières premières sont en quantité insuffisante. "
+                "Les commandes concernées ont été mises en attente."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("OK"),
+          ),
+        ],
+      ),
+    );
+  }
+
   void _showErrorSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -69,7 +70,8 @@ class _PlanificationViewState extends State<PlanificationView> {
       ),
     );
   }
-    void _showSuccessSnackbar(String message) {
+
+  void _showSuccessSnackbar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
@@ -77,6 +79,7 @@ class _PlanificationViewState extends State<PlanificationView> {
       ),
     );
   }
+
   Future<void> _fetchWaitingPlanifications() async {
     try {
       final waitingPlans = await ApiService.getWaitingPlanifications();
@@ -103,11 +106,7 @@ class _PlanificationViewState extends State<PlanificationView> {
     }
   }
 
-  // Afficher le dialogue des planifications en attente
   void _showWaitingPlanificationsDialog(BuildContext context) async {
-    // Fetch waiting planifications (assuming _waitingPlanifications is populated)
-    // If needed, ensure _waitingPlanifications is populated with proper data
-
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -139,18 +138,16 @@ class _PlanificationViewState extends State<PlanificationView> {
             children: _waitingPlanifications.asMap().entries.map((entry) {
               final index = entry.key;
               final waitingPlan = entry.value;
-              // Safely access commande and modele data
-              final commande = waitingPlan.commandes.isNotEmpty ? waitingPlan.commandes.first : null;
-              final modeleData = commande?.modeles.isNotEmpty == true ? commande!.modeles.first : null;
+              final commande =
+              waitingPlan.commandes.isNotEmpty ? waitingPlan.commandes.first : null;
+              final modeleData =
+              commande?.modeles.isNotEmpty == true ? commande!.modeles.first : null;
 
-              // Future to fetch model name if needed
               Future<String?> getModelName() async {
                 if (modeleData?.modele != null) {
                   if (modeleData!.modele is String) {
-                    // Fetch name from API if modele is a string (ID)
                     return await ApiService().getModeleNom(modeleData.modele as String);
                   } else if (modeleData!.modele is Modele) {
-                    // Use name if modele is a Modele object
                     return (modeleData.modele as Modele).nom;
                   }
                 }
@@ -200,6 +197,10 @@ class _PlanificationViewState extends State<PlanificationView> {
                               "Quantité: ${waitingPlan.quantite?.toString() ?? modeleData?.quantite?.toString() ?? 'Non spécifié'}",
                               style: TextStyle(fontSize: 12, color: Colors.grey[800]),
                             ),
+                            Text(
+                              "Ajouté le :  ${waitingPlan.createdAt != null ? DateFormat("dd/MM/yyyy HH:mm").format(waitingPlan.createdAt!) : 'Non spécifié'}",
+                              style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                            ),
                           ],
                         ),
                       );
@@ -222,7 +223,7 @@ class _PlanificationViewState extends State<PlanificationView> {
       ),
     );
   }
-  // Confirmer la déconnexion
+
   void _confirmLogout(BuildContext context) {
     showDialog(
       context: context,
@@ -239,7 +240,7 @@ class _PlanificationViewState extends State<PlanificationView> {
               await AuthService.logout();
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (context) => LoginPage()),
-                (Route<dynamic> route) => false,
+                    (Route<dynamic> route) => false,
               );
             },
             child: Text("Déconnexion", style: TextStyle(color: Colors.red)),
@@ -273,7 +274,11 @@ class _PlanificationViewState extends State<PlanificationView> {
               final provider = Provider.of<PlanificationProvider>(context, listen: false);
               provider.fetchPlanifications();
               _fetchWaitingPlanifications();
-              _isDateRangeInitialized = false; // Réinitialiser pour recalculer
+              _isDateRangeInitialized = false;
+              setState(() {
+                _startDate = DateTime.now();
+                _endDate = null;
+              });
               if (provider.planifications.isNotEmpty) {
                 _calculateDateRange(provider.planifications);
               }
@@ -284,7 +289,7 @@ class _PlanificationViewState extends State<PlanificationView> {
             icon: Icon(Icons.today),
             onPressed: () {
               setState(() {
-                _startDate = null;
+                _startDate = DateTime.now();
                 _endDate = null;
                 _isDateRangeInitialized = false;
               });
@@ -313,7 +318,6 @@ class _PlanificationViewState extends State<PlanificationView> {
             );
           }
 
-          // Calculer la plage de dates si nécessaire après le chargement
           if (!_isDateRangeInitialized && provider.planifications.isNotEmpty) {
             WidgetsBinding.instance.addPostFrameCallback((_) {
               _calculateDateRange(provider.planifications);
@@ -333,21 +337,43 @@ class _PlanificationViewState extends State<PlanificationView> {
     );
   }
 
-  // Filtrer les planifications
   List<Planification> _filterPlanifications(List<Planification> plans) {
     return plans.where((p) {
       final date = p.debutPrevue;
+      if (date == null) return false;
+
+      DateTime rangeStart = _startDate ?? DateTime.now();
+      DateTime rangeEnd;
+
+      switch (_selectedViewMode) {
+        case 'journée':
+          rangeStart = DateTime(rangeStart.year, rangeStart.month, rangeStart.day, _startHour);
+          rangeEnd = DateTime(rangeStart.year, rangeStart.month, rangeStart.day, _endHour);
+          break;
+        case 'semaine':
+          rangeStart = rangeStart.subtract(Duration(days: rangeStart.weekday - 1));
+          rangeStart = DateTime(rangeStart.year, rangeStart.month, rangeStart.day);
+          rangeEnd = rangeStart.add(Duration(days: 6, hours: 23, minutes: 59));
+          break;
+        case 'mois':
+          rangeStart = DateTime(rangeStart.year, rangeStart.month, 1);
+          rangeEnd = DateTime(rangeStart.year, rangeStart.month + 1, 0, 23, 59);
+          break;
+        default:
+          rangeEnd = _endDate ?? DateTime.now();
+      }
+
+      final timeMatch = !date.isBefore(rangeStart) && !date.isAfter(rangeEnd);
       final statusMatch = _selectedStatus == 'tous' ||
           p.statut == _selectedStatus ||
           (_selectedStatus == 'en attente' && p.statut == 'waiting_resources');
-      return date != null &&
-          (_startDate == null || !date.isBefore(_startDate!)) &&
-          (_endDate == null || !date.isAfter(_endDate!)) &&
-          p.machines.isNotEmpty &&
-          p.machines.first.salle.type == _selectedSalleType &&
-          statusMatch;
+      final salleMatch =
+          _selectedSalleType == 'tous' || (p.machines.isNotEmpty && p.machines.first.salle.type == _selectedSalleType);
+
+      return timeMatch && statusMatch && salleMatch;
     }).toList();
   }
+
   void _calculateDateRange(List<Planification> planifications) {
     if (planifications.isEmpty || _isDateRangeInitialized) return;
 
@@ -370,7 +396,6 @@ class _PlanificationViewState extends State<PlanificationView> {
     });
   }
 
-  // Barre de filtres
   Widget _buildFilterBar(BuildContext context, PlanificationProvider provider) {
     return FadeIn(
       duration: Duration(milliseconds: 500),
@@ -384,11 +409,13 @@ class _PlanificationViewState extends State<PlanificationView> {
             runSpacing: 8,
             children: [
               _buildDateSelector(context, true),
-              Text('à', style: TextStyle(fontWeight: FontWeight.bold)),
-              _buildDateSelector(context, false),
+              if (_selectedViewMode == 'mois') ...[
+                Text('à', style: TextStyle(fontWeight: FontWeight.bold)),
+                _buildDateSelector(context, false),
+              ],
               _buildDropdown(
                 value: _selectedSalleType,
-                items: ['noir', 'blanc'],
+                items: ['tous', 'noir', 'blanc'],
                 hint: 'Type de salle',
                 onChanged: (value) => setState(() => _selectedSalleType = value),
                 width: 120,
@@ -397,7 +424,26 @@ class _PlanificationViewState extends State<PlanificationView> {
                 value: _selectedViewMode,
                 items: ['journée', 'semaine', 'mois'],
                 hint: 'Mode de vue',
-                onChanged: (value) => setState(() => _selectedViewMode = value!),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedViewMode = value!;
+                    if (_startDate != null) {
+                      switch (value) {
+                        case 'journée':
+                          _endDate = _startDate!.add(Duration(days: 1, minutes: -1));
+                          break;
+                        case 'semaine':
+                          _endDate = _startDate!
+                              .subtract(Duration(days: _startDate!.weekday - 1))
+                              .add(Duration(days: 6, hours: 23, minutes: 59));
+                          break;
+                        case 'mois':
+                          _endDate = DateTime(_startDate!.year, _startDate!.month + 1, 0, 23, 59);
+                          break;
+                      }
+                    }
+                  });
+                },
                 width: 120,
               ),
               if (_selectedViewMode == 'journée') ...[
@@ -427,7 +473,6 @@ class _PlanificationViewState extends State<PlanificationView> {
     );
   }
 
-  // Sélecteur de date
   Widget _buildDateSelector(BuildContext context, bool isStartDate) {
     return TextButton.icon(
       style: TextButton.styleFrom(
@@ -438,19 +483,14 @@ class _PlanificationViewState extends State<PlanificationView> {
       icon: Icon(Icons.calendar_today, size: 16, color: Colors.deepPurple),
       label: Text(
         isStartDate
-            ? (_startDate != null
-            ? DateFormat('dd/MM/yyyy').format(_startDate!)
-            : 'Date début')
-            : (_endDate != null
-            ? DateFormat('dd/MM/yyyy').format(_endDate!)
-            : 'Date fin'),
+            ? (_startDate != null ? DateFormat('dd/MM/yyyy').format(_startDate!) : 'Date début')
+            : (_endDate != null ? DateFormat('dd/MM/yyyy').format(_endDate!) : 'Date fin'),
         style: TextStyle(color: Colors.deepPurple, fontSize: 12),
       ),
       onPressed: () => _selectDate(context, isStartDate: isStartDate),
     );
   }
 
-  // Dropdown générique
   Widget _buildDropdown({
     required String? value,
     required List<String> items,
@@ -485,7 +525,6 @@ class _PlanificationViewState extends State<PlanificationView> {
     );
   }
 
-  // Dropdown pour les heures
   Widget _buildHourDropdown({
     required int value,
     required ValueChanged<int?> onChanged,
@@ -515,23 +554,17 @@ class _PlanificationViewState extends State<PlanificationView> {
     );
   }
 
-  // Contrôles de zoom
   Widget _buildZoomControls() {
     return Row(
       mainAxisSize: MainAxisSize.min,
-      children: [
-
-      ],
+      children: [],
     );
   }
 
-  // Sélection de date
   Future<void> _selectDate(BuildContext context, {required bool isStartDate}) async {
     final DateTime? picked = await showDatePicker(
       context: context,
-      initialDate: isStartDate
-          ? _startDate ?? DateTime.now()
-          : _endDate ?? DateTime.now(),
+      initialDate: isStartDate ? _startDate ?? DateTime.now() : _endDate ?? DateTime.now(),
       firstDate: DateTime(2000),
       lastDate: DateTime(2100),
     );
@@ -539,6 +572,19 @@ class _PlanificationViewState extends State<PlanificationView> {
       setState(() {
         if (isStartDate) {
           _startDate = picked;
+          switch (_selectedViewMode) {
+            case 'journée':
+              _endDate = picked.add(Duration(days: 1, minutes: -1));
+              break;
+            case 'semaine':
+              _endDate = picked
+                  .subtract(Duration(days: picked.weekday - 1))
+                  .add(Duration(days: 6, hours: 23, minutes: 59));
+              break;
+            case 'mois':
+              _endDate = DateTime(picked.year, picked.month + 1, 0, 23, 59);
+              break;
+          }
         } else {
           _endDate = picked;
         }
@@ -546,10 +592,15 @@ class _PlanificationViewState extends State<PlanificationView> {
     }
   }
 
-  // Construire le tableau des planifications
   Widget _buildPlanificationTable(List<Planification> planifications) {
-    if (_startDate == null || _endDate == null) {
-      return Center(child: CircularProgressIndicator());
+    // Sort planifications by debutPrevue
+    planifications.sort((a, b) => a.debutPrevue!.compareTo(b.debutPrevue!));
+    Map<String, List<Planification>> groupedPlans = {};
+    if (_selectedViewMode == 'semaine') {
+      for (var plan in planifications) {
+        final dayKey = DateFormat('EEEE dd/MM').format(plan.debutPrevue!);
+        groupedPlans.putIfAbsent(dayKey, () => []).add(plan);
+      }
     }
 
     return SingleChildScrollView(
@@ -558,139 +609,195 @@ class _PlanificationViewState extends State<PlanificationView> {
         constraints: BoxConstraints(
           minWidth: MediaQuery.of(context).size.width,
         ),
-        child: DataTable(
-          columnSpacing: 0, // Remove fixed spacing to allow columns to stretch
+        child: _selectedViewMode == 'semaine' && groupedPlans.isNotEmpty
+            ? Column(
+          children: groupedPlans.entries.map((entry) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(8.0),
+                  child: Text(
+                    entry.key,
+                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                  ),
+                ),
+                ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minWidth: MediaQuery.of(context).size.width,
+                  ),
+                  child: DataTable(
+                    columnSpacing: 0,
+                    dataRowHeight: 60,
+                    headingRowColor: MaterialStateColor.resolveWith(
+                            (states) => Colors.deepPurple.withOpacity(0.1)),
+                    columns: [
+                      DataColumn(
+                          label: Text('Client', style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(
+                          label: Text('Modèle', style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(
+                          label: Text('Taille', style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(
+                          label: Text('Machine', style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(
+                          label: Text('Salle', style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(
+                          label: Text('Début', style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(
+                          label: Text('Fin', style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(
+                          label: Text('Statut', style: TextStyle(fontWeight: FontWeight.bold))),
+                    ],
+                    rows: entry.value.asMap().entries.map((rowEntry) {
+                      final plan = rowEntry.value;
+                      final commande =
+                      plan.commandes.isNotEmpty ? plan.commandes.first : null;
+                      final modeleData =
+                      commande?.modeles.isNotEmpty == true ? commande!.modeles.first : null;
+
+                      Future<String?> getModelName() async {
+                        if (plan.modele != null) {
+                          return plan.modele!.nom;
+                        } else if (modeleData?.modele != null) {
+                          if (modeleData!.modele is String) {
+                            return await ApiService().getModeleNom(modeleData.modele as String);
+                          } else if (modeleData!.modele is Modele) {
+                            return (modeleData.modele as Modele).nom;
+                          }
+                        }
+                        return 'Non spécifié';
+                      }
+
+                      return DataRow(
+                        cells: [
+                          DataCell(Text(
+                            plan.commandes.isNotEmpty
+                                ? plan.commandes.first.client.name
+                                : 'Aucun client',
+                            style: TextStyle(fontSize: 12),
+                            overflow: TextOverflow.ellipsis,
+                          )),
+                          DataCell(FutureBuilder<String?>(
+                            future: getModelName(),
+                            builder: (context, snapshot) {
+                              final modelName = snapshot.data ?? 'Chargement...';
+                              return Text(
+                                modelName,
+                                style: TextStyle(fontSize: 12),
+                                overflow: TextOverflow.ellipsis,
+                              );
+                            },
+                          )),
+                          DataCell(Text(
+                            plan.taille ?? modeleData?.taille ?? 'Non spécifié',
+                            style: TextStyle(fontSize: 12),
+                            overflow: TextOverflow.ellipsis,
+                          )),
+                          DataCell(Text(
+                            plan.machines.isNotEmpty ? plan.machines.first.nom : 'Aucune machine',
+                            style: TextStyle(fontSize: 12),
+                            overflow: TextOverflow.ellipsis,
+                          )),
+                          DataCell(Text(
+                            plan.machines.isNotEmpty ? plan.machines.first.salle.nom : 'N/A',
+                            style: TextStyle(fontSize: 12),
+                            overflow: TextOverflow.ellipsis,
+                          )),
+                          DataCell(Text(
+                            _formatDateTime(plan.debutPrevue),
+                            style: TextStyle(fontSize: 12),
+                          )),
+                          DataCell(Text(
+                            _formatDateTime(plan.finPrevue),
+                            style: TextStyle(fontSize: 12),
+                          )),
+                          DataCell(_buildStatusBadge(plan.statut)),
+                        ],
+                      );
+                    }).toList(),
+                  ),
+                ),
+              ],
+            );
+          }).toList(),
+        )
+            : DataTable(
+          columnSpacing: 0,
           dataRowHeight: 60,
-          headingRowColor: MaterialStateColor.resolveWith((states) => Colors.deepPurple.withOpacity(0.1)),
+          headingRowColor: MaterialStateColor.resolveWith(
+                  (states) => Colors.deepPurple.withOpacity(0.1)),
           columns: [
-            DataColumn(
-              label: Container(
-                alignment: Alignment.center,
-                child: Text('Client', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            ),
-            DataColumn(
-              label: Container(
-                alignment: Alignment.center,
-                child: Text('Modele', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            ),
-            DataColumn(
-              label: Container(
-                alignment: Alignment.center,
-                child: Text('Taille', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            ),
-            DataColumn(
-              label: Container(
-                alignment: Alignment.center,
-                child: Text('Machine', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            ),
-            DataColumn(
-              label: Container(
-                alignment: Alignment.center,
-                child: Text('Salle', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            ),
-            DataColumn(
-              label: Container(
-                alignment: Alignment.center,
-                child: Text('Début', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            ),
-            DataColumn(
-              label: Container(
-                alignment: Alignment.center,
-                child: Text('Fin', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            ),
-            DataColumn(
-              label: Container(
-                alignment: Alignment.center,
-                child: Text('Statut', style: TextStyle(fontWeight: FontWeight.bold)),
-              ),
-            ),
+            DataColumn(label: Text('Client', style: TextStyle(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('Modèle', style: TextStyle(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('Taille', style: TextStyle(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('Machine', style: TextStyle(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('Salle', style: TextStyle(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('Début', style: TextStyle(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('Fin', style: TextStyle(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('Statut', style: TextStyle(fontWeight: FontWeight.bold))),
           ],
           rows: planifications.asMap().entries.map((entry) {
-            final index = entry.key;
             final plan = entry.value;
+            final commande = plan.commandes.isNotEmpty ? plan.commandes.first : null;
+            final modeleData =
+            commande?.modeles.isNotEmpty == true ? commande!.modeles.first : null;
+
+            Future<String?> getModelName() async {
+              if (plan.modele != null) {
+                return plan.modele!.nom;
+              } else if (modeleData?.modele != null) {
+                if (modeleData!.modele is String) {
+                  return await ApiService().getModeleNom(modeleData.modele as String);
+                } else if (modeleData!.modele is Modele) {
+                  return (modeleData.modele as Modele).nom;
+                }
+              }
+              return 'Non spécifié';
+            }
+
             return DataRow(
               cells: [
-                DataCell(
-                  Container(
-                    alignment: Alignment.center,
-                    child: Text(
-                      plan.commandes.isNotEmpty ? plan.commandes.first.client.name : 'Aucun client',
+                DataCell(Text(
+                  plan.commandes.isNotEmpty ? plan.commandes.first.client.name : 'Aucun client',
+                  style: TextStyle(fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
+                )),
+                DataCell(FutureBuilder<String?>(
+                  future: getModelName(),
+                  builder: (context, snapshot) {
+                    final modelName = snapshot.data ?? 'Chargement...';
+                    return Text(
+                      modelName,
                       style: TextStyle(fontSize: 12),
                       overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-                DataCell(
-                  Container(
-                    alignment: Alignment.center,
-                    child: Text(
-                      plan.commandes.isNotEmpty ? plan.machines.first.modele.nom : 'modele inconnu',
-                      style: TextStyle(fontSize: 12),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-                DataCell(
-                  Container(
-                    alignment: Alignment.center,
-                    child: Text(
-                      plan.commandes.isNotEmpty ? plan.machines.first.taille : 'taille inconnu',
-                      style: TextStyle(fontSize: 12),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-                DataCell(
-                  Container(
-                    alignment: Alignment.center,
-                    child: Text(
-                      plan.machines.isNotEmpty ? plan.machines.first.nom : 'Aucune machine',
-                      style: TextStyle(fontSize: 12),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-                DataCell(
-                  Container(
-                    alignment: Alignment.center,
-                    child: Text(
-                      plan.machines.isNotEmpty ? plan.machines.first.salle.nom : 'N/A',
-                      style: TextStyle(fontSize: 12),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ),
-                DataCell(
-                  Container(
-                    alignment: Alignment.center,
-                    child: Text(
-                      _formatDateTime(plan.debutPrevue),
-                      style: TextStyle(fontSize: 12),
-                    ),
-                  ),
-                ),
-                DataCell(
-                  Container(
-                    alignment: Alignment.center,
-                    child: Text(
-                      _formatDateTime(plan.finPrevue),
-                      style: TextStyle(fontSize: 12),
-                    ),
-                  ),
-                ),
-                DataCell(
-                  Container(
-                    alignment: Alignment.center,
-                    child: _buildStatusBadge(plan.statut),
-                  ),
-                ),
+                    );
+                  },
+                )),
+                DataCell(Text(
+                  plan.taille ?? modeleData?.taille ?? 'Non spécifié',
+                  style: TextStyle(fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
+                )),
+                DataCell(Text(
+                  plan.machines.isNotEmpty ? plan.machines.first.nom : 'Aucune machine',
+                  style: TextStyle(fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
+                )),
+                DataCell(Text(
+                  plan.machines.isNotEmpty ? plan.machines.first.salle.nom : 'N/A',
+                  style: TextStyle(fontSize: 12),
+                  overflow: TextOverflow.ellipsis,
+                )),
+                DataCell(Text(
+                  _formatDateTime(plan.debutPrevue),
+                  style: TextStyle(fontSize: 12),
+                )),
+                DataCell(Text(
+                  _formatDateTime(plan.finPrevue),
+                  style: TextStyle(fontSize: 12),
+                )),
+                DataCell(_buildStatusBadge(plan.statut)),
               ],
             );
           }).toList(),
@@ -699,7 +806,6 @@ class _PlanificationViewState extends State<PlanificationView> {
     );
   }
 
-  // Couleur selon le statut
   Color _getStatusColor(String statut) {
     switch (statut) {
       case 'en attente':
@@ -712,17 +818,19 @@ class _PlanificationViewState extends State<PlanificationView> {
         return Colors.grey;
     }
   }
+
   String _formatTime(DateTime? date) {
     return date != null ? DateFormat('HH:mm').format(date) : '--:--';
   }
+
   String _formatDate(DateTime? date) {
     return date != null ? DateFormat('dd/MM/yyyy').format(date) : '--/--/----';
   }
+
   String _formatDateTime(DateTime? date) {
-    return date != null
-        ? DateFormat('dd/MM/yyyy HH:mm').format(date)
-        : '--/--/---- --:--';
+    return date != null ? DateFormat('dd/MM/yyyy HH:mm').format(date) : '--/--/---- --:--';
   }
+
   Widget _buildStatusBadge(String statut) {
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
