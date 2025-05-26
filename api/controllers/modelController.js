@@ -3,7 +3,7 @@ const Matiere = require("../models/matiere");
 
 exports.addModele = async (req, res) => {
   try {
-    const { nom, tailles, bases, consommation, taillesBases } = req.body;
+    const { nom, tailles, bases, consommation, taillesBases, description } = req.body;
 
     // Vérifier si les bases existent
     let baseModels = [];
@@ -28,6 +28,7 @@ exports.addModele = async (req, res) => {
       tailles,
       bases: baseModels.map(b => b._id),
       taillesBases: formattedTaillesBases,
+      description,
       consommation: consommation || tailles.map(taille => ({
         taille: taille,
         quantite: 0
@@ -101,12 +102,15 @@ exports.getAllModeles = async (req, res) => {
 exports.updateModele = async (req, res) => {
     try {
         const { id } = req.params;
-        const { consommation, ...updateData } = req.body;
+        const { consommation,description, ...updateData } = req.body;
 
-        const modele = await Modele.findByIdAndUpdate(id, updateData, { new: true }).populate("matiere").populate("bases");
+        const modele = await Modele.findByIdAndUpdate(id, { ...updateData, description }, { new: true }).populate("matiere").populate("bases");
         if (!modele) return res.status(404).json({ message: "Modèle non trouvé" });
         if (consommation) {
             modele.consommation = consommation;
+        }
+        if (description !== undefined) {
+            modele.description = description; // Mise à jour explicite de description
         }
         Object.assign(modele, updateData);
 

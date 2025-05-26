@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frontend/views/StatistiquesView.dart';
 import 'CommandePage.dart';
 import 'SalleListPage.dart';
 import 'StockView.dart';
@@ -20,10 +21,15 @@ class _AdminHomePageState extends State<AdminHomePage> {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('role');
   }
-
+  Future<void> _logout(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear(); // Clear all stored preferences
+    Navigator.pushReplacementNamed(context, '/login'); 
+  }
   List<Widget> _buildPages(String? role) {
     List<Widget> pages = [
       PlanificationView(), // Première page par défaut
+      StatistiquesView(),
     ];
 
     if (role == 'admin') {
@@ -56,6 +62,10 @@ class _AdminHomePageState extends State<AdminHomePage> {
       BottomNavigationBarItem(
         icon: Icon(Icons.schedule), 
         label: 'Planification'
+      ),
+      BottomNavigationBarItem(
+        icon: Icon(Icons.bar_chart), 
+        label: 'Statistiques'
       ),
     ];
 

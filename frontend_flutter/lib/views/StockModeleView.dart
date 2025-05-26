@@ -15,6 +15,7 @@ class _StockModeleViewState extends State<StockModeleView> {
   final TextEditingController _nomController = TextEditingController();
   final TextEditingController _taillesController = TextEditingController();
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _descriptionController = TextEditingController();
   List<Modele> _filteredModeles = [];
 
   @override
@@ -40,6 +41,19 @@ class _StockModeleViewState extends State<StockModeleView> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
+        Text(
+          "Description:",
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        SizedBox(height: 8),
+        Text(
+          modele.description ?? 'Aucune description',
+          style: TextStyle(color: modele.description != null ? Colors.black : Colors.grey),
+        ),
+        SizedBox(height: 16),
         Text(
           "Associations de tailles:",
           style: TextStyle(
@@ -226,6 +240,20 @@ void _addModeleDialog() {
                   ),
                 ),
                 const SizedBox(height: 16),
+                TextField(
+                      controller: _descriptionController,
+                      decoration: InputDecoration(
+                        labelText: 'Description (optionnel)',
+                        prefixIcon: Icon(Icons.description, color: Colors.blueGrey),
+                        filled: true,
+                        fillColor: Colors.white.withOpacity(0.9),
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide.none,
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 16),
                 MultiSelectDialogField(
                   items: basesDisponibles
                       .map((base) => MultiSelectItem<String>(base.nom, base.nom))
@@ -278,6 +306,9 @@ void _addModeleDialog() {
                   .map((e) => e.trim())
                   .where((e) => e.isNotEmpty)
                   .toList();
+              final description = _descriptionController.text.trim().isNotEmpty
+                    ? _descriptionController.text.trim()
+                    : null;
               if (nom.isEmpty || tailles.isEmpty) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
@@ -288,7 +319,7 @@ void _addModeleDialog() {
                 return;
               }
               if (selectedBases.isNotEmpty) {
-                _showAssociationDialog(context, modeleProvider, nom, tailles, selectedBases, _consommationController.text);
+                _showAssociationDialog(context, modeleProvider, nom, tailles, selectedBases, _consommationController.text,description);
               } else {
                 List<Consommation> consommations = [];
                 if (_consommationController.text.isNotEmpty) {
@@ -297,9 +328,10 @@ void _addModeleDialog() {
                       .map((taille) => Consommation(taille: taille, quantity: consommationValue))
                       .toList();
                 }
-                await modeleProvider.addModele(nom, tailles, null, consommations, []);
+                await modeleProvider.addModele(nom, tailles, null, consommations, [],description);
                 _nomController.clear();
                 _taillesController.clear();
+                 _descriptionController.clear();
                 _consommationController.clear();
                 Navigator.pop(context);
               }
@@ -467,7 +499,8 @@ void _showAssociationDialog(
     String nom,
     List<String> tailles,
     List<String> baseNoms,
-    String consommationText) {
+    String consommationText,
+    String? description,) {
   final Map<String, List<Map<String, dynamic>>> associationsByBase = {};
 
   for (final baseNom in baseNoms) {
@@ -592,7 +625,7 @@ void _showAssociationDialog(
                         .toList();
                   }
 
-                  await modeleProvider.addModele(nom, tailles, baseNoms, consommations, taillesBases);
+                  await modeleProvider.addModele(nom, tailles, baseNoms, consommations, taillesBases,description);
                   _nomController.clear();
                   _taillesController.clear();
                   Navigator.pop(context);
@@ -617,7 +650,7 @@ void _showAssociationDialog(
     final modeleProvider = Provider.of<ModeleProvider>(context, listen: false);
     _nomController.text = modele.nom;
     _taillesController.text = modele.tailles.join(', ');
-
+    _descriptionController.text = modele.description ?? '';
     showDialog(
       context: context,
       builder: (context) {
@@ -661,11 +694,30 @@ void _showAssociationDialog(
                   ),
                 ),
               ),
+              SizedBox(height: 16),
+                TextField(
+                  controller: _descriptionController,
+                  decoration: InputDecoration(
+                    labelText: 'Description (optionnel)',
+                    prefixIcon: Icon(Icons.description, color: Colors.blueGrey),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.9),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
             ],
           ),
           actions: [
             TextButton(
-              onPressed: () => Navigator.pop(context),
+              onPressed: () {
+                _nomController.clear();
+                _taillesController.clear();
+                _descriptionController.clear();
+                Navigator.pop(context);
+              },
               child: const Text('Annuler'),
             ),
             ElevatedButton(
@@ -676,6 +728,9 @@ void _showAssociationDialog(
                     .map((e) => e.trim())
                     .where((e) => e.isNotEmpty)
                     .toList();
+                final description = _descriptionController.text.trim().isNotEmpty
+                    ? _descriptionController.text.trim()
+                    : null;
                 if (nom.isEmpty || tailles.isEmpty) {
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -695,7 +750,11 @@ void _showAssociationDialog(
                       : null,
                   modele.consommation,
                   modele.taillesBases,
+                  description,
                 );
+                _nomController.clear();
+                _taillesController.clear();
+                _descriptionController.clear();
                 Navigator.pop(context);
               },
               child: const Text('Enregistrer'),
@@ -759,6 +818,7 @@ void _showAssociationDialog(
     _nomController.dispose();
     _taillesController.dispose();
     _searchController.dispose();
+     _descriptionController.dispose();
     super.dispose();
   }
 

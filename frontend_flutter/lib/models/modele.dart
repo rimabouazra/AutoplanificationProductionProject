@@ -27,6 +27,7 @@ class Modele {
   List<Modele>? derives;
   List<Consommation> consommation;
   List<TailleBase> taillesBases;
+  String? description;
 
   Modele({
     required this.id,
@@ -35,6 +36,7 @@ class Modele {
     this.derives,
     required this.consommation,
     this.taillesBases = const [], // Initialisation par défaut
+    this.description, 
   });
 
   factory Modele.fromJson(Map<String, dynamic> json) {
@@ -51,6 +53,7 @@ class Modele {
       taillesBases: json['taillesBases'] != null
           ? List<TailleBase>.from(json['taillesBases'].map((tb) => TailleBase.fromJson(tb)))
           : [], // Ajout du parsing de taillesBases
+      description: json['description'],
     );
   }
 
@@ -63,6 +66,7 @@ class Modele {
       'derives': derives?.map((m) => m.toJson()).toList(),
       'consommation': consommation.map((c) => c.toJson()).toList(),
       'taillesBases': taillesBases.map((tb) => tb.toJson()).toList(), 
+      'description': description,
     };
   }
 List<String> getTailleBaseForTaille(String taille) {

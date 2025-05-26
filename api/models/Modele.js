@@ -9,6 +9,7 @@ const ModeleSchema = new mongoose.Schema({
         baseId: { type: mongoose.Schema.Types.ObjectId, ref: "Modele",required: false }, // Référence à la base
         tailles: [{ type: String }] // Correspondance des tailles
     }],
+    description: { type: String, required: false },
     consommation: [{
         taille: { type: String, required: true },
         quantite: { 

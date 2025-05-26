@@ -177,8 +177,8 @@ class ApiService {
   }
 
   // Ajouter un nouveau Modèle
-  static Future<void> addModele(String nom, List<String> tailles, List<String>? bases,
-      List<Consommation> consommation,
+  static Future<void> addModele(String nom, List<String> tailles,
+      List<String>? bases, List<Consommation> consommation, String? description,
       [List<TailleBase> taillesBases = const []]) async {
     final response = await http.post(
       Uri.parse("$baseUrl/modeles/add"),
@@ -186,21 +186,24 @@ class ApiService {
       body: jsonEncode({
         "nom": nom,
         "tailles": tailles,
-        'bases': bases?? [],
+        'bases': bases ?? [],
         if (consommation.isNotEmpty)
           'consommation': consommation.map((c) => c.toJson()).toList(),
         // Convertir la liste
-        "taillesBases":taillesBases.map((tb) => tb.toJson()).toList(),
+        "taillesBases": taillesBases.map((tb) => tb.toJson()).toList(),
+        'description': description,
       }),
     );
     print("Requête envoyée : ${jsonEncode({
-    'nom': nom,
-    'tailles': tailles,
-    'bases': bases ?? [],
-    'consommation': consommation.map((c) => c.toJson()).toList(),
-    'taillesBases': taillesBases.map((tb) => tb.toJson()).toList(),
-  })}");//debug
-    print("Réponse de l'API: ${response.statusCode} - ${response.body}");//debug
+          'nom': nom,
+          'tailles': tailles,
+          'bases': bases ?? [],
+          'consommation': consommation.map((c) => c.toJson()).toList(),
+          'taillesBases': taillesBases.map((tb) => tb.toJson()).toList(),
+          'description': description,
+        })}"); //debug
+    print(
+        "Réponse de l'API: ${response.statusCode} - ${response.body}"); //debug
     if (response.statusCode != 201) {
       throw Exception("Échec de l'ajout du modèle: ${response.body}");
     }
@@ -368,7 +371,8 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> getPlanificationPreview(String commandeId) async {
+  static Future<Map<String, dynamic>> getPlanificationPreview(
+      String commandeId) async {
     final uri = Uri.parse('$baseUrl/planifications/auto');
     final response = await http.post(
       uri,
@@ -383,41 +387,45 @@ class ApiService {
       final jsonData = json.decode(response.body);
       return {
         'planifications': (jsonData['planifications'] as List<dynamic>?)
-            ?.map((json) => Planification.fromJson(json))
-            .toList() ?? [],
+                ?.map((json) => Planification.fromJson(json))
+                .toList() ??
+            [],
         'statut': jsonData['statut'] ?? 'planifiée'
       };
     } else {
       throw Exception('Erreur lors de la récupération des prévisualisations');
     }
   }
-static Future<bool> confirmerPlanification(List<Planification> planifications) async {
-  try {
-    if (planifications.isEmpty) return false;
 
-    // Log planifications for debugging
-    debugPrint('Planifications to confirm: ${planifications.length}');
-    planifications.forEach((p) {
-      debugPrint('Planification: id=${p.id}, statut=${p.statut}, machines=${p.machines.length}');
-    });
+  static Future<bool> confirmerPlanification(
+      List<Planification> planifications) async {
+    try {
+      if (planifications.isEmpty) return false;
 
-    final response = await http.post(
-      Uri.parse('$baseUrl/planifications/confirm'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'planifications': planifications.map((p) => p.toJson()).toList(),
-      }),
-    );
+      // Log planifications for debugging
+      debugPrint('Planifications to confirm: ${planifications.length}');
+      planifications.forEach((p) {
+        debugPrint(
+            'Planification: id=${p.id}, statut=${p.statut}, machines=${p.machines.length}');
+      });
 
-    debugPrint('Status confirmation: ${response.statusCode}');
-    debugPrint('Body confirmation: ${response.body}');
+      final response = await http.post(
+        Uri.parse('$baseUrl/planifications/confirm'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'planifications': planifications.map((p) => p.toJson()).toList(),
+        }),
+      );
 
-    return response.statusCode == 200 || response.statusCode == 201;
-  } catch (e) {
-    debugPrint('Exception in confirmerPlanification: $e');
-    return false;
+      debugPrint('Status confirmation: ${response.statusCode}');
+      debugPrint('Body confirmation: ${response.body}');
+
+      return response.statusCode == 200 || response.statusCode == 201;
+    } catch (e) {
+      debugPrint('Exception in confirmerPlanification: $e');
+      return false;
+    }
   }
-}
 
   static Future<bool> addPlanification(Planification planification) async {
     final response = await http.post(
@@ -466,7 +474,8 @@ static Future<bool> confirmerPlanification(List<Planification> planifications) a
           'planifications': (planificationData['planifications'] as List)
               .map((json) => Planification.fromJson(json))
               .toList(),
-          'hasInsufficientStock': planificationData['hasInsufficientStock'] ?? false,
+          'hasInsufficientStock':
+              planificationData['hasInsufficientStock'] ?? false,
           'partialAvailable': planificationData['partialAvailable'] ?? false,
         };
       } else {
@@ -549,42 +558,44 @@ static Future<bool> confirmerPlanification(List<Planification> planifications) a
     }
   }
 
-static Future<Matiere?> updateMatiere(String id, double newQuantite, {String? action}) async {
-  try {
-    final response = await http.put(
-      Uri.parse('$baseUrl/matieres/update/$id'),
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({
-        "quantite": newQuantite,
-        if (action != null) "action": action,
-      }),
-    );
+  static Future<Matiere?> updateMatiere(String id, double newQuantite,
+      {String? action}) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$baseUrl/matieres/update/$id'),
+        headers: {"Content-Type": "application/json"},
+        body: jsonEncode({
+          "quantite": newQuantite,
+          if (action != null) "action": action,
+        }),
+      );
 
-    print("Requête API - URL: $baseUrl/matieres/update/$id");
-    print("Requête API - Body envoyé: ${jsonEncode({
-      "quantite": newQuantite,
-      if (action != null) "action": action,
-    })}");
-    print("Réponse API - Status: ${response.statusCode}");
-    print("Réponse API - Body: ${response.body}");
+      print("Requête API - URL: $baseUrl/matieres/update/$id");
+      print("Requête API - Body envoyé: ${jsonEncode({
+            "quantite": newQuantite,
+            if (action != null) "action": action,
+          })}");
+      print("Réponse API - Status: ${response.statusCode}");
+      print("Réponse API - Body: ${response.body}");
 
-    if (response.statusCode == 200) {
-      final responseData = jsonDecode(response.body);
-      if (responseData != null) {
-        return Matiere.fromJson(responseData);
+      if (response.statusCode == 200) {
+        final responseData = jsonDecode(response.body);
+        if (responseData != null) {
+          return Matiere.fromJson(responseData);
+        }
+        print("Erreur : responseData est null");
+        return null;
+      } else {
+        print("Erreur API - Status: ${response.statusCode}");
+        print("Erreur API - Body: ${response.body}");
+        return null;
       }
-      print("Erreur : responseData est null");
-      return null;
-    } else {
-      print("Erreur API - Status: ${response.statusCode}");
-      print("Erreur API - Body: ${response.body}");
+    } catch (e) {
+      print("Erreur réseau lors de la mise à jour: $e");
       return null;
     }
-  } catch (e) {
-    print("Erreur réseau lors de la mise à jour: $e");
-    return null;
   }
-}
+
   static Future<List<Historique>> getHistoriqueMatiere(String matiereId) async {
     final response =
         await http.get(Uri.parse('$baseUrl/matieres/historique/$matiereId'));
@@ -747,7 +758,7 @@ static Future<Matiere?> updateMatiere(String id, double newQuantite, {String? ac
 
   static Future<void> updateModele(String id, String nom, List<String> tailles,
       String? base, List<Consommation> consommation,
-      [List<TailleBase> taillesBases = const []]) async {
+      [List<TailleBase> taillesBases = const [],String? description]) async {
     final response = await http.put(
       Uri.parse("$baseUrl/modeles/$id"),
       headers: {"Content-Type": "application/json"},
@@ -757,6 +768,7 @@ static Future<Matiere?> updateMatiere(String id, double newQuantite, {String? ac
         "base": base,
         'consommation': consommation.map((c) => c.toJson()).toList(),
         'taillesBases': taillesBases.map((tb) => tb.toJson()).toList(),
+        'description': description,
       }),
     );
     if (response.statusCode != 200) {
@@ -764,28 +776,29 @@ static Future<Matiere?> updateMatiere(String id, double newQuantite, {String? ac
     }
   }
 
-static Future<void> deleteModele(String id) async {
-  try {
-    final response = await http.delete(
-      Uri.parse("$baseUrl/modeles/delete/$id"),
-      headers: {"Content-Type": "application/json"},
-    );
-    if (response.statusCode == 200) {
-      return; // Suppression réussie
-    } else if (response.statusCode >= 400 && response.statusCode < 500) {
-      try {
-        final errorData = jsonDecode(response.body);
-        throw Exception(errorData['message'] ?? "Échec de la suppression du modèle");
-      } catch (_) {
-        throw Exception("Échec de la suppression: ${response.body}");
+  static Future<void> deleteModele(String id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse("$baseUrl/modeles/delete/$id"),
+        headers: {"Content-Type": "application/json"},
+      );
+      if (response.statusCode == 200) {
+        return; // Suppression réussie
+      } else if (response.statusCode >= 400 && response.statusCode < 500) {
+        try {
+          final errorData = jsonDecode(response.body);
+          throw Exception(
+              errorData['message'] ?? "Échec de la suppression du modèle");
+        } catch (_) {
+          throw Exception("Échec de la suppression: ${response.body}");
+        }
+      } else {
+        throw Exception("Erreur serveur: ${response.statusCode}");
       }
-    } else {
-      throw Exception("Erreur serveur: ${response.statusCode}");
+    } catch (e) {
+      throw Exception("Erreur de connexion: $e");
     }
-  } catch (e) {
-    throw Exception("Erreur de connexion: $e");
   }
-}
 
   static Future<bool> updateConsommation(
       String modeleId, String taille, double quantite) async {
@@ -901,9 +914,12 @@ static Future<void> deleteModele(String id) async {
       throw Exception('Échec de la mise à jour de la quantité réelle');
     }
   }
-  static Future<List<Planification>> getWaitingPlanifications({String? commandeId}) async {
+
+  static Future<List<Planification>> getWaitingPlanifications(
+      {String? commandeId}) async {
     final uri = commandeId != null
-        ? Uri.parse('$baseUrl/planifications/get/waiting?commandeId=$commandeId')
+        ? Uri.parse(
+            '$baseUrl/planifications/get/waiting?commandeId=$commandeId')
         : Uri.parse('$baseUrl/planifications/get/waiting');
     final response = await http.get(uri);
 
@@ -911,9 +927,11 @@ static Future<void> deleteModele(String id) async {
       List<dynamic> jsonData = json.decode(response.body);
       return jsonData.map((json) => Planification.fromJson(json)).toList();
     } else {
-      throw Exception("Erreur lors de la récupération des planifications en attente");
+      throw Exception(
+          "Erreur lors de la récupération des planifications en attente");
     }
   }
+
   static Future<bool> hasActivePlanification(String machineId) async {
     try {
       final response = await http.get(
@@ -932,10 +950,11 @@ static Future<void> deleteModele(String id) async {
       throw Exception("Erreur de connexion");
     }
   }
-  static Future<void> updateWaitingPlanificationOrder(List<String?> order) async {
+
+  static Future<void> updateWaitingPlanificationOrder(
+      List<String?> order) async {
     try {
       final token = await AuthService.getToken();
-
 
       final response = await http.put(
         Uri.parse('$baseUrl/planifications/waiting/order'),
@@ -946,14 +965,14 @@ static Future<void> deleteModele(String id) async {
         body: jsonEncode({"orderedIds": order}),
       );
 
-
-
       if (response.statusCode != 200) {
-        throw Exception("Erreur lors de la mise à jour de l'ordre des planifications en attente: ${response.statusCode} - ${response.body}");
+        throw Exception(
+            "Erreur lors de la mise à jour de l'ordre des planifications en attente: ${response.statusCode} - ${response.body}");
       }
     } catch (e) {
       print('Error in updateWaitingPlanificationOrder: $e');
-      throw Exception("Erreur lors de la mise à jour de l'ordre des planifications en attente: $e");
+      throw Exception(
+          "Erreur lors de la mise à jour de l'ordre des planifications en attente: $e");
     }
   }
 }
