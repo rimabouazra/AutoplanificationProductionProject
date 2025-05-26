@@ -11,7 +11,7 @@ const mongoose = require('mongoose');
 let workHoursConfig = {
   startHour: 7, // 7 AM
   endHour: 17, // 5 PM
-  timezone: "CET"
+  timezone: "Africa/Tunis"
 };
 
 exports.updateWorkHours = async (newStartHour, newEndHour) => {
@@ -35,7 +35,7 @@ exports.updateWorkHours = async (newStartHour, newEndHour) => {
 };
 
 const calculatePlanificationDates = (startDate, hoursRequired, workHours = workHoursConfig) => {
-  let currentDate = moment(startDate).tz(workHours.timezone);
+  let currentDate = moment(startDate).tz(workHours.timezone).startOf('minute');
   let remainingHours = hoursRequired;
   let workDayHours = workHours.endHour - workHours.startHour;
 
@@ -51,23 +51,18 @@ const calculatePlanificationDates = (startDate, hoursRequired, workHours = workH
   let finPrevue;
 
   while (remainingHours > 0) {
-    // Calculate remaining hours in the current workday
     let hoursUntilEndOfDay = workHours.endHour - currentDate.hour();
     if (hoursUntilEndOfDay <= 0) {
       currentDate.add(1, 'day').set({ hour: workHours.startHour, minute: 0, second: 0 });
       hoursUntilEndOfDay = workDayHours;
     }
-
-    // Use the minimum of remaining hours or hours until end of day
     let hoursToUse = Math.min(remainingHours, hoursUntilEndOfDay);
     remainingHours -= hoursToUse;
 
     if (remainingHours <= 0) {
-      // Set finPrevue to the end of this work period
       currentDate.add(hoursToUse, 'hours');
       finPrevue = currentDate.toDate();
     } else {
-      // Move to the next workday
       currentDate.add(1, 'day').set({ hour: workHours.startHour, minute: 0, second: 0 });
     }
   }
@@ -79,7 +74,7 @@ exports.checkActivePlanification = async (req, res) => {
   try {
     const { machineId } = req.params;
 
-    const now = new Date();
+    const now = moment().tz("Africa/Tunis").toDate();
     const activePlanification = await Planification.findOne({
       machines: machineId,
       statut: { $ne: "terminée" },
@@ -101,8 +96,7 @@ exports.checkActivePlanification = async (req, res) => {
 
 exports.mettreAJourCommandesEnCours = async (req, res) => {
   try {
-    const now = new Date();
-
+const now = moment().tz("Africa/Tunis").toDate();
     const planifs = await Planification.find({
       debutPrevue: { $lte: now },
       finPrevue: { $gt: now },
@@ -136,8 +130,7 @@ exports.mettreAJourCommandesEnCours = async (req, res) => {
 
 exports.mettreAJourMachinesDisponibles = async (req, res) => {
   try {
-    const now = new Date();
-
+    const now = moment().tz("Africa/Tunis").toDate();
     const planifs = await Planification.find({
       $or: [
         { finPrevue: { $lte: now } },
@@ -270,7 +263,7 @@ exports.autoPlanifierCommande = async (req, res) => {
         commandes: [commande._id],
         machines: [],
         statut: "waiting_resources",
-        createdAt: new Date(),
+        createdAt: moment().tz("Africa/Tunis").toDate(),
       });
       await waitingPlan.save();
 
@@ -378,7 +371,8 @@ exports.autoPlanifierCommande = async (req, res) => {
           quantitePlanifiee = 0;
         } else {
           const heures = quantitePlanifiee / 35 + 2;
-          const now = moment().tz("CET").toDate();
+          const now = moment().tz("Africa/Tunis").toDate();
+          console.log("Current time in Africa/Tunis:", moment().tz("Africa/Tunis").format());
           const { debutPrevue, finPrevue } = calculatePlanificationDates(now, heures);
 
           if (!preview) {
@@ -448,7 +442,7 @@ exports.autoPlanifierCommande = async (req, res) => {
           taille: modele.taille,
           couleur: modele.couleur,
           statut: "waiting_resources",
-          createdAt: moment().tz("CET").toDate(),
+          createdAt: moment().tz("Africa/Tunis").toDate(),
         };
 
         if (!preview) {
@@ -613,7 +607,7 @@ exports.processWaitingList = async () => {
         m.etat === "disponible"
       );
 
-      let debutPrevue = new Date();
+      let debutPrevue =moment().tz("Africa/Tunis").toDate();
       let finPrevue;
 
       if (!machine) {
@@ -687,7 +681,7 @@ exports.processWaitingList = async () => {
       matiere.historique.push({
         action: "consommation",
         quantite: quantiteNecessaire,
-        date: new Date()
+        date: moment().tz("Africa/Tunis").toDate()
       });
       await matiere.save({ session });
     }
@@ -793,13 +787,13 @@ exports.confirmPlanification = async (req, res) => {
             commandes: plan.commandes.map((c) => c._id || c),
             machines: plan.machines.map((m) => m._id || m),
             salle: plan.salle._id || plan.salle,
-            debutPrevue: plan.debutPrevue ? new Date(plan.debutPrevue) : new Date(),
-            finPrevue: plan.finPrevue ? new Date(plan.finPrevue) : new Date(),
+            debutPrevue: plan.debutPrevue ? new Date(plan.debutPrevue) : moment().tz("Africa/Tunis").toDate(),
+            finPrevue: plan.finPrevue ? new Date(plan.finPrevue) : moment().tz("Africa/Tunis").toDate(),
             statut: plan.statut || "en attente",
             quantite: plan.quantite || 0,
             taille: plan.taille || "",
             couleur: plan.couleur || "",
-            createdAt: plan.createdAt ? new Date(plan.createdAt) : new Date(),
+            createdAt: plan.createdAt ? new Date(plan.createdAt) : moment().tz("Africa/Tunis").toDate(),
           });
         } else {
           // Update existing planification
@@ -820,13 +814,13 @@ exports.confirmPlanification = async (req, res) => {
           commandes: plan.commandes.map((c) => c._id || c),
           machines: plan.machines.map((m) => m._id || m),
           salle: plan.salle._id || plan.salle,
-          debutPrevue: plan.debutPrevue ? new Date(plan.debutPrevue) : new Date(),
-          finPrevue: plan.finPrevue ? new Date(plan.finPrevue) : new Date(),
+          debutPrevue: plan.debutPrevue ? new Date(plan.debutPrevue) : moment().tz("Africa/Tunis").toDate(),
+          finPrevue: plan.finPrevue ? new Date(plan.finPrevue) : moment().tz("Africa/Tunis").toDate(),
           statut: plan.statut || "en attente",
           quantite: plan.quantite || 0,
           taille: plan.taille || "",
           couleur: plan.couleur || "",
-          createdAt: plan.createdAt ? new Date(plan.createdAt) : new Date(),
+          createdAt: plan.createdAt ? new Date(plan.createdAt) : moment().tz("Africa/Tunis").toDate(),
         });
       }
 
