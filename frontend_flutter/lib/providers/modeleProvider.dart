@@ -16,9 +16,9 @@ class ModeleProvider with ChangeNotifier {
     print("Erreur lors du chargement des modèles: $e");
   }
 }
-   Future<void> addModele(String nom, List<String> tailles, String? base, List<Consommation> consommation,[List<TailleBase> taillesBases = const []]) async {
+   Future<void> addModele(String nom, List<String> tailles, List<String>? bases, List<Consommation> consommation,[List<TailleBase> taillesBases = const []]) async {
     try {
-      await ApiService.addModele(nom, tailles, base, consommation, taillesBases);
+      await ApiService.addModele(nom, tailles, bases, consommation, taillesBases);
       fetchModeles(); // Rafraîchir la liste des modèles
     } catch (e) {
       print("Erreur lors de l'ajout du modèle: $e");

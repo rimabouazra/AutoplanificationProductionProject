@@ -65,23 +65,22 @@ class Modele {
       'taillesBases': taillesBases.map((tb) => tb.toJson()).toList(), 
     };
   }
-  String? getTailleBaseForTaille(String taille) {
-    try {
-        // Trouver l'index de la taille dans le modèle
-        final index = tailles.indexOf(taille);
-        if (index == -1) return null;
+List<String> getTailleBaseForTaille(String taille) {
+  try {
+    final index = tailles.indexOf(taille);
+    if (index == -1) return [];
 
-        // Parcourir toutes les associations de base
-        for (final tb in taillesBases) {
-            if (index < tb.tailles.length) {
-                return tb.tailles[index];
-            }
-        }
-        return null;
-    } catch (e) {
-        print("Erreur getTailleBaseForTaille: $e");
-        return null;
+    List<String> taillesBase = [];
+    for (final tb in taillesBases) {
+      if (index < tb.tailles.length) {
+        taillesBase.add(tb.tailles[index]);
+      }
     }
+    return taillesBase;
+  } catch (e) {
+    print("Erreur getTailleBaseForTaille: $e");
+    return [];
+  }
 }
 }
 class Consommation {

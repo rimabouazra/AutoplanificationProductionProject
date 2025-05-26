@@ -177,7 +177,7 @@ class ApiService {
   }
 
   // Ajouter un nouveau Modèle
-  static Future<void> addModele(String nom, List<String> tailles, String? base,
+  static Future<void> addModele(String nom, List<String> tailles, List<String>? bases,
       List<Consommation> consommation,
       [List<TailleBase> taillesBases = const []]) async {
     final response = await http.post(
@@ -186,18 +186,23 @@ class ApiService {
       body: jsonEncode({
         "nom": nom,
         "tailles": tailles,
-        'base': base,
+        'bases': bases?? [],
         if (consommation.isNotEmpty)
           'consommation': consommation.map((c) => c.toJson()).toList(),
         // Convertir la liste
-        "taillesBases": base != null 
-          ? taillesBases.map((tb) => tb.toJson()).toList()
-          : [], // Envoyer une liste vide si pas de base
+        "taillesBases":taillesBases.map((tb) => tb.toJson()).toList(),
       }),
     );
-    //print("Réponse de l'API: ${response.statusCode} - ${response.body}");
+    print("Requête envoyée : ${jsonEncode({
+    'nom': nom,
+    'tailles': tailles,
+    'bases': bases ?? [],
+    'consommation': consommation.map((c) => c.toJson()).toList(),
+    'taillesBases': taillesBases.map((tb) => tb.toJson()).toList(),
+  })}");//debug
+    print("Réponse de l'API: ${response.statusCode} - ${response.body}");//debug
     if (response.statusCode != 201) {
-      throw Exception("Échec de l'ajout du modèle");
+      throw Exception("Échec de l'ajout du modèle: ${response.body}");
     }
   }
 
