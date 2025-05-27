@@ -15,27 +15,42 @@ class StatistiquesView extends StatefulWidget {
   _StatistiquesViewState createState() => _StatistiquesViewState();
 }
 
-class _StatistiquesViewState extends State<StatistiquesView> {
+class _StatistiquesViewState extends State<StatistiquesView>
+    with SingleTickerProviderStateMixin {
   String _selectedPeriod = 'Mois';
   DateTime _selectedDate = DateTime.now();
   TextEditingController _searchController = TextEditingController();
   bool _isLoading = false;
   List<Matiere> _allMatieres = [];
+  int _touchedBarIndex = -1; // For bar chart interaction
+  int _touchedPieIndex = -1; // For pie chart interaction
+  late AnimationController _animationController;
+  late Animation<double> _fadeAnimation;
 
   @override
   void initState() {
     super.initState();
+    _animationController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+    _fadeAnimation =
+        CurvedAnimation(parent: _animationController, curve: Curves.easeIn);
+    _searchController.addListener(_onSearchChanged);
     _loadData();
   }
 
   Future<void> _loadData() async {
     setState(() => _isLoading = true);
     try {
-      await Provider.of<MatiereProvider>(context, listen: false).fetchMatieres();
+      await Provider.of<MatiereProvider>(context, listen: false)
+          .fetchMatieres();
       setState(() {
-        _allMatieres = Provider.of<MatiereProvider>(context, listen: false).matieres;
+        _allMatieres =
+            Provider.of<MatiereProvider>(context, listen: false).matieres;
         _isLoading = false;
       });
+      _animationController.forward(from: 0);
     } catch (e) {
       setState(() => _isLoading = false);
       ScaffoldMessenger.of(context).showSnackBar(
@@ -47,13 +62,28 @@ class _StatistiquesViewState extends State<StatistiquesView> {
     }
   }
 
+  void _onSearchChanged() {
+    setState(() {});
+    _animationController.forward(from: 0);
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _animationController.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: const Text('Statistiques de Consommation des Matières'),
+        title: const Text('Statistiques des Matières',
+            style: TextStyle(fontWeight: FontWeight.bold)),
         centerTitle: true,
+        backgroundColor: Colors.blue.shade700,
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.picture_as_pdf),
@@ -77,9 +107,11 @@ class _StatistiquesViewState extends State<StatistiquesView> {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  CircularProgressIndicator(),
+                  CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation(Colors.blue)),
                   SizedBox(height: 16),
-                  Text('Chargement des données...', style: TextStyle(fontSize: 16)),
+                  Text('Chargement des données...',
+                      style: TextStyle(fontSize: 16, color: Colors.blue)),
                 ],
               ),
             )
@@ -95,10 +127,15 @@ class _StatistiquesViewState extends State<StatistiquesView> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.inventory_2_outlined, size: 48, color: Colors.grey),
+            Icon(Icons.inventory_2_outlined, size: 64, color: Colors.grey),
             SizedBox(height: 16),
-            Text('Aucune donnée disponible',
-                style: TextStyle(fontSize: 18, color: Colors.grey)),
+            Text(
+              'Aucune donnée disponible',
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w500,
+                  color: Colors.grey),
+            ),
           ],
         ),
       );
@@ -106,67 +143,100 @@ class _StatistiquesViewState extends State<StatistiquesView> {
 
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildPeriodSelector(),
-          const SizedBox(height: 20),
-          _buildMatiereSummaryStats(filteredMatieres),
-          const SizedBox(height: 30),
-          _buildMatiereQuantiteChart(filteredMatieres),
-          const SizedBox(height: 30),
-          _buildMatiereMovementsChart(filteredMatieres),
-          const SizedBox(height: 30),
-          _buildConsumptionTrendChart(filteredMatieres),
-          const SizedBox(height: 30),
-          _buildMatieresTable(filteredMatieres),
-        ],
+      child: FadeTransition(
+        opacity: _fadeAnimation,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildSearchBar(),
+            const SizedBox(height: 16),
+            _buildPeriodSelector(),
+            const SizedBox(height: 24),
+            _buildMatiereSummaryStats(filteredMatieres),
+            const SizedBox(height: 32),
+            _buildMatiereQuantiteChart(filteredMatieres),
+            const SizedBox(height: 32),
+            _buildMatiereMovementsChart(filteredMatieres),
+            const SizedBox(height: 32),
+            _buildConsumptionTrendChart(filteredMatieres),
+            const SizedBox(height: 32),
+            _buildMatieresTable(filteredMatieres),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Card(
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        child: TextField(
+          controller: _searchController,
+          decoration: InputDecoration(
+            hintText: 'Rechercher par référence ou couleur...',
+            border: InputBorder.none,
+            icon: Icon(Icons.search, color: Colors.blue.shade700),
+            suffixIcon: _searchController.text.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(Icons.clear, color: Colors.grey),
+                    onPressed: () {
+                      _searchController.clear();
+                      setState(() {});
+                    },
+                  )
+                : null,
+          ),
+        ),
       ),
     );
   }
 
   Widget _buildPeriodSelector() {
     return Card(
-      elevation: 2,
+      elevation: 4,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       child: Padding(
-        padding: const EdgeInsets.all(12.0),
+        padding: const EdgeInsets.all(12),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            DropdownButton<String>(
-              value: _selectedPeriod,
-              items: ['Jour', 'Semaine', 'Mois'].map((String value) {
-                return DropdownMenuItem<String>(
-                  value: value,
-                  child: Text(value),
-                );
-              }).toList(),
-              onChanged: (String? newValue) {
+            ToggleButtons(
+              borderRadius: BorderRadius.circular(8),
+              selectedColor: Colors.white,
+              fillColor: Colors.blue.shade700,
+              color: Colors.blue.shade700,
+              constraints: const BoxConstraints(minHeight: 36, minWidth: 80),
+              isSelected: ['Jour', 'Semaine', 'Mois']
+                  .map((p) => p == _selectedPeriod)
+                  .toList(),
+              onPressed: (index) {
                 setState(() {
-                  _selectedPeriod = newValue!;
+                  _selectedPeriod = ['Jour', 'Semaine', 'Mois'][index];
+                  _animationController.forward(from: 0);
                 });
               },
+              children: const [
+                Text('Jour'),
+                Text('Semaine'),
+                Text('Mois'),
+              ],
             ),
-            const SizedBox(width: 20),
-            TextButton(
-              style: TextButton.styleFrom(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            const SizedBox(width: 16),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue.shade50,
+                foregroundColor: Colors.blue.shade800,
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8)),
               ),
               onPressed: () => _selectDate(context),
-              child: Row(
-                children: [
-                  const Icon(Icons.calendar_today, size: 16),
-                  const SizedBox(width: 8),
-                  Text(
-                    DateFormat('dd/MM/yyyy').format(_selectedDate),
-                    style: TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.blue.shade800,
-                    ),
-                  ),
-                ],
+              icon: const Icon(Icons.calendar_today, size: 16),
+              label: Text(
+                DateFormat('dd/MM/yyyy').format(_selectedDate),
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
             ),
           ],
@@ -180,28 +250,44 @@ class _StatistiquesViewState extends State<StatistiquesView> {
     final totalQuantite = matieres.fold(0.0, (sum, m) => sum + m.quantite);
     final totalConsommation = matieres.fold(
         0.0,
-        (sum, m) => sum +
+        (sum, m) =>
+            sum +
             m.historique
                 .where((h) => h.action.toLowerCase() == 'consommation')
                 .fold(0.0, (sum, h) => sum + h.quantite));
 
     return Card(
-      elevation: 4,
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+      elevation: 6,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.blue.shade50, Colors.white],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        padding: const EdgeInsets.all(20),
         child: Column(
           children: [
             const Text(
               'Résumé des Matières',
-              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.blue),
             ),
-            const SizedBox(height: 15),
+            const SizedBox(height: 16),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                _buildStatItem('Matières', totalMatieres.toString(), Colors.blue),
-                _buildStatItem('Stock total', totalQuantite.toStringAsFixed(2), Colors.green),
-                _buildStatItem('Consommation', totalConsommation.toStringAsFixed(2), Colors.red),
+                _buildStatItem(Icons.category, 'Matières',
+                    totalMatieres.toString(), Colors.blue),
+                _buildStatItem(Icons.storage, 'Stock Total',
+                    totalQuantite.toStringAsFixed(2), Colors.green),
+                _buildStatItem(Icons.trending_down, 'Consommation',
+                    totalConsommation.toStringAsFixed(2), Colors.red),
               ],
             ),
           ],
@@ -211,180 +297,152 @@ class _StatistiquesViewState extends State<StatistiquesView> {
   }
 
   Widget _buildMatiereQuantiteChart(List<Matiere> matieres) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 5,
-      shadowColor: Colors.grey.withOpacity(0.2),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.bar_chart, color: Colors.indigo),
-                SizedBox(width: 8),
-                Text(
-                  'Quantité par Matière',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 300,
-              child: BarChart(
-                BarChartData(
-                  alignment: BarChartAlignment.spaceAround,
-                  maxY: matieres.fold(
-                          0.0, (max, m) => m.quantite > max ? m.quantite : max) * 1.2,
-                  barGroups: matieres
-                      .asMap()
-                      .entries
-                      .map(
-                        (entry) => BarChartGroupData(
-                          x: entry.key,
-                          barRods: [
-                            BarChartRodData(
-                              toY: entry.value.quantite,
-                              color: Colors.indigoAccent,
-                              width: 22,
-                              borderRadius: BorderRadius.circular(4),
-                            ),
-                          ],
-                        ),
-                      )
-                      .toList(),
-                  titlesData: FlTitlesData(
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) => Text(
-                          matieres[value.toInt()].reference.substring(0, 3),
-                          style: const TextStyle(fontSize: 10),
-                        ),
-                      ),
-                    ),
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: true),
-                    ),
-                  ),
+  return Card(
+    elevation: 6,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    child: Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.indigo.shade50, Colors.white],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.bar_chart, color: Colors.indigo, size: 24),
+              SizedBox(width: 8),
+              Text(
+                'Quantité par Matière',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.indigo,
                 ),
               ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 350,
+            child: BarChart(
+              BarChartData(
+                alignment: BarChartAlignment.spaceAround,
+                maxY: matieres.fold(0.0, (max, m) => m.quantite > max ? m.quantite : max) * 1.2,
+                barTouchData: BarTouchData(
+                  enabled: true,
+                  touchTooltipData: BarTouchTooltipData(
+                    getTooltipColor: (group) => Colors.indigo.withOpacity(0.8), // Fixed here
+                    getTooltipItem: (group, groupIndex, rod, rodIndex) {
+                      return BarTooltipItem(
+                        '${matieres[groupIndex].reference}\n${rod.toY.toStringAsFixed(2)}',
+                        const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      );
+                    },
+                  ),
+                  touchCallback: (FlTouchEvent event, barTouchResponse) {
+                    setState(() {
+                      if (!event.isInterestedForInteractions ||
+                          barTouchResponse == null ||
+                          barTouchResponse.spot == null) {
+                        _touchedBarIndex = -1;
+                        return;
+                      }
+                      _touchedBarIndex = barTouchResponse.spot!.touchedBarGroupIndex;
+                    });
+                  },
+                ),
+                barGroups: matieres.asMap().entries.map((entry) {
+                  final isTouched = _touchedBarIndex == entry.key;
+                  return BarChartGroupData(
+                    x: entry.key,
+                    barRods: [
+                      BarChartRodData(
+                        toY: entry.value.quantite,
+                        color: isTouched ? Colors.indigo : Colors.indigoAccent,
+                        width: 20,
+                        borderRadius: BorderRadius.circular(4),
+                        backDrawRodData: BackgroundBarChartRodData(
+                          show: true,
+                          toY: matieres.fold(0.0, (max, m) => m.quantite > max ? m.quantite : max) * 1.2,
+                          color: Colors.grey.withOpacity(0.1),
+                        ),
+                      ),
+                    ],
+                  );
+                }).toList(),
+                titlesData: FlTitlesData(
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 60,
+                      getTitlesWidget: (value, meta) {
+                        final index = value.toInt();
+                        if (index >= 0 && index < matieres.length) {
+                          return Transform.rotate(
+                            angle: -45 * 3.14159 / 180,
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: Text(
+                                matieres[index].reference,
+                                style: const TextStyle(fontSize: 10, color: Colors.black87),
+                              ),
+                            ),
+                          );
+                        }
+                        return const Text('');
+                      },
+                    ),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: true, reservedSize: 40),
+                  ),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                ),
+                gridData: FlGridData(show: true, drawVerticalLine: false),
+                borderData: FlBorderData(show: false),
+              ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildMatiereMovementsChart(List<Matiere> matieres) {
     final ajouts = matieres.fold(
         0.0,
-        (sum, m) => sum +
+        (sum, m) =>
+            sum +
             m.historique
                 .where((h) => h.action.toLowerCase() == 'ajout')
                 .fold(0.0, (sum, h) => sum + h.quantite));
     final consommations = matieres.fold(
         0.0,
-        (sum, m) => sum +
+        (sum, m) =>
+            sum +
             m.historique
                 .where((h) => h.action.toLowerCase() == 'consommation')
                 .fold(0.0, (sum, h) => sum + h.quantite));
 
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 5,
-      shadowColor: Colors.grey.withOpacity(0.2),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            const Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.donut_large, color: Colors.teal),
-                SizedBox(width: 8),
-                Text(
-                  'Mouvements de Stock',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            SizedBox(
-              height: 200,
-              child: PieChart(
-                PieChartData(
-                  sections: [
-                    PieChartSectionData(
-                      value: ajouts,
-                      color: Colors.green,
-                      title: 'Ajouts\n${ajouts.toStringAsFixed(2)}',
-                      radius: 60,
-                      titleStyle: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    PieChartSectionData(
-                      value: consommations,
-                      color: Colors.red,
-                      title: 'Consommations\n${consommations.toStringAsFixed(2)}',
-                      radius: 60,
-                      titleStyle: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                  centerSpaceRadius: 40,
-                  sectionsSpace: 2,
-                ),
-              ),
-            ),
-            const SizedBox(height: 10),
-            Wrap(
-              spacing: 16,
-              alignment: WrapAlignment.center,
-              children: [
-                _buildLegendDot(Colors.green, 'Ajouts'),
-                _buildLegendDot(Colors.red, 'Consommations'),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildConsumptionTrendChart(List<Matiere> matieres) {
-    final consumptionByDate = <String, double>{};
-    for (var matiere in matieres) {
-      for (var entry in matiere.historique) {
-        if (entry.action.toLowerCase() == 'consommation') {
-          final dateKey = _formatDateForPeriod(entry.date);
-          consumptionByDate[dateKey] =
-              (consumptionByDate[dateKey] ?? 0) + entry.quantite;
-        }
-      }
-    }
-
-    final sortedDates = consumptionByDate.keys.toList()..sort();
-    final dataPoints = sortedDates.asMap().entries.map((entry) {
-      return FlSpot(entry.key.toDouble(), consumptionByDate[entry.value]!);
-    }).toList();
-
-    if (dataPoints.isEmpty) {
+    final total = ajouts + consommations;
+    if (total == 0) {
       return const Card(
         child: Padding(
           padding: EdgeInsets.all(16),
           child: Text(
-            'Aucune donnée de consommation pour la période sélectionnée',
+            'Aucun mouvement de stock pour la période sélectionnée',
             style: TextStyle(fontSize: 16, color: Colors.grey),
             textAlign: TextAlign.center,
           ),
@@ -393,66 +451,89 @@ class _StatistiquesViewState extends State<StatistiquesView> {
     }
 
     return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 5,
-      shadowColor: Colors.grey.withOpacity(0.2),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
+      elevation: 6,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.teal.shade50, Colors.white],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.trending_up, color: Colors.blue),
+                Icon(Icons.donut_large, color: Colors.teal, size: 24),
                 SizedBox(width: 8),
                 Text(
-                  'Tendance de Consommation',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  'Mouvements de Stock',
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.teal),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 16),
             SizedBox(
-              height: 300,
-              child: LineChart(
-                LineChartData(
-                  lineBarsData: [
-                    LineChartBarData(
-                      spots: dataPoints,
-                      isCurved: true,
-                      color: Colors.blue,
-                      barWidth: 4,
-                      belowBarData: BarAreaData(
-                        show: true,
-                        color: Colors.blue.withOpacity(0.2),
-                      ),
+              height: 250,
+              child: PieChart(
+                PieChartData(
+                  pieTouchData: PieTouchData(
+                    touchCallback: (FlTouchEvent event, pieTouchResponse) {
+                      setState(() {
+                        if (!event.isInterestedForInteractions ||
+                            pieTouchResponse == null ||
+                            pieTouchResponse.touchedSection == null) {
+                          _touchedPieIndex = -1;
+                          return;
+                        }
+                        _touchedPieIndex = pieTouchResponse
+                            .touchedSection!.touchedSectionIndex;
+                      });
+                    },
+                  ),
+                  sections: [
+                    PieChartSectionData(
+                      value: ajouts,
+                      color: Colors.green,
+                      radius: _touchedPieIndex == 0 ? 80 : 70,
+                      title: '',
+                      badgeWidget: _buildPieBadge(
+                          'Ajouts', ajouts.toStringAsFixed(2), Colors.green),
+                      badgePositionPercentageOffset: 1.2,
+                    ),
+                    PieChartSectionData(
+                      value: consommations,
+                      color: Colors.red,
+                      radius: _touchedPieIndex == 1 ? 80 : 70,
+                      title: '',
+                      badgeWidget: _buildPieBadge('Consommations',
+                          consommations.toStringAsFixed(2), Colors.red),
+                      badgePositionPercentageOffset: 1.2,
                     ),
                   ],
-                  titlesData: FlTitlesData(
-                    bottomTitles: AxisTitles(
-                      sideTitles: SideTitles(
-                        showTitles: true,
-                        getTitlesWidget: (value, meta) {
-                          final index = value.toInt();
-                          if (index >= 0 && index < sortedDates.length) {
-                            return Text(
-                              sortedDates[index],
-                              style: const TextStyle(fontSize: 10),
-                            );
-                          }
-                          return const Text('');
-                        },
-                      ),
-                    ),
-                    leftTitles: AxisTitles(
-                      sideTitles: SideTitles(showTitles: true),
-                    ),
-                  ),
-                  borderData: FlBorderData(show: true),
-                  gridData: FlGridData(show: true),
+                  centerSpaceRadius: 50,
+                  sectionsSpace: 4,
                 ),
               ),
+            ),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 24,
+              alignment: WrapAlignment.center,
+              children: [
+                _buildLegendDot(
+                    Colors.green, 'Ajouts (${ajouts.toStringAsFixed(2)})'),
+                _buildLegendDot(Colors.red,
+                    'Consommations (${consommations.toStringAsFixed(2)})'),
+              ],
             ),
           ],
         ),
@@ -460,41 +541,217 @@ class _StatistiquesViewState extends State<StatistiquesView> {
     );
   }
 
-  Widget _buildMatieresTable(List<Matiere> matieres) {
-    return Card(
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-      elevation: 6,
-      shadowColor: Colors.black.withOpacity(0.05),
-      margin: const EdgeInsets.symmetric(vertical: 10),
+  Widget _buildPieBadge(String title, String value, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.8),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Text(
+        '$title: $value',
+        style: const TextStyle(
+            fontSize: 12, color: Colors.white, fontWeight: FontWeight.bold),
+      ),
+    );
+  }
+
+Widget _buildConsumptionTrendChart(List<Matiere> matieres) {
+  final consumptionByDate = <String, double>{};
+  for (var matiere in matieres) {
+    for (var entry in matiere.historique) {
+      if (entry.action.toLowerCase() == 'consommation') {
+        final dateKey = _formatDateForPeriod(entry.date);
+        consumptionByDate[dateKey] = (consumptionByDate[dateKey] ?? 0) + entry.quantite;
+      }
+    }
+  }
+
+  final sortedDates = consumptionByDate.keys.toList()..sort();
+  final dataPoints = sortedDates.asMap().entries.map((entry) {
+    return FlSpot(entry.key.toDouble(), consumptionByDate[entry.value]!);
+  }).toList();
+
+  if (dataPoints.isEmpty) {
+    return const Card(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: EdgeInsets.all(16),
+        child: Text(
+          'Aucune donnée de consommation pour la période sélectionnée',
+          style: TextStyle(fontSize: 16, color: Colors.grey),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+  return Card(
+    elevation: 6,
+    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+    child: Container(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.blue.shade50, Colors.white],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.trending_up, color: Colors.blue, size: 24),
+              SizedBox(width: 8),
+              Text(
+                'Tendance de Consommation',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.blue),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            height: 350,
+            child: LineChart(
+              LineChartData(
+                lineTouchData: LineTouchData(
+                  enabled: true,
+                  touchTooltipData: LineTouchTooltipData(
+                    getTooltipColor: (LineBarSpot spot) => Colors.blue.withOpacity(0.8), // Fixed here
+                    getTooltipItems: (touchedSpots) {
+                      return touchedSpots.map((spot) {
+                        return LineTooltipItem(
+                          '${sortedDates[spot.x.toInt()]}: ${spot.y.toStringAsFixed(2)}',
+                          const TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                        );
+                      }).toList();
+                    },
+                  ),
+                ),
+                lineBarsData: [
+                  LineChartBarData(
+                    spots: dataPoints,
+                    isCurved: true,
+                    color: Colors.blue,
+                    barWidth: 4,
+                    belowBarData: BarAreaData(
+                      show: true,
+                      color: Colors.blue.withOpacity(0.2),
+                    ),
+                    dotData: FlDotData(show: true),
+                  ),
+                ],
+                titlesData: FlTitlesData(
+                  bottomTitles: AxisTitles(
+                    sideTitles: SideTitles(
+                      showTitles: true,
+                      reservedSize: 40,
+                      interval: sortedDates.length > 10 ? sortedDates.length / 5 : 1,
+                      getTitlesWidget: (value, meta) {
+                        final index = value.toInt();
+                        if (index >= 0 && index < sortedDates.length) {
+                          return Transform.rotate(
+                            angle: -45 * 3.14159 / 180,
+                            child: Padding(
+                              padding: const EdgeInsets.only(right: 8),
+                              child: Text(
+                                sortedDates[index],
+                                style: const TextStyle(fontSize: 10, color: Colors.black87),
+                              ),
+                            ),
+                          );
+                        }
+                        return const Text('');
+                      },
+                    ),
+                  ),
+                  leftTitles: AxisTitles(
+                    sideTitles: SideTitles(showTitles: true, reservedSize: 40),
+                  ),
+                  topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                  rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
+                ),
+                gridData: FlGridData(show: true, drawVerticalLine: false),
+                borderData: FlBorderData(show: false),
+              ),
+            ),
+          ),
+        ],
+      ),
+    ),
+  );
+}
+
+  Widget _buildMatieresTable(List<Matiere> matieres) {
+    const itemsPerPage = 10;
+    int currentPage = 0;
+
+    return Card(
+      elevation: 6,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      child: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.orange.shade50, Colors.white],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        padding: const EdgeInsets.all(20),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             const Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.inventory_2, color: Colors.deepOrange),
+                Icon(Icons.inventory_2, color: Colors.deepOrange, size: 24),
                 SizedBox(width: 8),
                 Text(
                   'Détail des Matières',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.deepOrange),
                 ),
               ],
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 16),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: DataTable(
-                headingRowColor: MaterialStateProperty.all(Colors.grey.shade100),
-                columns: const [
-                  DataColumn(label: Text('Référence')),
-                  DataColumn(label: Text('Couleur')),
-                  DataColumn(label: Text('Quantité'), numeric: true),
-                  DataColumn(label: Text('Consommation Récente'), numeric: true),
-                  DataColumn(label: Text('Dernier mouvement')),
+                headingRowColor: MaterialStateProperty.all(Colors.blue.shade50),
+                dataRowColor: MaterialStateProperty.resolveWith((states) {
+                  return states.contains(MaterialState.selected)
+                      ? Colors.blue.shade100
+                      : null;
+                }),
+                columns: [
+                  const DataColumn(
+                      label: Text('Référence',
+                          style: TextStyle(fontWeight: FontWeight.bold))),
+                  const DataColumn(
+                      label: Text('Couleur',
+                          style: TextStyle(fontWeight: FontWeight.bold))),
+                  const DataColumn(
+                      label: Text('Quantité',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      numeric: true),
+                  const DataColumn(
+                      label: Text('Consommation Récente',
+                          style: TextStyle(fontWeight: FontWeight.bold)),
+                      numeric: true),
+                  const DataColumn(
+                      label: Text('Dernier Mouvement',
+                          style: TextStyle(fontWeight: FontWeight.bold))),
                 ],
-                rows: matieres.take(10).map((matiere) {
+                rows: matieres
+                    .skip(currentPage * itemsPerPage)
+                    .take(itemsPerPage)
+                    .map((matiere) {
                   final recentConsumption = matiere.historique
                       .where((h) =>
                           h.action.toLowerCase() == 'consommation' &&
@@ -504,18 +761,86 @@ class _StatistiquesViewState extends State<StatistiquesView> {
                       ? DateFormat('dd/MM').format(matiere.historique.last.date)
                       : 'N/A';
 
-                  return DataRow(cells: [
-                    DataCell(Text(matiere.reference)),
-                    DataCell(Text(matiere.couleur)),
-                    DataCell(Text(matiere.quantite.toStringAsFixed(2))),
-                    DataCell(Text(recentConsumption.toStringAsFixed(2))),
-                    DataCell(Text(dernierMouvement)),
-                  ]);
+                  return DataRow(
+                    cells: [
+                      DataCell(
+                        GestureDetector(
+                          onTap: () => _showMatiereDetails(context, matiere),
+                          child: Text(matiere.reference,
+                              style: const TextStyle(
+                                  color: Colors.blue,
+                                  decoration: TextDecoration.underline)),
+                        ),
+                      ),
+                      DataCell(Text(matiere.couleur)),
+                      DataCell(Text(matiere.quantite.toStringAsFixed(2))),
+                      DataCell(Text(recentConsumption.toStringAsFixed(2))),
+                      DataCell(Text(dernierMouvement)),
+                    ],
+                  );
                 }).toList(),
               ),
             ),
+            if (matieres.length > itemsPerPage)
+              Padding(
+                padding: const EdgeInsets.only(top: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.arrow_back),
+                      onPressed: currentPage > 0
+                          ? () => setState(() => currentPage--)
+                          : null,
+                    ),
+                    Text(
+                        'Page ${currentPage + 1} / ${(matieres.length / itemsPerPage).ceil()}'),
+                    IconButton(
+                      icon: const Icon(Icons.arrow_forward),
+                      onPressed:
+                          (currentPage + 1) * itemsPerPage < matieres.length
+                              ? () => setState(() => currentPage++)
+                              : null,
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
+      ),
+    );
+  }
+
+  void _showMatiereDetails(BuildContext context, Matiere matiere) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text('Détails de ${matiere.reference}'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Couleur: ${matiere.couleur}'),
+              Text('Quantité: ${matiere.quantite.toStringAsFixed(2)}'),
+              const SizedBox(height: 16),
+              const Text('Historique des Mouvements:',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
+              ...matiere.historique.take(5).map((h) => Padding(
+                    padding: const EdgeInsets.only(top: 8),
+                    child: Text(
+                      '${DateFormat('dd/MM HH:mm').format(h.date)} - ${h.action}: ${h.quantite.toStringAsFixed(2)}',
+                    ),
+                  )),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Fermer'),
+          ),
+        ],
       ),
     );
   }
@@ -525,38 +850,40 @@ class _StatistiquesViewState extends State<StatistiquesView> {
       mainAxisSize: MainAxisSize.min,
       children: [
         Container(
-          width: 12,
-          height: 12,
+          width: 16,
+          height: 16,
           decoration: BoxDecoration(color: color, shape: BoxShape.circle),
         ),
-        const SizedBox(width: 6),
-        Text(label),
+        const SizedBox(width: 8),
+        Text(label,
+            style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500)),
       ],
     );
   }
 
-  Widget _buildStatItem(String label, String value, Color color) {
+  Widget _buildStatItem(
+      IconData icon, String label, String value, Color color) {
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(16),
           decoration: BoxDecoration(
-            color: color.withOpacity(0.1),
+            gradient: LinearGradient(
+                colors: [color.withOpacity(0.2), color.withOpacity(0.1)]),
             shape: BoxShape.circle,
           ),
-          child: Text(
-            value,
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: color,
-            ),
-          ),
+          child: Icon(icon, color: color, size: 32),
         ),
         const SizedBox(height: 8),
         Text(
+          value,
+          style: TextStyle(
+              fontSize: 20, fontWeight: FontWeight.bold, color: color),
+        ),
+        const SizedBox(height: 4),
+        Text(
           label,
-          style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+          style: TextStyle(fontSize: 14, color: Colors.grey.shade700),
         ),
       ],
     );
@@ -576,7 +903,8 @@ class _StatistiquesViewState extends State<StatistiquesView> {
                 level: 0,
                 child: pw.Text(
                   'Statistiques de Consommation des Matières',
-                  style: pw.TextStyle(fontSize: 24, fontWeight: pw.FontWeight.bold),
+                  style: pw.TextStyle(
+                      fontSize: 24, fontWeight: pw.FontWeight.bold),
                 ),
               ),
               pw.SizedBox(height: 10),
@@ -592,15 +920,17 @@ class _StatistiquesViewState extends State<StatistiquesView> {
               pw.SizedBox(height: 20),
               pw.Text(
                 'Résumé des Statistiques',
-                style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+                style:
+                    pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
               ),
               pw.SizedBox(height: 10),
               pw.Row(
                 mainAxisAlignment: pw.MainAxisAlignment.spaceAround,
                 children: [
-                  _buildPdfStatItem('Matières', filteredMatieres.length.toString(), PdfColors.blue),
+                  _buildPdfStatItem('Matières',
+                      filteredMatieres.length.toString(), PdfColors.blue),
                   _buildPdfStatItem(
-                      'Stock total',
+                      'Stock Total',
                       filteredMatieres
                           .fold(0.0, (sum, m) => sum + m.quantite)
                           .toStringAsFixed(2),
@@ -610,9 +940,12 @@ class _StatistiquesViewState extends State<StatistiquesView> {
                       filteredMatieres
                           .fold(
                               0.0,
-                              (sum, m) => sum +
+                              (sum, m) =>
+                                  sum +
                                   m.historique
-                                      .where((h) => h.action.toLowerCase() == 'consommation')
+                                      .where((h) =>
+                                          h.action.toLowerCase() ==
+                                          'consommation')
                                       .fold(0.0, (sum, h) => sum + h.quantite))
                           .toStringAsFixed(2),
                       PdfColors.red),
@@ -621,13 +954,20 @@ class _StatistiquesViewState extends State<StatistiquesView> {
               pw.SizedBox(height: 30),
               pw.Text(
                 'Détail des Matières (${filteredMatieres.length} résultats)',
-                style: pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
+                style:
+                    pw.TextStyle(fontSize: 18, fontWeight: pw.FontWeight.bold),
               ),
               pw.SizedBox(height: 10),
               pw.Table.fromTextArray(
                 context: context,
-                headers: ['Référence', 'Couleur', 'Quantité', 'Consommation Récente', 'Dernier mouvement'],
-                data: filteredMatieres.take(20).map((matiere) {
+                headers: [
+                  'Référence',
+                  'Couleur',
+                  'Quantité',
+                  'Consommation Récente',
+                  'Dernier Mouvement'
+                ],
+                data: filteredMatieres.map((matiere) {
                   final recentConsumption = matiere.historique
                       .where((h) =>
                           h.action.toLowerCase() == 'consommation' &&
@@ -652,8 +992,7 @@ class _StatistiquesViewState extends State<StatistiquesView> {
     );
 
     await Printing.layoutPdf(
-      onLayout: (PdfPageFormat format) async => pdf.save(),
-    );
+        onLayout: (PdfPageFormat format) async => pdf.save());
   }
 
   pw.Widget _buildPdfStatItem(String label, String value, PdfColor color) {
@@ -673,10 +1012,7 @@ class _StatistiquesViewState extends State<StatistiquesView> {
           child: pw.Text(
             value,
             style: pw.TextStyle(
-              fontSize: 16,
-              fontWeight: pw.FontWeight.bold,
-              color: color,
-            ),
+                fontSize: 16, fontWeight: pw.FontWeight.bold, color: color),
           ),
         ),
         pw.SizedBox(height: 5),
@@ -709,6 +1045,7 @@ class _StatistiquesViewState extends State<StatistiquesView> {
     if (picked != null && picked != _selectedDate) {
       setState(() {
         _selectedDate = picked;
+        _animationController.forward(from: 0);
       });
     }
   }
@@ -719,8 +1056,9 @@ class _StatistiquesViewState extends State<StatistiquesView> {
       final matchesSearch = searchQuery.isEmpty ||
           matiere.reference.toLowerCase().contains(searchQuery) ||
           matiere.couleur.toLowerCase().contains(searchQuery);
-      final matchesPeriod = matiere.historique.any(
-          (h) => h.action.toLowerCase() == 'consommation' && _isWithinSelectedPeriod(h.date));
+      final matchesPeriod = matiere.historique.any((h) =>
+          h.action.toLowerCase() == 'consommation' &&
+          _isWithinSelectedPeriod(h.date));
       return matchesSearch && (matchesPeriod || _selectedPeriod == 'Mois');
     }).toList();
   }
@@ -732,12 +1070,15 @@ class _StatistiquesViewState extends State<StatistiquesView> {
             date.month == _selectedDate.month &&
             date.day == _selectedDate.day;
       case 'Semaine':
-        final startOfWeek = _selectedDate.subtract(Duration(days: _selectedDate.weekday - 1));
+        final startOfWeek =
+            _selectedDate.subtract(Duration(days: _selectedDate.weekday - 1));
         final endOfWeek = startOfWeek.add(const Duration(days: 6));
-        return date.isAfter(startOfWeek) && date.isBefore(endOfWeek.add(const Duration(days: 1)));
+        return date.isAfter(startOfWeek) &&
+            date.isBefore(endOfWeek.add(const Duration(days: 1)));
       case 'Mois':
       default:
-        return date.year == _selectedDate.year && date.month == _selectedDate.month;
+        return date.year == _selectedDate.year &&
+            date.month == _selectedDate.month;
     }
   }
 
