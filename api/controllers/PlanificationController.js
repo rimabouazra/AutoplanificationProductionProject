@@ -484,9 +484,9 @@ exports.autoPlanifierCommande = async (req, res) => {
 
     const response = {
       planifications: [...planifications, ...partialPlanifications],
-      statut: hasInsufficientStock ? "en attente" : "planifiée",
+      statut: hasInsufficientStock || partialPlanifications.length > 0 ? "en attente" : "planifiée",
       hasInsufficientStock,
-      partialAvailable: hasInsufficientStock,
+      partialAvailable: hasInsufficientStock || partialPlanifications.length > 0,
     };
 
     return res.status(preview ? 200 : 201).json(response);

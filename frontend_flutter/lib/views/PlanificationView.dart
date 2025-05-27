@@ -8,7 +8,8 @@ import '../models/modele.dart';
 import '../models/planification.dart';
 import '../providers/PlanificationProvider .dart';
 import '../services/api_service.dart';
-
+import 'package:timezone/timezone.dart' as tz;
+import 'package:timezone/data/latest.dart' as tz;
 class PlanificationView extends StatefulWidget {
   @override
   _PlanificationViewState createState() => _PlanificationViewState();
@@ -173,7 +174,7 @@ class _PlanificationViewState extends State<PlanificationView> {
                           "Client: ${commande?.client.name ?? 'Inconnu'}",
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
-                            fontSize: 14,
+                            fontSize: 20,
                             color: Colors.deepPurple,
                           ),
                         ),
@@ -183,23 +184,23 @@ class _PlanificationViewState extends State<PlanificationView> {
                             SizedBox(height: 4),
                             Text(
                               "Modele: $modelName",
-                              style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                              style: TextStyle(fontSize: 20, color: Colors.grey[800]),
                             ),
                             Text(
                               "Taille: ${waitingPlan.taille ?? modeleData?.taille ?? 'Non spécifié'}",
-                              style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                              style: TextStyle(fontSize: 20, color: Colors.grey[800]),
                             ),
                             Text(
                               "Couleur: ${waitingPlan.couleur ?? modeleData?.couleur ?? 'Non spécifié'}",
-                              style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                              style: TextStyle(fontSize: 20, color: Colors.grey[800]),
                             ),
                             Text(
                               "Quantité: ${waitingPlan.quantite?.toString() ?? modeleData?.quantite?.toString() ?? 'Non spécifié'}",
-                              style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                            style: TextStyle(fontSize: 20, color: Colors.grey[800]),
                             ),
                             Text(
                               "Ajouté le :  ${waitingPlan.createdAt != null ? DateFormat("dd/MM/yyyy HH:mm").format(waitingPlan.createdAt!) : 'Non spécifié'}",
-                              style: TextStyle(fontSize: 12, color: Colors.grey[800]),
+                              style: TextStyle(fontSize: 20, color: Colors.grey[800]),
                             ),
                           ],
                         ),
@@ -377,24 +378,27 @@ class _PlanificationViewState extends State<PlanificationView> {
   void _calculateDateRange(List<Planification> planifications) {
     if (planifications.isEmpty || _isDateRangeInitialized) return;
 
-    DateTime minDate = planifications.first.debutPrevue ?? DateTime.now();
-    DateTime maxDate = planifications.first.finPrevue ?? DateTime.now();
-
+    DateTime? maxDate;
     for (var plan in planifications) {
-      if (plan.debutPrevue != null && plan.debutPrevue!.isBefore(minDate)) {
-        minDate = plan.debutPrevue!;
-      }
-      if (plan.finPrevue != null && plan.finPrevue!.isAfter(maxDate)) {
+      if (plan.finPrevue != null && (maxDate == null || plan.finPrevue!.isAfter(maxDate))) {
         maxDate = plan.finPrevue!;
       }
     }
 
     setState(() {
-      _startDate = minDate.subtract(Duration(days: 1));
-      _endDate = maxDate.add(Duration(days: 1));
+      _endDate = maxDate?.add(Duration(days: 1)) ??
+          switch (_selectedViewMode) {
+            'journée' => _startDate!.add(Duration(days: 1, minutes: -1)),
+            'semaine' => _startDate!
+                .subtract(Duration(days: _startDate!.weekday - 1))
+                .add(Duration(days: 6, hours: 23, minutes: 59)),
+            'mois' => DateTime(_startDate!.year, _startDate!.month + 1, 0, 23, 59),
+            _ => _startDate!.add(Duration(days: 7)),
+          };
       _isDateRangeInitialized = true;
     });
   }
+
 
   Widget _buildFilterBar(BuildContext context, PlanificationProvider provider) {
     return FadeIn(
@@ -603,6 +607,11 @@ class _PlanificationViewState extends State<PlanificationView> {
       }
     }
 
+    // Define consistent text styles
+    const headerTextStyle = TextStyle(fontWeight: FontWeight.bold, fontSize: 18);
+    const cellTextStyle = TextStyle(fontSize: 16);
+    const dayHeaderStyle = TextStyle(fontWeight: FontWeight.bold, fontSize: 20);
+
     return SingleChildScrollView(
       scrollDirection: Axis.vertical,
       child: ConstrainedBox(
@@ -619,7 +628,7 @@ class _PlanificationViewState extends State<PlanificationView> {
                   padding: EdgeInsets.all(8.0),
                   child: Text(
                     entry.key,
-                    style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                    style: dayHeaderStyle,
                   ),
                 ),
                 ConstrainedBox(
@@ -627,41 +636,35 @@ class _PlanificationViewState extends State<PlanificationView> {
                     minWidth: MediaQuery.of(context).size.width,
                   ),
                   child: DataTable(
-                    columnSpacing: 0,
-                    dataRowHeight: 60,
+                    columnSpacing: 12, // Increased spacing
+                    dataRowHeight: 70, // Increased row height
                     headingRowColor: MaterialStateColor.resolveWith(
                             (states) => Colors.deepPurple.withOpacity(0.1)),
                     columns: [
-                      DataColumn(
-                          label: Text('Client', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(
-                          label: Text('Modèle', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(
-                          label: Text('Taille', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(
-                          label: Text('Machine', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(
-                          label: Text('Salle', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(
-                          label: Text('Début', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(
-                          label: Text('Fin', style: TextStyle(fontWeight: FontWeight.bold))),
-                      DataColumn(
-                          label: Text('Statut', style: TextStyle(fontWeight: FontWeight.bold))),
+                      DataColumn(label: Text('Client', style: headerTextStyle)),
+                      DataColumn(label: Text('Modèle', style: headerTextStyle)),
+                      DataColumn(label: Text('Taille', style: headerTextStyle)),
+                      DataColumn(label: Text('Machine', style: headerTextStyle)),
+                      DataColumn(label: Text('Salle', style: headerTextStyle)),
+                      DataColumn(label: Text('Début', style: headerTextStyle)),
+                      DataColumn(label: Text('Fin', style: headerTextStyle)),
+                      DataColumn(label: Text('Statut', style: headerTextStyle)),
                     ],
                     rows: entry.value.asMap().entries.map((rowEntry) {
                       final plan = rowEntry.value;
                       final commande =
                       plan.commandes.isNotEmpty ? plan.commandes.first : null;
-                      final modeleData =
-                      commande?.modeles.isNotEmpty == true ? commande!.modeles.first : null;
+                      final modeleData = commande?.modeles.isNotEmpty == true
+                          ? commande!.modeles.first
+                          : null;
 
                       Future<String?> getModelName() async {
                         if (plan.modele != null) {
                           return plan.modele!.nom;
                         } else if (modeleData?.modele != null) {
                           if (modeleData!.modele is String) {
-                            return await ApiService().getModeleNom(modeleData.modele as String);
+                            return await ApiService()
+                                .getModeleNom(modeleData.modele as String);
                           } else if (modeleData!.modele is Modele) {
                             return (modeleData.modele as Modele).nom;
                           }
@@ -675,7 +678,7 @@ class _PlanificationViewState extends State<PlanificationView> {
                             plan.commandes.isNotEmpty
                                 ? plan.commandes.first.client.name
                                 : 'Aucun client',
-                            style: TextStyle(fontSize: 12),
+                            style: cellTextStyle,
                             overflow: TextOverflow.ellipsis,
                           )),
                           DataCell(FutureBuilder<String?>(
@@ -684,33 +687,37 @@ class _PlanificationViewState extends State<PlanificationView> {
                               final modelName = snapshot.data ?? 'Chargement...';
                               return Text(
                                 modelName,
-                                style: TextStyle(fontSize: 12),
+                                style: cellTextStyle,
                                 overflow: TextOverflow.ellipsis,
                               );
                             },
                           )),
                           DataCell(Text(
                             plan.taille ?? modeleData?.taille ?? 'Non spécifié',
-                            style: TextStyle(fontSize: 12),
+                            style: cellTextStyle,
                             overflow: TextOverflow.ellipsis,
                           )),
                           DataCell(Text(
-                            plan.machines.isNotEmpty ? plan.machines.first.nom : 'Aucune machine',
-                            style: TextStyle(fontSize: 12),
+                            plan.machines.isNotEmpty
+                                ? plan.machines.first.nom
+                                : 'Aucune machine',
+                            style: cellTextStyle,
                             overflow: TextOverflow.ellipsis,
                           )),
                           DataCell(Text(
-                            plan.machines.isNotEmpty ? plan.machines.first.salle.nom : 'N/A',
-                            style: TextStyle(fontSize: 12),
+                            plan.machines.isNotEmpty
+                                ? plan.machines.first.salle.nom
+                                : 'N/A',
+                            style: cellTextStyle,
                             overflow: TextOverflow.ellipsis,
                           )),
                           DataCell(Text(
                             _formatDateTime(plan.debutPrevue),
-                            style: TextStyle(fontSize: 12),
+                            style: cellTextStyle,
                           )),
                           DataCell(Text(
                             _formatDateTime(plan.finPrevue),
-                            style: TextStyle(fontSize: 12),
+                            style: cellTextStyle,
                           )),
                           DataCell(_buildStatusBadge(plan.statut)),
                         ],
@@ -723,32 +730,35 @@ class _PlanificationViewState extends State<PlanificationView> {
           }).toList(),
         )
             : DataTable(
-          columnSpacing: 0,
-          dataRowHeight: 60,
+          columnSpacing: 12, // Increased spacing
+          dataRowHeight: 70, // Increased row height
           headingRowColor: MaterialStateColor.resolveWith(
                   (states) => Colors.deepPurple.withOpacity(0.1)),
           columns: [
-            DataColumn(label: Text('Client', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Modèle', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Taille', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Machine', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Salle', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Début', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Fin', style: TextStyle(fontWeight: FontWeight.bold))),
-            DataColumn(label: Text('Statut', style: TextStyle(fontWeight: FontWeight.bold))),
+            DataColumn(label: Text('Client', style: headerTextStyle)),
+            DataColumn(label: Text('Modèle', style: headerTextStyle)),
+            DataColumn(label: Text('Taille', style: headerTextStyle)),
+            DataColumn(label: Text('Machine', style: headerTextStyle)),
+            DataColumn(label: Text('Salle', style: headerTextStyle)),
+            DataColumn(label: Text('Début', style: headerTextStyle)),
+            DataColumn(label: Text('Fin', style: headerTextStyle)),
+            DataColumn(label: Text('Statut', style: headerTextStyle)),
           ],
           rows: planifications.asMap().entries.map((entry) {
             final plan = entry.value;
-            final commande = plan.commandes.isNotEmpty ? plan.commandes.first : null;
-            final modeleData =
-            commande?.modeles.isNotEmpty == true ? commande!.modeles.first : null;
+            final commande =
+            plan.commandes.isNotEmpty ? plan.commandes.first : null;
+            final modeleData = commande?.modeles.isNotEmpty == true
+                ? commande!.modeles.first
+                : null;
 
             Future<String?> getModelName() async {
               if (plan.modele != null) {
                 return plan.modele!.nom;
               } else if (modeleData?.modele != null) {
                 if (modeleData!.modele is String) {
-                  return await ApiService().getModeleNom(modeleData.modele as String);
+                  return await ApiService()
+                      .getModeleNom(modeleData.modele as String);
                 } else if (modeleData!.modele is Modele) {
                   return (modeleData.modele as Modele).nom;
                 }
@@ -759,8 +769,10 @@ class _PlanificationViewState extends State<PlanificationView> {
             return DataRow(
               cells: [
                 DataCell(Text(
-                  plan.commandes.isNotEmpty ? plan.commandes.first.client.name : 'Aucun client',
-                  style: TextStyle(fontSize: 12),
+                  plan.commandes.isNotEmpty
+                      ? plan.commandes.first.client.name
+                      : 'Aucun client',
+                  style: cellTextStyle,
                   overflow: TextOverflow.ellipsis,
                 )),
                 DataCell(FutureBuilder<String?>(
@@ -769,33 +781,37 @@ class _PlanificationViewState extends State<PlanificationView> {
                     final modelName = snapshot.data ?? 'Chargement...';
                     return Text(
                       modelName,
-                      style: TextStyle(fontSize: 12),
+                      style: cellTextStyle,
                       overflow: TextOverflow.ellipsis,
                     );
                   },
                 )),
                 DataCell(Text(
                   plan.taille ?? modeleData?.taille ?? 'Non spécifié',
-                  style: TextStyle(fontSize: 12),
+                  style: cellTextStyle,
                   overflow: TextOverflow.ellipsis,
                 )),
                 DataCell(Text(
-                  plan.machines.isNotEmpty ? plan.machines.first.nom : 'Aucune machine',
-                  style: TextStyle(fontSize: 12),
+                  plan.machines.isNotEmpty
+                      ? plan.machines.first.nom
+                      : 'Aucune machine',
+                  style: cellTextStyle,
                   overflow: TextOverflow.ellipsis,
                 )),
                 DataCell(Text(
-                  plan.machines.isNotEmpty ? plan.machines.first.salle.nom : 'N/A',
-                  style: TextStyle(fontSize: 12),
+                  plan.machines.isNotEmpty
+                      ? plan.machines.first.salle.nom
+                      : 'N/A',
+                  style: cellTextStyle,
                   overflow: TextOverflow.ellipsis,
                 )),
                 DataCell(Text(
                   _formatDateTime(plan.debutPrevue),
-                  style: TextStyle(fontSize: 12),
+                  style: cellTextStyle,
                 )),
                 DataCell(Text(
                   _formatDateTime(plan.finPrevue),
-                  style: TextStyle(fontSize: 12),
+                  style: cellTextStyle,
                 )),
                 DataCell(_buildStatusBadge(plan.statut)),
               ],
@@ -805,7 +821,6 @@ class _PlanificationViewState extends State<PlanificationView> {
       ),
     );
   }
-
   Color _getStatusColor(String statut) {
     switch (statut) {
       case 'en attente':
@@ -819,16 +834,20 @@ class _PlanificationViewState extends State<PlanificationView> {
     }
   }
 
-  String _formatTime(DateTime? date) {
-    return date != null ? DateFormat('HH:mm').format(date) : '--:--';
-  }
-
-  String _formatDate(DateTime? date) {
-    return date != null ? DateFormat('dd/MM/yyyy').format(date) : '--/--/----';
-  }
-
   String _formatDateTime(DateTime? date) {
-    return date != null ? DateFormat('dd/MM/yyyy HH:mm').format(date) : '--/--/---- --:--';
+    if (date != null) {
+      tz.initializeTimeZones();
+      final tunis = tz.getLocation('Africa/Tunis');
+      // Convert UTC DateTime to Africa/Tunis
+      final tunisDate = tz.TZDateTime.from(date, tunis);
+      /*
+      print("Raw UTC DateTime: $date");
+      print("Converted Africa/Tunis DateTime: $tunisDate");
+      print("Formatted DateTime: ${DateFormat('dd/MM/yyyy HH:mm').format(tunisDate)}");
+      */
+      return DateFormat('dd/MM/yyyy  HH:mm').format(tunisDate);
+    }
+    return '--/--/---- --:--';
   }
 
   Widget _buildStatusBadge(String statut) {
