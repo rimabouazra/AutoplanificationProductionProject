@@ -522,7 +522,10 @@ exports.processWaitingList = async () => {
         console.log(`Planification ${plan._id} already has machines assigned`);
         continue;
       }
-
+    if (!plan.taille || !plan.couleur) {
+            console.error(`Invalid planification ${plan._id}: taille=${plan.taille}, couleur=${plan.couleur}`);
+            continue;
+        }
       const commande = await Commande.findById(plan.commandes[0])
         .populate({
           path: 'modeles.modele',
@@ -703,6 +706,15 @@ exports.confirmPlanification = async (req, res) => {
     let hasInsufficientStock = false;
 
     for (const plan of planifications) {
+    if (!plan.taille || !plan.couleur) {
+        console.error(`Invalid planification ${plan._id}: taille (${plan.taille}) or couleur (${plan.couleur}) is missing or undefined`);
+        continue;
+      }
+
+      if (plan.machines.length > 0) {
+        console.log(`Planification ${plan._id} already has machines assigned`);
+        continue;
+      }
       for (const commande of plan.commandes) {
         const cmd = await Commande.findById(commande._id || commande).populate({
           path: "modeles.modele",
@@ -1038,21 +1050,22 @@ exports.updatePlanification = async (req, res) => {
 exports.reorderWaitingPlanifications = async (req, res) => {
   try {
     const { orderedIds } = req.body;
-
     if (!orderedIds || !Array.isArray(orderedIds)) {
       console.log('Invalid orderedIds:', orderedIds);
       return res.status(400).json({ message: "orderedIds must be an array" });
     }
 
-    const updates = orderedIds.map((id, index) => {
-      return Planification.updateOne(
-        { _id: id, statut: { $in: ["en attente", "waiting_resources"] } },
-        { $set: { order: index } }
+    const BATCH_SIZE = 10; // Process in batches
+    for (let i = 0; i < orderedIds.length; i += BATCH_SIZE) {
+      const batch = orderedIds.slice(i, i + BATCH_SIZE);
+      const updates = batch.map((id, index) =>
+        Planification.updateOne(
+          { _id: id, statut: { $in: ["en attente", "waiting_resources"] } },
+          { $set: { order: i + index } }
+        )
       );
-    });
-
-    const results = await Promise.all(updates);
-    console.log('Update results:', results);
+      await Promise.all(updates);
+    }
 
     res.status(200).json({ message: "Waiting planifications reordered successfully" });
   } catch (error) {
