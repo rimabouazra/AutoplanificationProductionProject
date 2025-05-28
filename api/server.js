@@ -115,6 +115,7 @@ app.use((err, req, res, next) => {
   console.error("Erreur serveur :", err.stack);
   res.status(500).json({ message: "Erreur interne du serveur." });
 });
+app.use(cors({ origin: 'https://autoplanificationproductionproject-0s1w.onrender.com/' }));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
