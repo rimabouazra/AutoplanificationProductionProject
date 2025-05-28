@@ -49,9 +49,10 @@ class ApiService {
           'message': error['message'] ?? 'Erreur inconnue'
         };
       }
-    } catch (e) {
+    } catch (e, stackTrace) {
       print('Erreur lors de la connexion: $e');
-      return {'success': false, 'message': 'Erreur de connexion réseau'};
+      print('Stack trace: $stackTrace');
+      return {'success': false, 'message': 'Erreur de connexion réseau: $e'};
     }
   }
 
