@@ -1,5 +1,6 @@
 const dotenv = require("dotenv");
 const path = require('path');
+const BASE_URL = 'https://autoplanificationproductionproject.onrender.com/';
 
 const cron = require('node-cron');
 const axios = require('axios');
@@ -30,7 +31,7 @@ const app = express();
 app.use(helmet());
 app.use(express.json());
 app.use(cors({
-  origin: '*', // Remplacer
+  origin: 'https://autoplanificationproductionproject-0s1w.onrender.com', 
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS','PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'authorization'],
   credentials: true,
@@ -79,7 +80,6 @@ app.get("/", (req, res) => {
   res.send("API Running...");
 });
 
-const BASE_URL = 'https://autoplanificationproductionproject.onrender.com/';
 // Tâche pour mettre à jour les commandes en cours toutes les minutes
 cron.schedule('*/5 * * * *', async () => {
   try {
@@ -115,7 +115,6 @@ app.use((err, req, res, next) => {
   console.error("Erreur serveur :", err.stack);
   res.status(500).json({ message: "Erreur interne du serveur." });
 });
-app.use(cors({ origin: 'https://autoplanificationproductionproject-0s1w.onrender.com/' }));
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
