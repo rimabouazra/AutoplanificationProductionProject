@@ -14,7 +14,7 @@ import '../models/commande.dart';
 import '../models/client.dart';
 
 class ApiService {
-  static const String baseUrl = "http://localhost:5000/api";
+  static const String baseUrl = "https://autoplanificationproductionproject.onrender.com/";
 
   Future<Map<String, dynamic>> loginUser(String email, String password) async {
     try {
