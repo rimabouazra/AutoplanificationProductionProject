@@ -79,7 +79,7 @@ app.get("/", (req, res) => {
   res.send("API Running...");
 });
 
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = 'https://autoplanificationproductionproject.onrender.com/';
 // Tâche pour mettre à jour les commandes en cours toutes les minutes
 cron.schedule('*/5 * * * *', async () => {
   try {

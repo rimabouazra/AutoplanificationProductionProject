@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:frontend/models/matiere.dart';
 import 'package:frontend/services/auth_service.dart';
 import 'package:http/http.dart' as http;
@@ -14,8 +15,7 @@ import '../models/commande.dart';
 import '../models/client.dart';
 
 class ApiService {
-  static const String baseUrl = "https://autoplanificationproductionproject.onrender.com/";
-
+  static String get baseUrl => dotenv.env['BASE_URL'] ?? "https://autoplanificationproductionproject.onrender.com/";
   Future<Map<String, dynamic>> loginUser(String email, String password) async {
     try {
       print('Tentative de connexion avec email: $email');
@@ -492,7 +492,7 @@ class ApiService {
 
   static Future<List<dynamic>> fetchMachinesParSalle(String salleId) async {
     final url =
-        'http://localhost:5000/api/machines/parSalle/$salleId'; // Ajout de salleId
+        '$baseUrl/machines/parSalle/$salleId'; // Ajout de salleId
     // print("🔍 Requête envoyée à: $url"); // Debug URL
 
     try {
@@ -681,7 +681,7 @@ class ApiService {
   Future<String?> getModeleNom(String modeleId) async {
     try {
       final response = await http
-          .get(Uri.parse("http://localhost:5000/api/modeles/$modeleId"));
+          .get(Uri.parse("$baseUrl/modeles/$modeleId"));
 
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
@@ -729,7 +729,7 @@ class ApiService {
       // Make sure the model name is URL-encoded to handle special characters
       String encodedNomModele = Uri.encodeComponent(nomModele);
       var response = await http.get(Uri.parse(
-          "http://localhost:5000/api/modeles/findByName/$encodedNomModele"));
+          "$baseUrl/modeles/findByName/$encodedNomModele"));
 
       print("Réponse HTTP: ${response.statusCode}");
 

@@ -19,7 +19,7 @@ class PlanificationProvider with ChangeNotifier {
 
 
   Future<void> autoPlanifierToutesLesCommandes() async {
-    final url = Uri.parse('http://localhost:5000/api/planifications/auto');
+    final url = Uri.parse('https://autoplanificationproductionproject.onrender.com/planifications/auto');
     final response = await http.post(url);
 
     print('Status code: ${response.statusCode}');

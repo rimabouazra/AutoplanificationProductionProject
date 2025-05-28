@@ -4,12 +4,14 @@ import 'package:http/http.dart' as http;
 import '../models/machine.dart';
 
 class MachineProvider with ChangeNotifier {
+  final String _baseUrl = "https://autoplanificationproductionproject.onrender.com/commandes";
+
   List<Machine> _machines = [];
 
   List<Machine> get machines => _machines;
 
   Future<void> fetchMachinesBySalle(String salleId) async {
-    final url = 'http://localhost:5000/api/machines/parSalle/$salleId';
+    final url = '$_baseUrl/parSalle/$salleId';
    // print("🔍 URL requête: $url");
 
     try {

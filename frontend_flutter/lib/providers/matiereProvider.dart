@@ -84,7 +84,7 @@ Future<List<Historique>> fetchHistorique(String id) async {
 Future<List<Matiere>> getMatieresByDate(DateTime date) async {
   try {
     final dateStr = DateFormat('yyyy-MM-dd').format(date);
-    final response = await http.get(Uri.parse("http://localhost:5000/api/matieres?date=$dateStr"));
+    final response = await http.get(Uri.parse("https://autoplanificationproductionproject.onrender.com/matieres?date=$dateStr"));
     if (response.statusCode == 200) {
       List<dynamic> data = json.decode(response.body);
       return data.map((json) => Matiere.fromJson(json)).toList();

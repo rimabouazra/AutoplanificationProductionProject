@@ -30,7 +30,7 @@ class _SalleListPageState extends State<SalleListPage> {
 
   Future<void> fetchSalles() async {
     try {
-      final response = await http.get(Uri.parse('http://localhost:5000/api/salles'));
+      final response = await http.get(Uri.parse('https://autoplanificationproductionproject.onrender.com/salles'));
       if (response.statusCode == 200) {
         setState(() {
           salles = json.decode(response.body);
@@ -53,7 +53,7 @@ class _SalleListPageState extends State<SalleListPage> {
     try {
       final token = await AuthService.getToken();
       final response = await http.post(
-        Uri.parse('http://localhost:5000/api/salles'),
+        Uri.parse('https://autoplanificationproductionproject.onrender.com/salles'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -88,7 +88,7 @@ class _SalleListPageState extends State<SalleListPage> {
     try {
       final token = await AuthService.getToken();
       final response = await http.put(
-        Uri.parse('http://localhost:5000/api/salles/$id'),
+        Uri.parse('https://autoplanificationproductionproject.onrender.com/salles/$id'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',
@@ -130,7 +130,7 @@ class _SalleListPageState extends State<SalleListPage> {
       }
 
       final response = await http.delete(
-        Uri.parse('http://localhost:5000/api/salles/$id'),
+        Uri.parse('https://autoplanificationproductionproject.onrender.com/salles/$id'),
         headers: {
           'Authorization': 'Bearer $token',
           'Content-Type': 'application/json',

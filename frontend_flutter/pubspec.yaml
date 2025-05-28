@@ -55,6 +55,7 @@ dependencies:
   flutter_svg: ^2.0.7
   page_route_transition: ^3.1.2
   timezone: ^0.9.0
+  flutter_dotenv: ^5.2.1
 
 dev_dependencies:
   flutter_test:
@@ -84,6 +85,7 @@ flutter:
         - asset: assets/fonts/PlayfairDisplay-Bold.ttf
           weight: 700
   assets:
+    - .env
     - assets/images/coque.jpg
     - assets/images/logo.jpg
     - assets/images/bra-cup-1.jpg
