@@ -1073,3 +1073,72 @@ exports.reorderWaitingPlanifications = async (req, res) => {
     res.status(500).json({ message: "Erreur serveur", error: error.message });
   }
 };
+exports.terminerPlanification = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Find the planification
+    const planification = await Planification.findById(id)
+      .populate({
+        path: "commandes",
+        populate: { path: "client" },
+      })
+      .populate({
+        path: "machines",
+        populate: ["salle", "modele"],
+      });
+
+    if (!planification) {
+      return res.status(404).json({ message: "Planification non trouvée" });
+    }
+
+    if (planification.statut === "terminée") {
+      return res.status(400).json({ message: "Planification déjà terminée" });
+    }
+
+    // Update planification status
+    planification.statut = "terminée";
+    await planification.save();
+
+    // Update associated machines to disponible
+    for (const machineId of planification.machines) {
+      const machine = await Machine.findById(machineId);
+      if (machine) {
+        machine.etat = "disponible";
+        await machine.save();
+      }
+    }
+
+    // Update associated commandes to "en presse"
+    for (const commandeId of planification.commandes) {
+      const commande = await Commande.findById(commandeId);
+      if (commande) {
+        commande.etat = "en presse";
+        await commande.save();
+      }
+    }
+
+    // Process waiting list to assign machines to pending planifications
+    await exports.processWaitingList();
+
+    // Populate salle for response
+    let salleLight = null;
+    if (planification.salle) {
+      salleLight = await Salle.findById(planification.salle).select("_id nom type");
+      planification.salle = salleLight
+        ? { _id: salleLight._id, nom: salleLight.nom, type: salleLight.type }
+        : null;
+    }
+
+    res.status(200).json({
+      message: "Planification terminée avec succès",
+      planification,
+    });
+  } catch (error) {
+    console.error("Erreur lors de la terminaison de la planification :", error);
+    res.status(500).json({
+      message: "Erreur serveur",
+      error: error.message,
+    });
+  }
+};

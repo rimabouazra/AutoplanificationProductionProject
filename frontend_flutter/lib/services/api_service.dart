@@ -975,4 +975,44 @@ class ApiService {
           "Erreur lors de la mise à jour de l'ordre des planifications en attente: $e");
     }
   }
+  static Future<Map<String, dynamic>> terminerPlanification(String planificationId) async {
+    try {
+      final token = await AuthService.getToken();
+      if (token == null) {
+        throw Exception('Aucun token disponible');
+      }
+
+      final response = await http.post(
+        Uri.parse('$baseUrl/planifications/terminate/$planificationId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+      );
+
+      debugPrint('Terminer Planification - Status: ${response.statusCode}');
+      debugPrint('Terminer Planification - Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        return {
+          'success': true,
+          'planification': Planification.fromJson(jsonData['planification']),
+          'message': jsonData['message'],
+        };
+      } else {
+        final errorData = json.decode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Erreur lors de la terminaison de la planification',
+        };
+      }
+    } catch (e) {
+      debugPrint('Erreur dans terminerPlanification: $e');
+      return {
+        'success': false,
+        'message': 'Erreur de connexion: $e',
+      };
+    }
+  }
 }

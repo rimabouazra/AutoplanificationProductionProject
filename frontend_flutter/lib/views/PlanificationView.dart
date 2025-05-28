@@ -44,23 +44,19 @@ class _PlanificationViewState extends State<PlanificationView> {
   void dispose() {
     super.dispose();
   }
-
-  void _showStockAlert(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text("Stock Insuffisant"),
-        content: Text(
-            "Certaines matières premières sont en quantité insuffisante. "
-                "Les commandes concernées ont été mises en attente."),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text("OK"),
-          ),
-        ],
-      ),
-    );
+  Future<void> _terminerPlanification(String planificationId) async {
+    try {
+      final result = await ApiService.terminerPlanification(planificationId);
+      if (result['success']) {
+        _showSuccessSnackbar(result['message']);
+        final provider = Provider.of<PlanificationProvider>(context, listen: false);
+        await provider.fetchPlanifications(); // Refresh planifications
+      } else {
+        _showErrorSnackbar(result['message']);
+      }
+    } catch (e) {
+      _showErrorSnackbar('Erreur: $e');
+    }
   }
 
   void _showErrorSnackbar(String message) {
@@ -636,8 +632,8 @@ class _PlanificationViewState extends State<PlanificationView> {
                     minWidth: MediaQuery.of(context).size.width,
                   ),
                   child: DataTable(
-                    columnSpacing: 12, // Increased spacing
-                    dataRowHeight: 70, // Increased row height
+                    columnSpacing: 12,
+                    dataRowHeight: 70,
                     headingRowColor: MaterialStateColor.resolveWith(
                             (states) => Colors.deepPurple.withOpacity(0.1)),
                     columns: [
@@ -649,6 +645,7 @@ class _PlanificationViewState extends State<PlanificationView> {
                       DataColumn(label: Text('Début', style: headerTextStyle)),
                       DataColumn(label: Text('Fin', style: headerTextStyle)),
                       DataColumn(label: Text('Statut', style: headerTextStyle)),
+                      DataColumn(label: Text('Actions', style: headerTextStyle)),
                     ],
                     rows: entry.value.asMap().entries.map((rowEntry) {
                       final plan = rowEntry.value;
@@ -720,6 +717,28 @@ class _PlanificationViewState extends State<PlanificationView> {
                             style: cellTextStyle,
                           )),
                           DataCell(_buildStatusBadge(plan.statut)),
+                          DataCell(
+                            FutureBuilder<bool>(
+                              future: AuthService.isAdminOrManager(),
+                              builder: (context, snapshot) {
+                                final isAdminOrManager = snapshot.data ?? false;
+                                return isAdminOrManager && plan.id != null
+                                    ? ElevatedButton(
+                                  onPressed: plan.statut == 'terminée'
+                                      ? null
+                                      : () => _terminerPlanification(plan.id !),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.deepPurple,
+                                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                    minimumSize: Size(80, 30),
+                                    textStyle: TextStyle(fontSize: 12),
+                                  ),
+                                  child: Text('Terminer'),
+                                )
+                                    : SizedBox.shrink();
+                              },
+                            ),
+                          ),
                         ],
                       );
                     }).toList(),
@@ -730,8 +749,8 @@ class _PlanificationViewState extends State<PlanificationView> {
           }).toList(),
         )
             : DataTable(
-          columnSpacing: 12, // Increased spacing
-          dataRowHeight: 70, // Increased row height
+          columnSpacing: 12,
+          dataRowHeight: 70,
           headingRowColor: MaterialStateColor.resolveWith(
                   (states) => Colors.deepPurple.withOpacity(0.1)),
           columns: [
@@ -743,6 +762,7 @@ class _PlanificationViewState extends State<PlanificationView> {
             DataColumn(label: Text('Début', style: headerTextStyle)),
             DataColumn(label: Text('Fin', style: headerTextStyle)),
             DataColumn(label: Text('Statut', style: headerTextStyle)),
+            DataColumn(label: Text('Actions', style: headerTextStyle)),
           ],
           rows: planifications.asMap().entries.map((entry) {
             final plan = entry.value;
@@ -814,6 +834,28 @@ class _PlanificationViewState extends State<PlanificationView> {
                   style: cellTextStyle,
                 )),
                 DataCell(_buildStatusBadge(plan.statut)),
+                DataCell(
+                  FutureBuilder<bool>(
+                    future: AuthService.isAdminOrManager(),
+                    builder: (context, snapshot) {
+                      final isAdminOrManager = snapshot.data ?? false;
+                      return isAdminOrManager && plan.id != null
+                          ? ElevatedButton(
+                        onPressed: plan.statut == 'terminée'
+                            ? null
+                            : () => _terminerPlanification(plan.id!),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepPurple,
+                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                          minimumSize: Size(80, 30),
+                          textStyle: TextStyle(fontSize: 12),
+                        ),
+                        child: Text('Terminer'),
+                      )
+                          : SizedBox.shrink();
+                    },
+                  ),
+                ),
               ],
             );
           }).toList(),
@@ -821,6 +863,7 @@ class _PlanificationViewState extends State<PlanificationView> {
       ),
     );
   }
+
   Color _getStatusColor(String statut) {
     switch (statut) {
       case 'en attente':
