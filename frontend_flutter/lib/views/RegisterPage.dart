@@ -104,7 +104,7 @@ class _RegisterPageState extends State<RegisterPage> {
                           Expanded(
                             child: FadeInLeft(
                               child: SvgPicture.asset(
-                                'images/register_illustration.svg',
+                                'assets/images/register_illustration.svg',
                                 height: 500,
                               ),
                             ),
@@ -120,7 +120,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       children: [
                         FadeInDown(
                           child: SvgPicture.asset(
-                            'images/register_illustration.svg',
+                            'assets/images/register_illustration.svg',
                             height: 300,
                           ),
                         ),

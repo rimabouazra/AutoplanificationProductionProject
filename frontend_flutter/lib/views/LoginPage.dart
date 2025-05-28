@@ -141,7 +141,7 @@ class _LoginPageState extends State<LoginPage> {
                           Expanded(
                             child: FadeInLeft(
                               child: SvgPicture.asset(
-                                'images/login_illustration.svg',
+                                'assets/images/login_illustration.svg',
                                 height: 500,
                               ),
                             ),
@@ -157,7 +157,7 @@ class _LoginPageState extends State<LoginPage> {
                       children: [
                         FadeInDown(
                           child: SvgPicture.asset(
-                            'images/login_illustration.svg',
+                            'assets/images/login_illustration.svg',
                             height: 300,
                           ),
                         ),
