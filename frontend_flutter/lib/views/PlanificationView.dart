@@ -19,7 +19,7 @@ class _PlanificationViewState extends State<PlanificationView> {
   DateTime? _startDate;
   DateTime? _endDate;
   String? _selectedSalleType = 'tous';
-  String _selectedViewMode = 'journée';
+  String _selectedViewMode = 'semaine';
   String _selectedStatus = 'tous';
   int _startHour = 7;
   int _endHour = 17;
@@ -728,7 +728,7 @@ class _PlanificationViewState extends State<PlanificationView> {
                                       ? null
                                       : () => _terminerPlanification(plan.id !),
                                   style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.deepPurple,
+                                    backgroundColor: Colors.greenAccent,
                                     padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                                     minimumSize: Size(80, 30),
                                     textStyle: TextStyle(fontSize: 12),

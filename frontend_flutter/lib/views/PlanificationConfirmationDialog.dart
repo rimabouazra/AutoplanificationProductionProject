@@ -268,7 +268,13 @@ class _PlanificationConfirmationDialogState
   }
 
   Future<void> _confirmPlanification() async {
-    print('Confirming planifications: ${widget.planifications.map((p) => p.toJson()).toList()}');//debug
+    print('Confirming planifications: ${widget.planifications.map((p) => p.toJson()).toList()}');
+    if (widget.planifications.any((p) => p.id == null || p.id!.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Erreur: ID de planification manquant")),
+      );
+      return;
+    }
     bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -322,7 +328,7 @@ class _PlanificationConfirmationDialogState
             waitingPlans.add(existingPlan);
           } else {
             waitingPlans.add(Planification(
-              id: plan.id ?? '',
+              id: plan.id ?? '', // Ensure ID is preserved
               commandes: plan.commandes,
               machines: [],
               salle: plan.salle,
@@ -360,7 +366,7 @@ class _PlanificationConfirmationDialogState
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
                 content:
-                    Text("Sélectionnez une salle pour toutes les planifications")),
+                Text("Sélectionnez une salle pour toutes les planifications")),
           );
           return;
         }
@@ -378,13 +384,14 @@ class _PlanificationConfirmationDialogState
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
                 content:
-                    Text("La date de début doit être avant la date de fin")),
+                Text("La date de début doit être avant la date de fin")),
           );
           return;
         }
 
+        // Preserve the original planification ID if it exists
         updatedPlanifications.add(Planification(
-          id: existingPlan?.id ?? plan.id ?? '',
+          id: plan.id ?? existingPlan?.id ?? '', // Use existing ID
           commandes: plan.commandes,
           machines: _availableMachines[i]
               .where((m) => _selectedMachinesForPlanifications[i].contains(m.id))
@@ -395,7 +402,7 @@ class _PlanificationConfirmationDialogState
           quantite: plan.quantite,
           taille: plan.taille,
           couleur: plan.couleur,
-          statut: "planifiée",
+          statut: "en attente", // Set to "en attente" instead of "planifiée"
         ));
       }
 
@@ -440,7 +447,7 @@ class _PlanificationConfirmationDialogState
       }
 
       final success =
-          await ApiService.confirmerPlanification(updatedPlanifications);
+      await ApiService.confirmerPlanification(updatedPlanifications);
 
       if (!success) {
         throw Exception("Failed to confirm planifications");
@@ -453,12 +460,12 @@ class _PlanificationConfirmationDialogState
       );
 
       final planifProvider =
-          Provider.of<PlanificationProvider>(context, listen: false);
+      Provider.of<PlanificationProvider>(context, listen: false);
       await planifProvider.fetchPlanifications();
 
       navigatorKey.currentState?.pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const AdminHomePage()),
-        (route) => false,
+            (route) => false,
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -468,7 +475,6 @@ class _PlanificationConfirmationDialogState
       setState(() => _isLoading = false);
     }
   }
-
   Widget _buildMatiereSelector(CommandeModele modele, String planificationStatus) {
     final modeleKey = '${modele.nomModele}_${modele.taille}';
 

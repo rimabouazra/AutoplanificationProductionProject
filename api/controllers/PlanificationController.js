@@ -39,6 +39,10 @@ const calculatePlanificationDates = (startDate, hoursRequired, workHours = workH
   let remainingHours = hoursRequired;
   let workDayHours = workHours.endHour - workHours.startHour;
 
+  if (currentDate.isBefore(moment().tz(workHours.timezone))) {
+    currentDate = moment().tz(workHours.timezone).startOf('minute');
+  }
+
   if (currentDate.hour() < workHours.startHour) {
     currentDate.set({ hour: workHours.startHour, minute: 0, second: 0 });
   } else if (currentDate.hour() >= workHours.endHour) {
@@ -69,7 +73,6 @@ const calculatePlanificationDates = (startDate, hoursRequired, workHours = workH
 
   return { debutPrevue, finPrevue };
 };
-
 exports.checkActivePlanification = async (req, res) => {
   try {
     const { machineId } = req.params;
@@ -148,7 +151,7 @@ exports.mettreAJourMachinesDisponibles = async (req, res) => {
     let commandesTerminees = [];
 
     for (const planif of planifs) {
-      console.log("cron job : update planification statut en cours")
+      console.log("cron job: update planification statut en cours");
       if (planif.debutPrevue <= now && planif.finPrevue > now && planif.statut !== "en cours") {
         planif.statut = "en cours";
         await planif.save();
@@ -182,6 +185,7 @@ exports.mettreAJourMachinesDisponibles = async (req, res) => {
     res.status(500).json({ message: "Erreur lors de la mise à jour", error: error.message });
   }
 };
+
 exports.autoPlanifierCommande = async (req, res) => {
   try {
     const { commandeId, preview, partial } = req.body;
@@ -706,7 +710,7 @@ exports.confirmPlanification = async (req, res) => {
     let hasInsufficientStock = false;
 
     for (const plan of planifications) {
-    if (!plan.taille || !plan.couleur) {
+      if (!plan.taille || !plan.couleur) {
         console.error(`Invalid planification ${plan._id}: taille (${plan.taille}) or couleur (${plan.couleur}) is missing or undefined`);
         continue;
       }
@@ -727,7 +731,6 @@ exports.confirmPlanification = async (req, res) => {
           );
 
           if (matiere) {
-
             let targetModele = modele.modele;
             let targetTaille = modele.taille;
 
@@ -741,7 +744,6 @@ exports.confirmPlanification = async (req, res) => {
 
             const consommation = targetModele.consommation.find(
               (c) => c.taille === targetTaille);
-
 
             const quantiteNecessaire =
               (consommation?.quantity || 0.5) * modele.quantite;
@@ -769,27 +771,23 @@ exports.confirmPlanification = async (req, res) => {
     for (const plan of planifications) {
       let planification;
 
-      // Check for existing planification to prevent duplication
+      // Check for existing planification by command, taille, couleur, and quantite
       const existingPlanification = await Planification.findOne({
         commandes: { $all: plan.commandes.map((c) => c._id || c) },
         salle: plan.salle._id || plan.salle,
         taille: plan.taille || "",
         couleur: plan.couleur || "",
         quantite: plan.quantite || 0,
-        statut: { $in: ["en attente", "waiting_resources"] }, // Only match non-completed planifications
+        statut: { $in: ["en attente", "waiting_resources"] },
       });
 
       if (existingPlanification) {
-        console.log(`Found existing planification for command: ${existingPlanification._id}`);
+        console.log(`Found existing planification: ${existingPlanification._id}`);
         planification = existingPlanification;
-        // Update fields if necessary
+        // Update fields
         planification.machines = plan.machines.map((m) => m._id || m);
-        if (plan.debutPrevue && !isNaN(new Date(plan.debutPrevue))) {
-          planification.debutPrevue = new Date(plan.debutPrevue);
-        }
-        if (plan.finPrevue && !isNaN(new Date(plan.finPrevue))) {
-          planification.finPrevue = new Date(plan.finPrevue);
-        }
+        planification.debutPrevue = plan.debutPrevue ? new Date(plan.debutPrevue) : planification.debutPrevue;
+        planification.finPrevue = plan.finPrevue ? new Date(plan.finPrevue) : planification.finPrevue;
         planification.statut = plan.statut || "en attente";
       } else if (plan._id && plan._id !== "null" && plan._id !== null) {
         planification = await Planification.findById(plan._id);
@@ -811,29 +809,42 @@ exports.confirmPlanification = async (req, res) => {
           // Update existing planification
           planification.machines = plan.machines.map((m) => m._id || m);
           planification.salle = plan.salle._id || plan.salle;
-          if (plan.debutPrevue && !isNaN(new Date(plan.debutPrevue))) {
-            planification.debutPrevue = new Date(plan.debutPrevue);
-          }
-          if (plan.finPrevue && !isNaN(new Date(plan.finPrevue))) {
-            planification.finPrevue = new Date(plan.finPrevue);
-          }
+          planification.debutPrevue = plan.debutPrevue ? new Date(plan.debutPrevue) : planification.debutPrevue;
+          planification.finPrevue = plan.finPrevue ? new Date(plan.finPrevue) : planification.finPrevue;
           planification.statut = plan.statut || "en attente";
         }
       } else {
-        // Create new planification for null ID
-        console.log(`Creating new planification for null ID: ${JSON.stringify(plan)}`);
-        planification = new Planification({
-          commandes: plan.commandes.map((c) => c._id || c),
-          machines: plan.machines.map((m) => m._id || m),
+        // Avoid creating new planification if it matches an existing one
+        console.log(`No existing planification found, checking for duplicates before creating: ${JSON.stringify(plan)}`);
+        const duplicateCheck = await Planification.findOne({
+          commandes: { $all: plan.commandes.map((c) => c._id || c) },
           salle: plan.salle._id || plan.salle,
-          debutPrevue: plan.debutPrevue ? new Date(plan.debutPrevue) : moment().tz("Africa/Tunis").toDate(),
-          finPrevue: plan.finPrevue ? new Date(plan.finPrevue) : moment().tz("Africa/Tunis").toDate(),
-          statut: plan.statut || "en attente",
-          quantite: plan.quantite || 0,
           taille: plan.taille || "",
           couleur: plan.couleur || "",
-          createdAt: plan.createdAt ? new Date(plan.createdAt) : moment().tz("Africa/Tunis").toDate(),
+          quantite: plan.quantite || 0,
+          statut: { $in: ["en attente", "waiting_resources"] },
         });
+        if (duplicateCheck) {
+          console.log(`Duplicate planification found: ${duplicateCheck._id}, updating instead`);
+          planification = duplicateCheck;
+          planification.machines = plan.machines.map((m) => m._id || m);
+          planification.debutPrevue = plan.debutPrevue ? new Date(plan.debutPrevue) : planification.debutPrevue;
+          planification.finPrevue = plan.finPrevue ? new Date(plan.finPrevue) : planification.finPrevue;
+          planification.statut = plan.statut || "en attente";
+        } else {
+          planification = new Planification({
+            commandes: plan.commandes.map((c) => c._id || c),
+            machines: plan.machines.map((m) => m._id || m),
+            salle: plan.salle._id || plan.salle,
+            debutPrevue: plan.debutPrevue ? new Date(plan.debutPrevue) : moment().tz("Africa/Tunis").toDate(),
+            finPrevue: plan.finPrevue ? new Date(plan.finPrevue) : moment().tz("Africa/Tunis").toDate(),
+            statut: plan.statut || "en attente",
+            quantite: plan.quantite || 0,
+            taille: plan.taille || "",
+            couleur: plan.couleur || "",
+            createdAt: plan.createdAt ? new Date(plan.createdAt) : moment().tz("Africa/Tunis").toDate(),
+          });
+        }
       }
 
       let salleLight = null;
@@ -845,7 +856,8 @@ exports.confirmPlanification = async (req, res) => {
         console.warn(`No salle assigned to planification ${planification._id || 'new'}`);
       }
 
-      if (planification.statut === "waiting_resources") {
+      if (hasInsufficientStock || planification.statut === "waiting_resources") {
+        planification.statut = "waiting_resources";
         await planification.save();
         const populatedPlan = await Planification.findById(planification._id)
           .populate({
@@ -905,7 +917,6 @@ exports.confirmPlanification = async (req, res) => {
     });
   }
 };
-
 exports.addPlanification = async (req, res) => {
   try {
     const { commandes, machinesIds, debutPrevue, finPrevue } = req.body;
