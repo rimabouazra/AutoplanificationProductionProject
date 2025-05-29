@@ -58,6 +58,16 @@ class ApiService {
       return {'success': false, 'message': 'Erreur de connexion réseau: $e'};
     }
   }
+  //TESTING BACKEND ROUTES
+  static Future<void> testPing() async {
+  try {
+    final response = await http.get(Uri.parse('$baseUrl/api/ping'));
+    print('Ping Status: ${response.statusCode}');
+    print('Ping Body: ${response.body}');
+  } catch (e) {
+    print('Ping Error: $e');
+  }
+}
 
   Future<Map<String, dynamic>?> register(
       String username, String email, String password) async {

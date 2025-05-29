@@ -31,12 +31,20 @@ const app = express();
 //app.use(helmet());
 app.use(express.json());
 app.use(cors({
-  origin: true, // Temporarily allow all origins
+  origin:[
+    'https://autoplanificationproductionproject-0s1w.onrender.com',
+    'http://localhost:4200', // Adjust port if different
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS','PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'authorization'],
   credentials: true,
   exposedHeaders: ['Authorization'] // Important pour les requêtes cross-origin
 }));
+
+// TEST
+app.get('/api/ping', (req, res) => {
+  res.status(200).json({ message: 'Pong!' });
+});
 
 app.use((req, res, next) => {
   //console.log('🔍 Incoming headers:', req.headers);
