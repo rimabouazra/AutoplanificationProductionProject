@@ -72,7 +72,7 @@ app.use("/api/machines", machineRoutes);
 app.use("/api/matieres", matiereRoutes);
 app.use("/api/produits", produitsRoutes);
 app.use("/api/planifications", planificationRoutes);
-app.use("/api/Users", UserRoutes);
+app.use("/api/users", UserRoutes);
 app.use("/api/clients", clientRoutes);
 
 
