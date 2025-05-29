@@ -34,6 +34,7 @@ app.use(cors({
   origin:[
     'https://autoplanificationproductionproject-0s1w.onrender.com',
     'http://localhost:4200', // Adjust port if different
+    'http://localhost:8081',
   ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS','PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'authorization'],

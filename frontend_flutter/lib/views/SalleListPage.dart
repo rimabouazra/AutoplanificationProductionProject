@@ -30,7 +30,7 @@ class _SalleListPageState extends State<SalleListPage> {
 
   Future<void> fetchSalles() async {
     try {
-      final response = await http.get(Uri.parse('https://autoplanificationproductionproject.onrender.com/salles'));
+      final response = await http.get(Uri.parse('https://autoplanificationproductionproject.onrender.com/api/salles'));
       if (response.statusCode == 200) {
         setState(() {
           salles = json.decode(response.body);
