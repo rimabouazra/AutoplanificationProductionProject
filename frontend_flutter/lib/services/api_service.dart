@@ -934,7 +934,7 @@ class ApiService {
     final uri = commandeId != null
         ? Uri.parse(
             '$baseUrl/api/planifications/get/waiting?commandeId=$commandeId')
-        : Uri.parse('$baseUrl/planifications/get/waiting');
+        : Uri.parse('$baseUrl/api/planifications/get/waiting');
     final response = await http.get(uri);
 
     if (response.statusCode == 200) {
