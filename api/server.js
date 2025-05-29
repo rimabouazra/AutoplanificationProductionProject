@@ -104,7 +104,7 @@ app.get("/", (req, res) => {
 cron.schedule('*/5 * * * *', async () => {
   try {
     console.log('Cronjob: Mise à jour des commandes en cours...');
-    await axios.post(`${BASE_URL}/planifications/mettre-a-jour-commandes`);
+    await axios.post(`${BASE_URL}/api/planifications/mettre-a-jour-commandes`);
     console.log('Commandes en cours mises à jour.');
   } catch (error) {
     console.error('Erreur mise à jour commandes en cours :', error.response?.data || error.message);
@@ -113,7 +113,7 @@ cron.schedule('*/5 * * * *', async () => {
 cron.schedule('*/5 * * * *', async () => {
   try {
     console.log('Cronjob: Mise à jour des machines disponibles...');
-    await axios.post(`${BASE_URL}/planifications/mettre-a-jour-machines`);
+    await axios.post(`${BASE_URL}/api/planifications/mettre-a-jour-machines`);
     console.log('Machines libérées.');
   } catch (error) {
     console.error('Erreur mise à jour machines :', error.response?.data || error.message);
