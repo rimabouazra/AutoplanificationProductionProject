@@ -38,7 +38,8 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS','PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'authorization'],
   credentials: true,
-  exposedHeaders: ['Authorization'] // Important pour les requêtes cross-origin
+  exposedHeaders: ['Authorization'], // Important pour les requêtes cross-origin
+  preflightContinue: true,
 }));
 
 // TEST
@@ -78,6 +79,9 @@ const authLimiter = rateLimit({
   },
 });
 app.use("/api/users", authLimiter);
+
+app.options('*', cors()); // Handle preflight for all routes
+
 // Routes
 app.use("/api/commandes", commandeRoutes);
 app.use("/api/salles", salleRoutes);
