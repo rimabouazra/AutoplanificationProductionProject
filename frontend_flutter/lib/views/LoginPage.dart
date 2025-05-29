@@ -27,6 +27,7 @@ class _LoginPageState extends State<LoginPage> {
       });
 
       try {
+        await ApiService.testPing();//debug
         final result = await ApiService().loginUser(
           emailController.text.trim(),
           passwordController.text.trim(),

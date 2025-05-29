@@ -15,13 +15,13 @@ import '../models/commande.dart';
 import '../models/client.dart';
 
 class ApiService {
-  static String get baseUrl => dotenv.env['BASE_URL'] ?? "https://autoplanificationproductionproject.onrender.com/";
+  static String get baseUrl => dotenv.env['BASE_URL'] ?? "https://autoplanificationproductionproject.onrender.com";
   Future<Map<String, dynamic>> loginUser(String email, String password) async {
     try {
       print('Tentative de connexion avec email: $email');
-
+      print('Full login URL: ${baseUrl}/api/users/login');
       final response = await http.post(
-        Uri.parse('$baseUrl/users/login'),
+        Uri.parse('$baseUrl/api/users/login'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -51,10 +51,23 @@ class ApiService {
       }
     } catch (e, stackTrace) {
       print('Erreur lors de la connexion: $e');
+      print('Full error: $e');
+      print('Type: ${e.runtimeType}');
+    print('Message: ${e.toString()}');
       print('Stack trace: $stackTrace');
       return {'success': false, 'message': 'Erreur de connexion réseau: $e'};
     }
   }
+  //TESTING BACKEND ROUTES
+  static Future<void> testPing() async {
+  try {
+    final response = await http.get(Uri.parse('$baseUrl/api/ping'));
+    print('Ping Status: ${response.statusCode}');
+    print('Ping Body: ${response.body}');
+  } catch (e) {
+    print('Ping Error: $e');
+  }
+}
 
   Future<Map<String, dynamic>?> register(
       String username, String email, String password) async {
@@ -94,7 +107,7 @@ class ApiService {
   }
 
   static Future<List<Machine>> getMachines() async {
-    final response = await http.get(Uri.parse('$baseUrl/machines'));
+    final response = await http.get(Uri.parse('$baseUrl/api/machines'));
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
       return jsonData.map((json) => Machine.fromJson(json)).toList();
@@ -111,7 +124,7 @@ class ApiService {
     final token = await AuthService.getToken();
     print('Token utilisé pour la requête: ${token?.substring(0, 10)}...');
     final response = await http.post(
-      Uri.parse('$baseUrl/machines/add'),
+      Uri.parse('$baseUrl/api/machines/add'),
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer $token",
@@ -142,7 +155,7 @@ class ApiService {
       }
     }
     await http.put(
-      Uri.parse("$baseUrl/machines/$id"),
+      Uri.parse("$baseUrl/api/machines/$id"),
       headers: {
         "Content-Type": "application/json",
         "Authorization": "Bearer $token",
@@ -154,7 +167,7 @@ class ApiService {
   static Future<void> deleteMachine(String id) async {
     final token = await AuthService.getToken();
     final response = await http.delete(
-      Uri.parse('$baseUrl/machines/$id'),
+      Uri.parse('$baseUrl/api/machines/$id'),
       headers: {
         "Authorization": "Bearer $token",
       },
@@ -167,7 +180,7 @@ class ApiService {
   }
 
   static Future<List<Modele>> getModeles() async {
-    final response = await http.get(Uri.parse('$baseUrl/modeles'));
+    final response = await http.get(Uri.parse('$baseUrl/api/modeles'));
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
       //print("Modèles récupérés: $jsonData"); // Debug des données reçues
@@ -182,7 +195,7 @@ class ApiService {
       List<String>? bases, List<Consommation> consommation, String? description,
       [List<TailleBase> taillesBases = const []]) async {
     final response = await http.post(
-      Uri.parse("$baseUrl/modeles/add"),
+      Uri.parse("$baseUrl/api/modeles/add"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "nom": nom,
@@ -213,7 +226,7 @@ class ApiService {
   static Future<bool> updateMachineModele(
       String machineId, String modeleId, String taille) async {
     final response = await http.put(
-      Uri.parse('$baseUrl/machines/$machineId'),
+      Uri.parse('$baseUrl/api/machines/$machineId'),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "modele": modeleId,
@@ -226,7 +239,7 @@ class ApiService {
   }
 
   static Future<List<Salle>> getSalles() async {
-    final response = await http.get(Uri.parse('$baseUrl/salles'));
+    final response = await http.get(Uri.parse('$baseUrl/api/salles'));
     print('Raw API response for getSalles: ${response.body}');
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
@@ -240,7 +253,7 @@ class ApiService {
   static Future<bool> ajouterSalle(String nom, String type) async {
     final token = await AuthService.getToken();
     final response = await http.post(
-      Uri.parse('$baseUrl/salles'),
+      Uri.parse('$baseUrl/api/salles'),
       headers: {
         'Authorization': 'Bearer $token',
         "Content-Type": "application/json"
@@ -267,7 +280,7 @@ class ApiService {
         return supprimerSalle(id); // Rappel récursif
       }
 
-      final url = Uri.parse('$baseUrl/salles/$id');
+      final url = Uri.parse('$baseUrl/api/salles/$id');
       final request = http.Request("DELETE", url);
       request.headers.addAll({
         'authorization': 'Bearer $token',
@@ -293,7 +306,7 @@ class ApiService {
 
   static Future<bool> modifierSalle(String id, String nom) async {
     final response = await http.put(
-      Uri.parse('$baseUrl/salles/$id'),
+      Uri.parse('$baseUrl/api/salles/$id'),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({"nom": nom}),
     );
@@ -301,7 +314,7 @@ class ApiService {
   }
 
   static Future<List<User>> getUsers() async {
-    final response = await http.get(Uri.parse('$baseUrl/users'));
+    final response = await http.get(Uri.parse('$baseUrl/api/users'));
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
       return jsonData.map((json) => User.fromJson(json)).toList();
@@ -312,7 +325,7 @@ class ApiService {
 
   static Future<bool> addUser(User user) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/users/add'),
+      Uri.parse('$baseUrl/api/users/add'),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(user.toJson()),
     );
@@ -321,7 +334,7 @@ class ApiService {
 
   static Future<bool> updateUser(String id, User user) async {
     final response = await http.put(
-      Uri.parse('$baseUrl/users/$id'),
+      Uri.parse('$baseUrl/api/users/$id'),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(user.toJson()),
     );
@@ -329,12 +342,12 @@ class ApiService {
   }
 
   static Future<bool> deleteUser(String id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/users/$id'));
+    final response = await http.delete(Uri.parse('$baseUrl/api/users/$id'));
     return response.statusCode == 200;
   }
 
   static Future<List<Planification>> getPlanifications() async {
-    final response = await http.get(Uri.parse('$baseUrl/planifications/'));
+    final response = await http.get(Uri.parse('$baseUrl/api/planifications/'));
     //print("Réponse brute de l'API fetch plan: ${response.body}"); // Log de débogage
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
@@ -346,7 +359,7 @@ class ApiService {
   }
 
   static Future<bool> autoPlanifierCommande(String commandeId) async {
-    final url = Uri.parse('$baseUrl/planifications/auto');
+    final url = Uri.parse('$baseUrl/api/planifications/auto');
 
     try {
       final response = await http.post(
@@ -374,7 +387,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> getPlanificationPreview(
       String commandeId) async {
-    final uri = Uri.parse('$baseUrl/planifications/auto');
+    final uri = Uri.parse('$baseUrl/api/planifications/auto');
     final response = await http.post(
       uri,
       headers: {'Content-Type': 'application/json'},
@@ -411,7 +424,7 @@ class ApiService {
       });
 
       final response = await http.post(
-        Uri.parse('$baseUrl/planifications/confirm'),
+        Uri.parse('$baseUrl/api/planifications/confirm'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'planifications': planifications.map((p) => p.toJson()).toList(),
@@ -430,7 +443,7 @@ class ApiService {
 
   static Future<bool> addPlanification(Planification planification) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/planifications/'),
+      Uri.parse('$baseUrl/api/planifications/'),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(planification.toJson()),
     );
@@ -438,7 +451,7 @@ class ApiService {
   }
 
   static Future<List<Commande>> getCommandes() async {
-    final response = await http.get(Uri.parse('$baseUrl/commandes'));
+    final response = await http.get(Uri.parse('$baseUrl/api/commandes'));
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
       return jsonData.map((json) => Commande.fromJson(json)).toList();
@@ -449,7 +462,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> addCommande(Commande commande) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/commandes/add'),
+      Uri.parse('$baseUrl/api/commandes/add'),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(commande.toJson()),
     );
@@ -459,7 +472,7 @@ class ApiService {
       final commandeId = commandeData['_id'];
       // Obtenir la prévisualisation de la planification
       final planificationResponse = await http.post(
-        Uri.parse('$baseUrl/planifications/auto'),
+        Uri.parse('$baseUrl/api/planifications/auto'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "commandeId": commandeId,
@@ -493,7 +506,7 @@ class ApiService {
 
   static Future<List<dynamic>> fetchMachinesParSalle(String salleId) async {
     final url =
-        '$baseUrl/machines/parSalle/$salleId'; // Ajout de salleId
+        '$baseUrl/api/machines/parSalle/$salleId'; // Ajout de salleId
     // print("🔍 Requête envoyée à: $url"); // Debug URL
 
     try {
@@ -518,7 +531,7 @@ class ApiService {
 
   static Future<List<Machine>> getMachinesParSalle(String salleId) async {
     final response =
-        await http.get(Uri.parse('$baseUrl/salles/$salleId/machines'));
+        await http.get(Uri.parse('$baseUrl/api/salles/$salleId/machines'));
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
       return jsonData.map((json) => Machine.fromJson(json)).toList();
@@ -530,7 +543,7 @@ class ApiService {
 
   // Récupérer les matières
   static Future<List<dynamic>> getMatieres() async {
-    final response = await http.get(Uri.parse('$baseUrl/matieres'));
+    final response = await http.get(Uri.parse('$baseUrl/api/matieres'));
     if (response.statusCode == 200) {
       return json.decode(response.body);
     } else {
@@ -540,7 +553,7 @@ class ApiService {
 
   static Future<Map<String, dynamic>> addMatiere(Matiere matiere) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/matieres/add'),
+      Uri.parse('$baseUrl/api/matieres/add'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode(matiere.toJson()),
     );
@@ -553,7 +566,7 @@ class ApiService {
   }
 
   static Future<void> deleteMatiere(String id) async {
-    final response = await http.delete(Uri.parse('$baseUrl/matieres/$id'));
+    final response = await http.delete(Uri.parse('$baseUrl/api/matieres/$id'));
     if (response.statusCode != 200) {
       throw Exception("Erreur lors de la suppression de la matière");
     }
@@ -563,7 +576,7 @@ class ApiService {
       {String? action}) async {
     try {
       final response = await http.put(
-        Uri.parse('$baseUrl/matieres/update/$id'),
+        Uri.parse('$baseUrl/api/matieres/update/$id'),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({
           "quantite": newQuantite,
@@ -599,7 +612,7 @@ class ApiService {
 
   static Future<List<Historique>> getHistoriqueMatiere(String matiereId) async {
     final response =
-        await http.get(Uri.parse('$baseUrl/matieres/historique/$matiereId'));
+        await http.get(Uri.parse('$baseUrl/api/matieres/historique/$matiereId'));
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
       return jsonData.map((json) {
@@ -617,7 +630,7 @@ class ApiService {
   static Future<Matiere?> renameMatiere(String id, String newReference) async {
     try {
       final response = await http.patch(
-        Uri.parse('$baseUrl/matieres/$id/rename'),
+        Uri.parse('$baseUrl/api/matieres/$id/rename'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'reference': newReference}),
       );
@@ -633,7 +646,7 @@ class ApiService {
   }
 
   static Future<List<Produit>> getProduits() async {
-    final response = await http.get(Uri.parse('$baseUrl/produits'));
+    final response = await http.get(Uri.parse('$baseUrl/api/produits'));
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
       //print(
@@ -647,7 +660,7 @@ class ApiService {
 
   static Future<void> addProduit(Produit produit) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/produits/add'),
+      Uri.parse('$baseUrl/api/produits/add'),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(produit.toJson()),
     );
@@ -659,7 +672,7 @@ class ApiService {
   static Future<void> updateProduit(
       String id, Map<String, dynamic> produitData) async {
     final response = await http.put(
-      Uri.parse('$baseUrl/produits/update/$id'),
+      Uri.parse('$baseUrl/api/produits/update/$id'),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(produitData), // On envoie tout l'objet JSON
     );
@@ -672,7 +685,7 @@ class ApiService {
 
   static Future<void> deleteProduit(String id) async {
     final response =
-        await http.delete(Uri.parse('$baseUrl/produits/delete/$id'));
+        await http.delete(Uri.parse('$baseUrl/api/produits/delete/$id'));
     if (response.statusCode != 200) {
       throw Exception(
           "Erreur lors de la suppression du produit : ${response.body}");
@@ -682,7 +695,7 @@ class ApiService {
   Future<String?> getModeleNom(String modeleId) async {
     try {
       final response = await http
-          .get(Uri.parse("$baseUrl/modeles/$modeleId"));
+          .get(Uri.parse("$baseUrl/api/modeles/$modeleId"));
 
       if (response.statusCode == 200) {
         var data = json.decode(response.body);
@@ -730,7 +743,7 @@ class ApiService {
       // Make sure the model name is URL-encoded to handle special characters
       String encodedNomModele = Uri.encodeComponent(nomModele);
       var response = await http.get(Uri.parse(
-          "$baseUrl/modeles/findByName/$encodedNomModele"));
+          "$baseUrl/api/modeles/findByName/$encodedNomModele"));
 
       print("Réponse HTTP: ${response.statusCode}");
 
@@ -761,7 +774,7 @@ class ApiService {
       String? base, List<Consommation> consommation,
       [List<TailleBase> taillesBases = const [],String? description]) async {
     final response = await http.put(
-      Uri.parse("$baseUrl/modeles/$id"),
+      Uri.parse("$baseUrl/api/modeles/$id"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "nom": nom,
@@ -780,7 +793,7 @@ class ApiService {
   static Future<void> deleteModele(String id) async {
     try {
       final response = await http.delete(
-        Uri.parse("$baseUrl/modeles/delete/$id"),
+        Uri.parse("$baseUrl/api/modeles/delete/$id"),
         headers: {"Content-Type": "application/json"},
       );
       if (response.statusCode == 200) {
@@ -803,7 +816,7 @@ class ApiService {
 
   static Future<bool> updateConsommation(
       String modeleId, String taille, double quantite) async {
-    final url = Uri.parse('$baseUrl/modeles/$modeleId/consommation');
+    final url = Uri.parse('$baseUrl/api/modeles/$modeleId/consommation');
 
     final body = jsonEncode({
       "modeleId": modeleId,
@@ -839,7 +852,7 @@ class ApiService {
   static Future<void> addTailleToProduit(
       String produitId, Map<String, dynamic> tailleData) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/produits/$produitId/addTaille'),
+      Uri.parse('$baseUrl/api/produits/$produitId/addTaille'),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode(tailleData),
     );
@@ -852,7 +865,7 @@ class ApiService {
   static Future<void> deleteTailleFromProduit(
       String produitId, int tailleIndex) async {
     final response = await http.delete(
-      Uri.parse('$baseUrl/produits/$produitId/deleteTaille/$tailleIndex'),
+      Uri.parse('$baseUrl/api/produits/$produitId/deleteTaille/$tailleIndex'),
       headers: {"Content-Type": "application/json"},
     );
 
@@ -864,7 +877,7 @@ class ApiService {
 
   static Future<bool> approveUser(String id, String role) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/users/approve/$id'),
+      Uri.parse('$baseUrl/api/users/approve/$id'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'role': role}),
     );
@@ -873,14 +886,14 @@ class ApiService {
 
   static Future<bool> rejectUser(String id) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/users/reject/$id'),
+      Uri.parse('$baseUrl/api/users/reject/$id'),
       headers: {'Content-Type': 'application/json'},
     );
     return response.statusCode == 200;
   }
 
   static Future<List<Client>> getClients() async {
-    final response = await http.get(Uri.parse('$baseUrl/clients'));
+    final response = await http.get(Uri.parse('$baseUrl/api/clients'));
     if (response.statusCode == 200) {
       final List jsonData = json.decode(response.body);
       return jsonData.map((e) => Client.fromJson(e)).toList();
@@ -891,7 +904,7 @@ class ApiService {
 
   static Future<Client> addClient(String name) async {
     final response = await http.post(
-      Uri.parse('$baseUrl/clients'),
+      Uri.parse('$baseUrl/api/clients'),
       headers: {'Content-Type': 'application/json'},
       body: json.encode({'name': name}),
     );
@@ -906,7 +919,7 @@ class ApiService {
   Future<void> updateQuantiteReelle(
       String commandeId, String modeleId, int quantiteReelle) async {
     final response = await http.patch(
-      Uri.parse('$baseUrl/commandes/$commandeId/modele/$modeleId'),
+      Uri.parse('$baseUrl/api/commandes/$commandeId/modele/$modeleId'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'quantiteReelle': quantiteReelle}),
     );
@@ -920,8 +933,8 @@ class ApiService {
       {String? commandeId}) async {
     final uri = commandeId != null
         ? Uri.parse(
-            '$baseUrl/planifications/get/waiting?commandeId=$commandeId')
-        : Uri.parse('$baseUrl/planifications/get/waiting');
+            '$baseUrl/api/planifications/get/waiting?commandeId=$commandeId')
+        : Uri.parse('$baseUrl/api/planifications/get/waiting');
     final response = await http.get(uri);
 
     if (response.statusCode == 200) {
@@ -936,7 +949,7 @@ class ApiService {
   static Future<bool> hasActivePlanification(String machineId) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/planifications/active/$machineId'),
+        Uri.parse('$baseUrl/api/planifications/active/$machineId'),
         headers: {"Content-Type": "application/json"},
       );
 
@@ -958,7 +971,7 @@ class ApiService {
       final token = await AuthService.getToken();
 
       final response = await http.put(
-        Uri.parse('$baseUrl/planifications/waiting/order'),
+        Uri.parse('$baseUrl/api/planifications/waiting/order'),
         headers: {
           "Content-Type": "application/json",
           "Authorization": "Bearer $token",
@@ -984,7 +997,7 @@ class ApiService {
       }
 
       final response = await http.post(
-        Uri.parse('$baseUrl/planifications/terminate/$planificationId'),
+        Uri.parse('$baseUrl/api/planifications/terminate/$planificationId'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $token',

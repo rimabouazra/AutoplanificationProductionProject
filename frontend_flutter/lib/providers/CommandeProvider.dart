@@ -8,7 +8,7 @@ import 'package:provider/provider.dart';
 import '../models/commande.dart';
 
 class CommandeProvider with ChangeNotifier {
-  final String _baseUrl = "https://autoplanificationproductionproject.onrender.com/commandes";
+  final String _baseUrl = "https://autoplanificationproductionproject.onrender.com/api/commandes";
 
   List<Commande> _commandes = [];
 
@@ -108,7 +108,7 @@ class CommandeProvider with ChangeNotifier {
   Future<String?> getModeleId(String nomModele) async {
     print("Recherche du modèle pour nomModele: $nomModele");
     try {
-      var response = await http.get(Uri.parse("https://autoplanificationproductionproject.onrender.com/modeles/findByName/$nomModele"));
+      var response = await http.get(Uri.parse("https://autoplanificationproductionproject.onrender.com/api/modeles/findByName/$nomModele"));
 
       // Vérifiez si la réponse est bien reçue
       print("Réponse HTTP: ${response.statusCode}");

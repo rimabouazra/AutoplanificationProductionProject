@@ -28,20 +28,36 @@ const UserRoutes = require("./routes/userRoutes");
 const app = express();
 
 // Middleware
-app.use(helmet());
+//app.use(helmet());
 app.use(express.json());
 app.use(cors({
-  origin: 'https://autoplanificationproductionproject-0s1w.onrender.com',
+  origin:[
+    'https://autoplanificationproductionproject-0s1w.onrender.com',
+    'http://localhost:4200', // Adjust port if different
+    'http://localhost:8081',
+  ],
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS','PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'authorization'],
   credentials: true,
-  exposedHeaders: ['Authorization'] // Important pour les requêtes cross-origin
+  exposedHeaders: ['Authorization'], // Important pour les requêtes cross-origin
+  preflightContinue: true,
 }));
+
+// TEST
+app.get('/api/ping', (req, res) => {
+  res.status(200).json({ message: 'Pong!' });
+});
 
 app.use((req, res, next) => {
   //console.log('🔍 Incoming headers:', req.headers);
   //console.log('🔍 Request method:', req.method);
   //console.log('🔍 Request URL:', req.originalUrl);
+  console.log('🔍 Incoming request:', {
+    method: req.method,
+    url: req.originalUrl,
+    origin: req.headers.origin,
+    headers: req.headers
+  });
   next();
 });
 //TEST
@@ -63,7 +79,10 @@ const authLimiter = rateLimit({
     error: "Trop de requêtes. Réessaie plus tard.",
   },
 });
-app.use("/api/Users", authLimiter);
+app.use("/api/users", authLimiter);
+
+app.options('*', cors()); // Handle preflight for all routes
+
 // Routes
 app.use("/api/commandes", commandeRoutes);
 app.use("/api/salles", salleRoutes);
@@ -72,9 +91,10 @@ app.use("/api/machines", machineRoutes);
 app.use("/api/matieres", matiereRoutes);
 app.use("/api/produits", produitsRoutes);
 app.use("/api/planifications", planificationRoutes);
-app.use("/api/Users", UserRoutes);
+app.use("/api/users", UserRoutes);
 app.use("/api/clients", clientRoutes);
 
+app.set('trust proxy', 1); // Trust first proxy
 
 app.get("/", (req, res) => {
   res.send("API Running...");
