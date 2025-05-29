@@ -273,7 +273,7 @@ class _PlanificationConfirmationDialogState
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Erreur: ID de planification manquant")),
       );
-      
+
     }
     bool? confirm = await showDialog<bool>(
       context: context,
