@@ -14,10 +14,29 @@ class PlanificationProvider with ChangeNotifier {
   final MatiereProvider matiereProvider;
   List<Planification> _planifications = [];
   List<Planification> get planifications => _planifications;
-
+  int _startHour = 7; // Default value
+  int _endHour = 17;  // Default value
+  String _timezone = 'Africa/Tunis';
   PlanificationProvider(this.commandeProvider, this.matiereProvider);
-
-
+  int get startHour => _startHour;
+  int get endHour => _endHour;
+  String get timezone => _timezone;
+  Future<void> updateWorkHours(int newStartHour, int newEndHour) async {
+    try {
+      final response = await ApiService.updateWorkHours(newStartHour, newEndHour);
+      if (response['success']) {
+        _startHour = response['workHoursConfig']['startHour'];
+        _endHour = response['workHoursConfig']['endHour'];
+        _timezone = response['workHoursConfig']['timezone'];
+        notifyListeners(); // Notify UI of changes
+      } else {
+        throw Exception(response['message']);
+      }
+    } catch (e) {
+      print('Erreur lors de la mise à jour des heures de travail: $e');
+      throw e;
+    }
+  }
   Future<void> autoPlanifierToutesLesCommandes() async {
     final url = Uri.parse('https://autoplanificationproductionproject.onrender.com/planifications/auto');
     final response = await http.post(url);

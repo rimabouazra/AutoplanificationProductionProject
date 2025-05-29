@@ -1029,4 +1029,52 @@ class ApiService {
       };
     }
   }
+  static Future<Map<String, dynamic>> updateWorkHours(int newStartHour, int newEndHour) async {
+    try {
+      final token = await AuthService.getToken();
+      if (token == null) {
+        throw Exception('Aucun token disponible');
+      }
+
+      final response = await http.put(
+        Uri.parse('$baseUrl/planifications/work-hours'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $token',
+        },
+        body: jsonEncode({
+          'newStartHour': newStartHour,
+          'newEndHour': newEndHour,
+        }),
+      );
+
+      debugPrint('Update Work Hours - Status: ${response.statusCode}');
+      debugPrint('Update Work Hours - Body: ${response.body}');
+
+      if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        return {
+          'success': true,
+          'message': jsonData['message'],
+          'workHoursConfig': {
+            'startHour': jsonData['workHoursConfig']['startHour'],
+            'endHour': jsonData['workHoursConfig']['endHour'],
+            'timezone': jsonData['workHoursConfig']['timezone'],
+          },
+        };
+      } else {
+        final errorData = json.decode(response.body);
+        return {
+          'success': false,
+          'message': errorData['message'] ?? 'Erreur lors de la mise à jour des heures de travail',
+        };
+      }
+    } catch (e) {
+      debugPrint('Erreur dans updateWorkHours: $e');
+      return {
+        'success': false,
+        'message': 'Erreur de connexion: $e',
+      };
+    }
+  }
 }

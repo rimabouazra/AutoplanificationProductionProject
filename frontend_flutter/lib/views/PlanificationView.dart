@@ -29,8 +29,10 @@ class _PlanificationViewState extends State<PlanificationView> {
   @override
   void initState() {
     super.initState();
-      _startDate = DateTime.now();
     final provider = Provider.of<PlanificationProvider>(context, listen: false);
+    _startHour = provider.startHour;
+    _endHour = provider.endHour;
+    _startDate = DateTime.now();
     provider.fetchPlanifications();
     _fetchWaitingPlanifications();
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -101,6 +103,67 @@ class _PlanificationViewState extends State<PlanificationView> {
         SnackBar(content: Text('Erreur lors de la mise à jour de l\'ordre')),
       );
     }
+  }
+  void _showUpdateWorkHoursDialog(BuildContext context) async {
+    final provider = Provider.of<PlanificationProvider>(context, listen: false);
+    int newStartHour = provider.startHour;
+    int newEndHour = provider.endHour;
+
+    await showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(
+          "Modifier les heures de travail",
+          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            _buildHourDropdown(
+              value: newStartHour,
+              onChanged: (value) => newStartHour = value !,
+              hint: 'Heure de début',
+            ),
+            SizedBox(height: 8),
+            _buildHourDropdown(
+              value: newEndHour,
+              onChanged: (value) => newEndHour = value !,
+              hint: 'Heure de fin',
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Annuler", style: TextStyle(color: Colors.deepPurple)),
+          ),
+          FutureBuilder<bool>(
+            future: AuthService.isAdminOrManager(),
+            builder: (context, snapshot) {
+              final isAdminOrManager = snapshot.data ?? false;
+              return TextButton(
+                onPressed: isAdminOrManager && newStartHour != null && newEndHour != null
+                    ? () async {
+                  try {
+                    await provider.updateWorkHours(newStartHour, newEndHour);
+                    Navigator.pop(context);
+                    _showSuccessSnackbar('Heures de travail mises à jour');
+                    setState(() {
+                      _startHour = newStartHour;
+                      _endHour = newEndHour;
+                    });
+                  } catch (e) {
+                    _showErrorSnackbar('Erreur: $e');
+                  }
+                }
+                    : null,
+                child: Text("Confirmer", style: TextStyle(color: Colors.deepPurple)),
+              );
+            },
+          ),
+        ],
+      ),
+    );
   }
 
   void _showWaitingPlanificationsDialog(BuildContext context) async {
@@ -261,6 +324,11 @@ class _PlanificationViewState extends State<PlanificationView> {
         elevation: 0,
         actions: [
           IconButton(
+            icon: Icon(Icons.access_time),
+            onPressed: () => _showUpdateWorkHoursDialog(context),
+            tooltip: 'Modifier les heures de travail',
+          ),
+          IconButton(
             icon: Icon(Icons.list),
             onPressed: () => _showWaitingPlanificationsDialog(context),
             tooltip: 'Voir les planifications en attente',
@@ -335,6 +403,7 @@ class _PlanificationViewState extends State<PlanificationView> {
   }
 
   List<Planification> _filterPlanifications(List<Planification> plans) {
+    final provider = Provider.of<PlanificationProvider>(context, listen: false);
     return plans.where((p) {
       final date = p.debutPrevue;
       if (date == null) return false;
@@ -344,8 +413,8 @@ class _PlanificationViewState extends State<PlanificationView> {
 
       switch (_selectedViewMode) {
         case 'journée':
-          rangeStart = DateTime(rangeStart.year, rangeStart.month, rangeStart.day, _startHour);
-          rangeEnd = DateTime(rangeStart.year, rangeStart.month, rangeStart.day, _endHour);
+          rangeStart = DateTime(rangeStart.year, rangeStart.month, rangeStart.day, provider.startHour);
+          rangeEnd = DateTime(rangeStart.year, rangeStart.month, rangeStart.day, provider.endHour);
           break;
         case 'semaine':
           rangeStart = rangeStart.subtract(Duration(days: rangeStart.weekday - 1));
@@ -370,7 +439,6 @@ class _PlanificationViewState extends State<PlanificationView> {
       return timeMatch && statusMatch && salleMatch;
     }).toList();
   }
-
   void _calculateDateRange(List<Planification> planifications) {
     if (planifications.isEmpty || _isDateRangeInitialized) return;
 

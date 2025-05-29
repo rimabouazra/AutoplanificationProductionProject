@@ -1,6 +1,6 @@
 const dotenv = require("dotenv");
 const path = require('path');
-const BASE_URL = 'https://autoplanificationproductionproject.onrender.com';
+const BASE_URL = 'https://autoplanificationproductionproject.onrender.com/';
 
 const cron = require('node-cron');
 const axios = require('axios');
