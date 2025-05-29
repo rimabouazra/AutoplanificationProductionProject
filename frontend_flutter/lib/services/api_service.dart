@@ -15,7 +15,7 @@ import '../models/commande.dart';
 import '../models/client.dart';
 
 class ApiService {
-  static String get baseUrl => dotenv.env['BASE_URL'] ?? "https://autoplanificationproductionproject.onrender.com/";
+  static String get baseUrl => dotenv.env['BASE_URL'] ?? "https://autoplanificationproductionproject.onrender.com";
   Future<Map<String, dynamic>> loginUser(String email, String password) async {
     try {
       print('Tentative de connexion avec email: $email');
