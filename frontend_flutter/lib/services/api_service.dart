@@ -107,7 +107,7 @@ class ApiService {
   }
 
   static Future<List<Machine>> getMachines() async {
-    final response = await http.get(Uri.parse('$baseUrl/machines'));
+    final response = await http.get(Uri.parse('$baseUrl/api/machines'));
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
       return jsonData.map((json) => Machine.fromJson(json)).toList();
@@ -239,7 +239,7 @@ class ApiService {
   }
 
   static Future<List<Salle>> getSalles() async {
-    final response = await http.get(Uri.parse('$baseUrl/salles'));
+    final response = await http.get(Uri.parse('$baseUrl/api/salles'));
     print('Raw API response for getSalles: ${response.body}');
     if (response.statusCode == 200) {
       List<dynamic> jsonData = json.decode(response.body);
