@@ -28,7 +28,7 @@ const UserRoutes = require("./routes/userRoutes");
 const app = express();
 
 // Middleware
-app.use(helmet());
+//app.use(helmet());
 app.use(express.json());
 app.use(cors({
   origin: '*', // Temporarily allow all origins
@@ -42,6 +42,12 @@ app.use((req, res, next) => {
   //console.log('🔍 Incoming headers:', req.headers);
   //console.log('🔍 Request method:', req.method);
   //console.log('🔍 Request URL:', req.originalUrl);
+  console.log('🔍 Incoming request:', {
+    method: req.method,
+    url: req.originalUrl,
+    origin: req.headers.origin,
+    headers: req.headers
+  });
   next();
 });
 //TEST

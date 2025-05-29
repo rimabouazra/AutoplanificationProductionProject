@@ -51,6 +51,7 @@ class ApiService {
       }
     } catch (e, stackTrace) {
       print('Erreur lors de la connexion: $e');
+      print('Full error: $e');
       print('Stack trace: $stackTrace');
       return {'success': false, 'message': 'Erreur de connexion réseau: $e'};
     }
