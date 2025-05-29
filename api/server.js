@@ -81,6 +81,7 @@ app.use("/api/planifications", planificationRoutes);
 app.use("/api/users", UserRoutes);
 app.use("/api/clients", clientRoutes);
 
+app.set('trust proxy', 1); // Trust first proxy
 
 app.get("/", (req, res) => {
   res.send("API Running...");
