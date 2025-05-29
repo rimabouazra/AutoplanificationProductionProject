@@ -69,7 +69,7 @@ const authLimiter = rateLimit({
     error: "Trop de requêtes. Réessaie plus tard.",
   },
 });
-app.use("/api/Users", authLimiter);
+app.use("/api/users", authLimiter);
 // Routes
 app.use("/api/commandes", commandeRoutes);
 app.use("/api/salles", salleRoutes);
