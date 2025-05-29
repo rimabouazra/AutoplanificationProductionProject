@@ -31,7 +31,7 @@ const app = express();
 //app.use(helmet());
 app.use(express.json());
 app.use(cors({
-  origin: '*', // Temporarily allow all origins
+  origin: true, // Temporarily allow all origins
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS','PATCH'],
   allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'authorization'],
   credentials: true,

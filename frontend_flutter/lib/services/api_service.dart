@@ -19,7 +19,7 @@ class ApiService {
   Future<Map<String, dynamic>> loginUser(String email, String password) async {
     try {
       print('Tentative de connexion avec email: $email');
-
+      print('Full login URL: ${baseUrl}/api/users/login');
       final response = await http.post(
         Uri.parse('$baseUrl/api/users/login'),
         headers: {
@@ -52,6 +52,8 @@ class ApiService {
     } catch (e, stackTrace) {
       print('Erreur lors de la connexion: $e');
       print('Full error: $e');
+      print('Type: ${e.runtimeType}');
+    print('Message: ${e.toString()}');
       print('Stack trace: $stackTrace');
       return {'success': false, 'message': 'Erreur de connexion réseau: $e'};
     }
