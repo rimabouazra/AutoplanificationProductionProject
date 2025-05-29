@@ -21,7 +21,7 @@ class ApiService {
       print('Tentative de connexion avec email: $email');
 
       final response = await http.post(
-        Uri.parse('$baseUrl/users/login'),
+        Uri.parse('$baseUrl/api/users/login'),
         headers: {
           'Content-Type': 'application/json',
         },
@@ -62,7 +62,7 @@ class ApiService {
       print('Tentative d\'inscription: $username, $email');
 
       final response = await http.post(
-        Uri.parse('$baseUrl/users/add'),
+        Uri.parse('$baseUrl/api/users/add'),
         headers: {
           'Content-Type': 'application/json',
         },
