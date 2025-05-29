@@ -15,10 +15,13 @@ import 'views/admin_home_page.dart';
 import 'views/HomePage.dart';
 import 'package:frontend/providers/PlanificationProvider .dart';
 import 'package:frontend/providers/userProvider.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await dotenv.load(fileName: ".env");
   runApp(
     MultiProvider(
       providers: [

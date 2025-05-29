@@ -26,3 +26,4 @@ router.get("/:id", planificationController.getPlanificationById);
 router.get('/active/:machineId', planificationController.checkActivePlanification);
 router.put("/waiting/order", planificationController.reorderWaitingPlanifications);
 router.post('/terminate/:id', authenticateToken, authorizeRoles('admin', 'manager'), planificationController.terminerPlanification);module.exports = router;
+router.put('/work-hours', authenticateToken, restrictToAdminOrManager, planificationController.updateWorkHours);
