@@ -269,12 +269,7 @@ class _PlanificationConfirmationDialogState
 
   Future<void> _confirmPlanification() async {
     print('Confirming planifications: ${widget.planifications.map((p) => p.toJson()).toList()}');
-    if (!widget.hasInsufficientStock && widget.planifications.any((p) => p.id == null || p.id!.isEmpty)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Erreur: ID de planification manquant")),
-      );
 
-    }
     bool? confirm = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(

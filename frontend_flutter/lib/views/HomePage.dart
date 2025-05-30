@@ -45,7 +45,7 @@ class _HomePageState extends State<HomePage> {
     {
       'image': 'assets/images/hero1.jpg',
       "title": 'Sustainable Style',
-      'subtitle': 'Eco-conscious designs for a better tomorrow.',
+      'subtitle': 'Des conceptions éco-responsables pour un avenir meilleur.',
     },
     {
       'image': 'assets/images/hero2.jpg',
@@ -56,7 +56,7 @@ class _HomePageState extends State<HomePage> {
       'image': 'assets/images/hero3.jpg',
 
       'title': 'Timeless Elegance',
-      'subtitle': 'Discover our latest lingerie collection.',
+      'subtitle': 'Découvrez notre dernière collection de lingerie.',
     },
   ];
 
@@ -153,7 +153,7 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       actions: [
-        _buildNavButton('Login', Icons.login, () {
+        _buildNavButton('Se connecter', Icons.login, () {
           Navigator.push(context, MaterialPageRoute(builder: (_) => LoginPage()));
         }),
         Padding(
@@ -268,7 +268,7 @@ class _HomePageState extends State<HomePage> {
                               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                             ),
                             child: Text(
-                              'Shop Now',
+                              'Achetez maintenant',
                               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                             ),
                           ),
@@ -383,7 +383,7 @@ class _HomePageState extends State<HomePage> {
                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(30)),
                     ),
                     child: Text(
-                      'Learn More',
+                      'Apprendre encore plus',
                       style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                     ),
                   ),
@@ -621,7 +621,7 @@ class _ProductCardState extends State<ProductCard> with SingleTickerProviderStat
                           padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                         ),
                         child: Text(
-                          'Explore',
+                          'Explorer',
                           style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
                         ),
                       ),

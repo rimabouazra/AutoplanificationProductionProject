@@ -84,7 +84,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   children: [
                     FadeInUp(
                       child: Text(
-                        'Create Account',
+                        'Créer un compte',
                         style: TextStyle(
                           fontFamily: 'Roboto',
                           fontSize: 32,
@@ -158,7 +158,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   TextFormField(
                     controller: _usernameController,
                     decoration: InputDecoration(
-                      labelText: 'Username',
+                      labelText: "nom d'utilisateur",
                       prefixIcon: Icon(Icons.person, color: Colors.blueGrey[600]),
                       filled: true,
                       fillColor: Colors.grey[100],
@@ -199,7 +199,7 @@ class _RegisterPageState extends State<RegisterPage> {
                   TextFormField(
                     controller: _passwordController,
                     decoration: InputDecoration(
-                      labelText: 'Password',
+                      labelText: 'mot de passe',
                       prefixIcon: Icon(Icons.lock, color: Colors.blueGrey[600]),
                       suffixIcon: IconButton(
                         icon: Icon(
@@ -245,7 +245,7 @@ class _RegisterPageState extends State<RegisterPage> {
                         elevation: 4,
                       ),
                       child: Text(
-                        'Se connecter',
+                        "S'inscrire",
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -260,7 +260,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Already have an account? ',
+                          " Vous avez déjà un compte ?",
                           style: TextStyle(
                             color: Colors.grey[600],
                             fontSize: 16,
@@ -283,7 +283,7 @@ class _RegisterPageState extends State<RegisterPage> {
                             );
                           },
                           child: Text(
-                            'Sign In',
+                            'Se connecter',
                             style: TextStyle(
                               color: Colors.blueGrey[700],
                               fontSize: 16,

@@ -666,8 +666,7 @@ class _PlanificationViewState extends State<PlanificationView> {
     Map<String, List<Planification>> groupedPlans = {};
     if (_selectedViewMode == 'semaine') {
       for (var plan in planifications) {
-        final dayKey = DateFormat('EEEE dd/MM').format(plan.debutPrevue!);
-        groupedPlans.putIfAbsent(dayKey, () => []).add(plan);
+        final dayKey = DateFormat('EEEE dd/MM', 'fr_FR').format(plan.debutPrevue!);        groupedPlans.putIfAbsent(dayKey, () => []).add(plan);
       }
     }
 
@@ -913,7 +912,7 @@ class _PlanificationViewState extends State<PlanificationView> {
                             ? null
                             : () => _terminerPlanification(plan.id!),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.deepPurple,
+                          backgroundColor: Colors.greenAccent,
                           padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                           minimumSize: Size(80, 30),
                           textStyle: TextStyle(fontSize: 12),

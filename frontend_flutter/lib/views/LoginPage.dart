@@ -122,7 +122,7 @@ class _LoginPageState extends State<LoginPage> {
                   children: [
                     FadeInUp(
                       child: Text(
-                        'Welcome Back',
+                        'Bienvenue',
                         style: TextStyle(
                           fontFamily: 'Roboto',
                           fontSize: 32,
@@ -217,7 +217,7 @@ class _LoginPageState extends State<LoginPage> {
                   TextFormField(
                     controller: passwordController,
                     decoration: InputDecoration(
-                      labelText: 'Password',
+                      labelText: 'mot de passe',
                       prefixIcon: Icon(Icons.lock, color: Colors.blueGrey[600]),
                       suffixIcon: IconButton(
                         icon: Icon(
@@ -263,7 +263,7 @@ class _LoginPageState extends State<LoginPage> {
                         elevation: 4,
                       ),
                       child: Text(
-                        'Se connecter',
+                        "s'inscrire",
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
@@ -278,7 +278,7 @@ class _LoginPageState extends State<LoginPage> {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          "pas de compte? ",
+                          "Vous n'avez pas de compte? ",
                           style: TextStyle(
                             color: Colors.grey[600],
                             fontSize: 16,
@@ -301,7 +301,7 @@ class _LoginPageState extends State<LoginPage> {
                             );
                           },
                           child: Text(
-                            'Se connecter',
+                            "S'inscrire",
                             style: TextStyle(
                               color: Colors.blueGrey[700],
                               fontSize: 16,
