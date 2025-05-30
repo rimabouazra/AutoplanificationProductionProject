@@ -263,7 +263,7 @@ class _LoginPageState extends State<LoginPage> {
                         elevation: 4,
                       ),
                       child: Text(
-                        "s'inscrire",
+                        "se connecter",
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w600,
