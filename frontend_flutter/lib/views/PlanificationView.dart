@@ -10,6 +10,7 @@ import '../providers/PlanificationProvider .dart';
 import '../services/api_service.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz;
+
 class PlanificationView extends StatefulWidget {
   @override
   _PlanificationViewState createState() => _PlanificationViewState();
@@ -46,13 +47,14 @@ class _PlanificationViewState extends State<PlanificationView> {
   void dispose() {
     super.dispose();
   }
+
   Future<void> _terminerPlanification(String planificationId) async {
     try {
       final result = await ApiService.terminerPlanification(planificationId);
       if (result['success']) {
         _showSuccessSnackbar(result['message']);
         final provider = Provider.of<PlanificationProvider>(context, listen: false);
-        await provider.fetchPlanifications(); // Refresh planifications
+        await provider.fetchPlanifications();
       } else {
         _showErrorSnackbar(result['message']);
       }
@@ -65,7 +67,8 @@ class _PlanificationViewState extends State<PlanificationView> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: Colors.red,
+        backgroundColor: Colors.redAccent,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -75,6 +78,7 @@ class _PlanificationViewState extends State<PlanificationView> {
       SnackBar(
         content: Text(message),
         backgroundColor: Colors.green,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -82,7 +86,6 @@ class _PlanificationViewState extends State<PlanificationView> {
   Future<void> _fetchWaitingPlanifications() async {
     try {
       final waitingPlans = await ApiService.getWaitingPlanifications();
-      print("API Response: $waitingPlans");
       setState(() {
         _waitingPlanifications = waitingPlans;
       });
@@ -96,14 +99,23 @@ class _PlanificationViewState extends State<PlanificationView> {
       final order = _waitingPlanifications.map((wp) => wp.id).toList();
       await ApiService.updateWaitingPlanificationOrder(order);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Ordre des planifications mis à jour')),
+        SnackBar(
+          content: Text('Ordre des planifications mis à jour'),
+          backgroundColor: Colors.green,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       );
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors de la mise à jour de l\'ordre')),
+        SnackBar(
+          content: Text('Erreur lors de la mise à jour de l\'ordre'),
+          backgroundColor: Colors.redAccent,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
       );
     }
   }
+
   void _showUpdateWorkHoursDialog(BuildContext context) async {
     final provider = Provider.of<PlanificationProvider>(context, listen: false);
     int newStartHour = provider.startHour;
@@ -112,22 +124,27 @@ class _PlanificationViewState extends State<PlanificationView> {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           "Modifier les heures de travail",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+          style: TextStyle(
+            fontFamily: 'PlayfairDisplay',
+            fontWeight: FontWeight.bold,
+            color: Colors.blueGrey,
+          ),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             _buildHourDropdown(
               value: newStartHour,
-              onChanged: (value) => newStartHour = value !,
+              onChanged: (value) => newStartHour = value!,
               hint: 'Heure de début',
             ),
-            SizedBox(height: 8),
+            SizedBox(height: 15),
             _buildHourDropdown(
               value: newEndHour,
-              onChanged: (value) => newEndHour = value !,
+              onChanged: (value) => newEndHour = value!,
               hint: 'Heure de fin',
             ),
           ],
@@ -135,29 +152,39 @@ class _PlanificationViewState extends State<PlanificationView> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text("Annuler", style: TextStyle(color: Colors.deepPurple)),
+            child: Text(
+              "Annuler",
+              style: TextStyle(color: Colors.blueGrey),
+            ),
           ),
           FutureBuilder<bool>(
             future: AuthService.isAdminOrManager(),
             builder: (context, snapshot) {
               final isAdminOrManager = snapshot.data ?? false;
-              return TextButton(
+              return ElevatedButton(
                 onPressed: isAdminOrManager && newStartHour != null && newEndHour != null
                     ? () async {
-                  try {
-                    await provider.updateWorkHours(newStartHour, newEndHour);
-                    Navigator.pop(context);
-                    _showSuccessSnackbar('Heures de travail mises à jour');
-                    setState(() {
-                      _startHour = newStartHour;
-                      _endHour = newEndHour;
-                    });
-                  } catch (e) {
-                    _showErrorSnackbar('Erreur: $e');
-                  }
-                }
+                        try {
+                          await provider.updateWorkHours(newStartHour, newEndHour);
+                          Navigator.pop(context);
+                          _showSuccessSnackbar('Heures de travail mises à jour');
+                          setState(() {
+                            _startHour = newStartHour;
+                            _endHour = newEndHour;
+                          });
+                        } catch (e) {
+                          _showErrorSnackbar('Erreur: $e');
+                        }
+                      }
                     : null,
-                child: Text("Confirmer", style: TextStyle(color: Colors.deepPurple)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueGrey[800],
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text(
+                  "Confirmer",
+                  style: TextStyle(color: Colors.white),
+                ),
               );
             },
           ),
@@ -170,113 +197,119 @@ class _PlanificationViewState extends State<PlanificationView> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         title: Text(
           "Planifications en Attente",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+          style: TextStyle(
+            fontFamily: 'PlayfairDisplay',
+            fontWeight: FontWeight.bold,
+            color: Colors.blueGrey,
+          ),
         ),
         content: Container(
           width: double.maxFinite,
           constraints: BoxConstraints(maxHeight: 400),
           child: _waitingPlanifications.isEmpty
               ? Center(
-            child: Text(
-              "Aucune planification en attente",
-              style: TextStyle(color: Colors.grey[600]),
-            ),
-          )
+                  child: Text(
+                    "Aucune planification en attente",
+                    style: TextStyle(color: Colors.blueGrey[600]),
+                  ),
+                )
               : ReorderableListView(
-            onReorder: (oldIndex, newIndex) {
-              setState(() {
-                if (newIndex > oldIndex) {
-                  newIndex -= 1;
-                }
-                final item = _waitingPlanifications.removeAt(oldIndex);
-                _waitingPlanifications.insert(newIndex, item);
-              });
-              _updateWaitingPlanificationOrder();
-            },
-            children: _waitingPlanifications.asMap().entries.map((entry) {
-              final index = entry.key;
-              final waitingPlan = entry.value;
-              final commande =
-              waitingPlan.commandes.isNotEmpty ? waitingPlan.commandes.first : null;
-              final modeleData =
-              commande?.modeles.isNotEmpty == true ? commande!.modeles.first : null;
+                  onReorder: (oldIndex, newIndex) {
+                    setState(() {
+                      if (newIndex > oldIndex) {
+                        newIndex -= 1;
+                      }
+                      final item = _waitingPlanifications.removeAt(oldIndex);
+                      _waitingPlanifications.insert(newIndex, item);
+                    });
+                    _updateWaitingPlanificationOrder();
+                  },
+                  children: _waitingPlanifications.asMap().entries.map((entry) {
+                    final index = entry.key;
+                    final waitingPlan = entry.value;
+                    final commande =
+                        waitingPlan.commandes.isNotEmpty ? waitingPlan.commandes.first : null;
+                    final modeleData =
+                        commande?.modeles.isNotEmpty == true ? commande!.modeles.first : null;
 
-              Future<String?> getModelName() async {
-                if (modeleData?.modele != null) {
-                  if (modeleData!.modele is String) {
-                    return await ApiService().getModeleNom(modeleData.modele as String);
-                  } else if (modeleData!.modele is Modele) {
-                    return (modeleData.modele as Modele).nom;
-                  }
-                }
-                return 'Non spécifié';
-              }
+                    Future<String?> getModelName() async {
+                      if (modeleData?.modele != null) {
+                        if (modeleData!.modele is String) {
+                          return await ApiService().getModeleNom(modeleData.modele as String);
+                        } else if (modeleData!.modele is Modele) {
+                          return (modeleData.modele as Modele).nom;
+                        }
+                      }
+                      return 'Non spécifié';
+                    }
 
-              return FadeInUp(
-                key: ValueKey(waitingPlan.id),
-                duration: Duration(milliseconds: 300 + index * 100),
-                child: Card(
-                  margin: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-                  elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: FutureBuilder<String?>(
-                    future: getModelName(),
-                    builder: (context, snapshot) {
-                      final modelName = snapshot.data ?? 'Chargement...';
-                      return ListTile(
-                        contentPadding: EdgeInsets.all(12),
-                        title: Text(
-                          "Client: ${commande?.client.name ?? 'Inconnu'}",
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 20,
-                            color: Colors.deepPurple,
-                          ),
+                    return FadeInUp(
+                      key: ValueKey(waitingPlan.id),
+                      duration: Duration(milliseconds: 300 + index * 100),
+                      child: Card(
+                        margin: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                        elevation: 5,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        subtitle: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            SizedBox(height: 4),
-                            Text(
-                              "Modele: $modelName",
-                              style: TextStyle(fontSize: 20, color: Colors.grey[800]),
-                            ),
-                            Text(
-                              "Taille: ${waitingPlan.taille ?? modeleData?.taille ?? 'Non spécifié'}",
-                              style: TextStyle(fontSize: 20, color: Colors.grey[800]),
-                            ),
-                            Text(
-                              "Couleur: ${waitingPlan.couleur ?? modeleData?.couleur ?? 'Non spécifié'}",
-                              style: TextStyle(fontSize: 20, color: Colors.grey[800]),
-                            ),
-                            Text(
-                              "Quantité: ${waitingPlan.quantite?.toString() ?? modeleData?.quantite?.toString() ?? 'Non spécifié'}",
-                              style: TextStyle(fontSize: 20, color: Colors.grey[800]),
-                            ),
-                            Text(
-                              "Ajouté le :  ${waitingPlan.createdAt != null ? DateFormat("dd/MM/yyyy HH:mm").format(waitingPlan.createdAt!) : 'Non spécifié'}",
-                              style: TextStyle(fontSize: 20, color: Colors.grey[800]),
-                            ),
-                          ],
+                        child: FutureBuilder<String?>(
+                          future: getModelName(),
+                          builder: (context, snapshot) {
+                            final modelName = snapshot.data ?? 'Chargement...';
+                            return ListTile(
+                              contentPadding: EdgeInsets.all(15),
+                              title: Text(
+                                "Client: ${commande?.client.name ?? 'Inconnu'}",
+                                style: TextStyle(
+                                  fontFamily: 'PlayfairDisplay',
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                  color: Colors.blueGrey,
+                                ),
+                              ),
+                              subtitle: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  SizedBox(height: 8),
+                                  Text(
+                                    "Modèle: $modelName",
+                                    style: TextStyle(fontSize: 14, color: Colors.blueGrey[600]),
+                                  ),
+                                  Text(
+                                    "Taille: ${waitingPlan.taille ?? modeleData?.taille ?? 'Non spécifié'}",
+                                    style: TextStyle(fontSize: 14, color: Colors.blueGrey[600]),
+                                  ),
+                                  Text(
+                                    "Couleur: ${waitingPlan.couleur ?? modeleData?.couleur ?? 'Non spécifié'}",
+                                    style: TextStyle(fontSize: 14, color: Colors.blueGrey[600]),
+                                  ),
+                                  Text(
+                                    "Quantité: ${waitingPlan.quantite?.toString() ?? modeleData?.quantite?.toString() ?? 'Non spécifié'}",
+                                    style: TextStyle(fontSize: 14, color: Colors.blueGrey[600]),
+                                  ),
+                                  Text(
+                                    "Ajouté le : ${waitingPlan.createdAt != null ? DateFormat('dd/MM/yyyy HH:mm').format(waitingPlan.createdAt!) : 'Non spécifié'}",
+                                    style: TextStyle(fontSize: 14, color: Colors.blueGrey[600]),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         ),
-                      );
-                    },
-                  ),
+                      ),
+                    );
+                  }).toList(),
                 ),
-              );
-            }).toList(),
-          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(
               "Fermer",
-              style: TextStyle(color: Colors.deepPurple),
+              style: TextStyle(color: Colors.blueGrey),
             ),
           ),
         ],
@@ -288,22 +321,43 @@ class _PlanificationViewState extends State<PlanificationView> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text("Confirmer la déconnexion"),
-        content: Text("Voulez-vous vraiment vous déconnecter ?"),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Text(
+          "Confirmer la déconnexion",
+          style: TextStyle(
+            fontFamily: 'PlayfairDisplay',
+            fontWeight: FontWeight.bold,
+            color: Colors.blueGrey,
+          ),
+        ),
+        content: Text(
+          "Voulez-vous vraiment vous déconnecter ?",
+          style: TextStyle(color: Colors.blueGrey[600]),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text("Annuler"),
+            child: Text(
+              "Annuler",
+              style: TextStyle(color: Colors.blueGrey),
+            ),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () async {
               await AuthService.logout();
               Navigator.of(context).pushAndRemoveUntil(
                 MaterialPageRoute(builder: (context) => LoginPage()),
-                    (Route<dynamic> route) => false,
+                (Route<dynamic> route) => false,
               );
             },
-            child: Text("Déconnexion", style: TextStyle(color: Colors.red)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red[600],
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+            child: Text(
+              "Déconnexion",
+              style: TextStyle(color: Colors.white),
+            ),
           ),
         ],
       ),
@@ -313,91 +367,120 @@ class _PlanificationViewState extends State<PlanificationView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.blueGrey[50],
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text(
-          "Planifications",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+        backgroundColor: Colors.blueGrey[800],
+        title: FadeInDown(
+          child: Text(
+            "Gestion des Planifications",
+            style: TextStyle(
+              fontFamily: 'PlayfairDisplay',
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+            ),
+          ),
         ),
-        backgroundColor: Colors.deepPurple,
         centerTitle: true,
         elevation: 0,
         actions: [
-          IconButton(
-            icon: Icon(Icons.access_time),
-            onPressed: () => _showUpdateWorkHoursDialog(context),
-            tooltip: 'Modifier les heures de travail',
+          FadeInRight(
+            child: IconButton(
+              icon: Icon(Icons.access_time, color: Colors.white),
+              onPressed: () => _showUpdateWorkHoursDialog(context),
+              tooltip: 'Modifier les heures de travail',
+            ),
           ),
-          IconButton(
-            icon: Icon(Icons.list),
-            onPressed: () => _showWaitingPlanificationsDialog(context),
-            tooltip: 'Voir les planifications en attente',
+          FadeInRight(
+            child: IconButton(
+              icon: Icon(Icons.list, color: Colors.white),
+              onPressed: () => _showWaitingPlanificationsDialog(context),
+              tooltip: 'Voir les planifications en attente',
+            ),
           ),
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: () {
-              final provider = Provider.of<PlanificationProvider>(context, listen: false);
-              provider.fetchPlanifications();
-              _fetchWaitingPlanifications();
-              _isDateRangeInitialized = false;
-              setState(() {
-                _startDate = DateTime.now();
-                _endDate = null;
-              });
-              if (provider.planifications.isNotEmpty) {
-                _calculateDateRange(provider.planifications);
-              }
-            },
-            tooltip: 'Rafraîchir les planifications',
-          ),
-          IconButton(
-            icon: Icon(Icons.today),
-            onPressed: () {
-              setState(() {
-                _startDate = DateTime.now();
-                _endDate = null;
+          FadeInRight(
+            child: IconButton(
+              icon: Icon(Icons.refresh, color: Colors.white),
+              onPressed: () {
+                final provider = Provider.of<PlanificationProvider>(context, listen: false);
+                provider.fetchPlanifications();
+                _fetchWaitingPlanifications();
                 _isDateRangeInitialized = false;
-              });
-            },
-            tooltip: 'Réinitialiser la plage de dates',
+                setState(() {
+                  _startDate = DateTime.now();
+                  _endDate = null;
+                });
+                if (provider.planifications.isNotEmpty) {
+                  _calculateDateRange(provider.planifications);
+                }
+              },
+              tooltip: 'Rafraîchir les planifications',
+            ),
           ),
-          IconButton(
-            icon: Icon(Icons.logout),
-            onPressed: () => _confirmLogout(context),
-            tooltip: 'Déconnexion',
+          FadeInRight(
+            child: IconButton(
+              icon: Icon(Icons.today, color: Colors.white),
+              onPressed: () {
+                setState(() {
+                  _startDate = DateTime.now();
+                  _endDate = null;
+                  _isDateRangeInitialized = false;
+                });
+              },
+              tooltip: 'Réinitialiser la plage de dates',
+            ),
+          ),
+          FadeInRight(
+            child: IconButton(
+              icon: Icon(Icons.logout, color: Colors.white),
+              onPressed: () => _confirmLogout(context),
+              tooltip: 'Déconnexion',
+            ),
           ),
         ],
       ),
-      body: Consumer<PlanificationProvider>(
-        builder: (context, provider, child) {
-          if (provider.planifications.isEmpty && _waitingPlanifications.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text("Chargement des planifications..."),
-                ],
-              ),
+      body: Container(
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.blueGrey[50]!, Colors.white],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: Consumer<PlanificationProvider>(
+          builder: (context, provider, child) {
+            if (provider.planifications.isEmpty && _waitingPlanifications.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    CircularProgressIndicator(color: Colors.blueGrey[800]),
+                    SizedBox(height: 16),
+                    Text(
+                      "Chargement des planifications...",
+                      style: TextStyle(color: Colors.blueGrey[600]),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            if (!_isDateRangeInitialized && provider.planifications.isNotEmpty) {
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                _calculateDateRange(provider.planifications);
+              });
+            }
+
+            final filteredPlans = _filterPlanifications(provider.planifications);
+
+            return Column(
+              children: [
+                FadeInUp(child: _buildFilterBar(context, provider)),
+                Expanded(child: _buildPlanificationTable(filteredPlans)),
+              ],
             );
-          }
-
-          if (!_isDateRangeInitialized && provider.planifications.isNotEmpty) {
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              _calculateDateRange(provider.planifications);
-            });
-          }
-
-          final filteredPlans = _filterPlanifications(provider.planifications);
-
-          return Column(
-            children: [
-              _buildFilterBar(context, provider),
-              Expanded(child: _buildPlanificationTable(filteredPlans)),
-            ],
-          );
-        },
+          },
+        ),
       ),
     );
   }
@@ -439,6 +522,7 @@ class _PlanificationViewState extends State<PlanificationView> {
       return timeMatch && statusMatch && salleMatch;
     }).toList();
   }
+
   void _calculateDateRange(List<Planification> planifications) {
     if (planifications.isEmpty || _isDateRangeInitialized) return;
 
@@ -463,22 +547,31 @@ class _PlanificationViewState extends State<PlanificationView> {
     });
   }
 
-
   Widget _buildFilterBar(BuildContext context, PlanificationProvider provider) {
-    return FadeIn(
+    return FadeInUp(
       duration: Duration(milliseconds: 500),
       child: Container(
-        padding: EdgeInsets.all(8),
-        color: Colors.grey[100],
+        padding: EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black12,
+              blurRadius: 8,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
         child: SingleChildScrollView(
           scrollDirection: Axis.horizontal,
           child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
+            spacing: 10,
+            runSpacing: 10,
             children: [
               _buildDateSelector(context, true),
               if (_selectedViewMode == 'mois') ...[
-                Text('à', style: TextStyle(fontWeight: FontWeight.bold)),
+                Text('à', style: TextStyle(color: Colors.blueGrey[600], fontWeight: FontWeight.bold)),
                 _buildDateSelector(context, false),
               ],
               _buildDropdown(
@@ -542,20 +635,22 @@ class _PlanificationViewState extends State<PlanificationView> {
   }
 
   Widget _buildDateSelector(BuildContext context, bool isStartDate) {
-    return TextButton.icon(
-      style: TextButton.styleFrom(
-        backgroundColor: Colors.white,
-        padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+    return FadeInUp(
+      child: TextButton.icon(
+        style: TextButton.styleFrom(
+          backgroundColor: Colors.white.withOpacity(0.9),
+          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ),
+        icon: Icon(Icons.calendar_today, size: 16, color: Colors.blueGrey[800]),
+        label: Text(
+          isStartDate
+              ? (_startDate != null ? DateFormat('dd/MM/yyyy').format(_startDate!) : 'Date début')
+              : (_endDate != null ? DateFormat('dd/MM/yyyy').format(_endDate!) : 'Date fin'),
+          style: TextStyle(color: Colors.blueGrey[800], fontSize: 12),
+        ),
+        onPressed: () => _selectDate(context, isStartDate: isStartDate),
       ),
-      icon: Icon(Icons.calendar_today, size: 16, color: Colors.deepPurple),
-      label: Text(
-        isStartDate
-            ? (_startDate != null ? DateFormat('dd/MM/yyyy').format(_startDate!) : 'Date début')
-            : (_endDate != null ? DateFormat('dd/MM/yyyy').format(_endDate!) : 'Date fin'),
-        style: TextStyle(color: Colors.deepPurple, fontSize: 12),
-      ),
-      onPressed: () => _selectDate(context, isStartDate: isStartDate),
     );
   }
 
@@ -566,29 +661,31 @@ class _PlanificationViewState extends State<PlanificationView> {
     required ValueChanged<String?> onChanged,
     double width = 120,
   }) {
-    return Container(
-      width: width,
-      padding: EdgeInsets.symmetric(horizontal: 6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
-      ),
-      child: DropdownButton<String>(
-        isExpanded: true,
-        value: value,
-        hint: Text(hint, style: TextStyle(fontSize: 12)),
-        items: items.map((item) {
-          return DropdownMenuItem<String>(
-            value: item,
-            child: Text(
-              item[0].toUpperCase() + item.substring(1),
-              style: TextStyle(fontSize: 12),
-            ),
-          );
-        }).toList(),
-        onChanged: onChanged,
-        underline: SizedBox(),
+    return FadeInUp(
+      child: Container(
+        width: width,
+        padding: EdgeInsets.symmetric(horizontal: 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8)],
+        ),
+        child: DropdownButton<String>(
+          isExpanded: true,
+          value: value,
+          hint: Text(hint, style: TextStyle(fontSize: 12, color: Colors.blueGrey[600])),
+          items: items.map((item) {
+            return DropdownMenuItem<String>(
+              value: item,
+              child: Text(
+                item[0].toUpperCase() + item.substring(1),
+                style: TextStyle(fontSize: 12, color: Colors.blueGrey[600]),
+              ),
+            );
+          }).toList(),
+          onChanged: onChanged,
+          underline: SizedBox(),
+        ),
       ),
     );
   }
@@ -598,26 +695,28 @@ class _PlanificationViewState extends State<PlanificationView> {
     required ValueChanged<int?> onChanged,
     required String hint,
   }) {
-    return Container(
-      width: 70,
-      padding: EdgeInsets.symmetric(horizontal: 6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
-      ),
-      child: DropdownButton<int>(
-        isExpanded: true,
-        value: value,
-        hint: Text(hint, style: TextStyle(fontSize: 12)),
-        items: List.generate(24, (index) => index)
-            .map((hour) => DropdownMenuItem(
-          value: hour,
-          child: Text('$hour h', style: TextStyle(fontSize: 12)),
-        ))
-            .toList(),
-        onChanged: onChanged,
-        underline: SizedBox(),
+    return FadeInUp(
+      child: Container(
+        width: 70,
+        padding: EdgeInsets.symmetric(horizontal: 6),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8)],
+        ),
+        child: DropdownButton<int>(
+          isExpanded: true,
+          value: value,
+          hint: Text(hint, style: TextStyle(fontSize: 12, color: Colors.blueGrey[600])),
+          items: List.generate(24, (index) => index)
+              .map((hour) => DropdownMenuItem(
+                    value: hour,
+                    child: Text('$hour h', style: TextStyle(fontSize: 12, color: Colors.blueGrey[600])),
+                  ))
+              .toList(),
+          onChanged: onChanged,
+          underline: SizedBox(),
+        ),
       ),
     );
   }
@@ -661,19 +760,28 @@ class _PlanificationViewState extends State<PlanificationView> {
   }
 
   Widget _buildPlanificationTable(List<Planification> planifications) {
-    // Sort planifications by debutPrevue
     planifications.sort((a, b) => a.debutPrevue!.compareTo(b.debutPrevue!));
     Map<String, List<Planification>> groupedPlans = {};
     if (_selectedViewMode == 'semaine') {
       for (var plan in planifications) {
-        final dayKey = DateFormat('EEEE dd/MM', 'fr_FR').format(plan.debutPrevue!);        groupedPlans.putIfAbsent(dayKey, () => []).add(plan);
+        final dayKey = DateFormat('EEEE dd/MM', 'fr_FR').format(plan.debutPrevue!);
+        groupedPlans.putIfAbsent(dayKey, () => []).add(plan);
       }
     }
 
-    // Define consistent text styles
-    const headerTextStyle = TextStyle(fontWeight: FontWeight.bold, fontSize: 18);
-    const cellTextStyle = TextStyle(fontSize: 16);
-    const dayHeaderStyle = TextStyle(fontWeight: FontWeight.bold, fontSize: 20);
+    const headerTextStyle = TextStyle(
+      fontFamily: 'PlayfairDisplay',
+      fontWeight: FontWeight.bold,
+      fontSize: 16,
+      color: Colors.blueGrey,
+    );
+    const cellTextStyle = TextStyle(fontSize: 14, color: Colors.blueGrey);
+    const dayHeaderStyle = TextStyle(
+      fontFamily: 'PlayfairDisplay',
+      fontWeight: FontWeight.bold,
+      fontSize: 18,
+      color: Colors.blueGrey,
+    );
 
     return SingleChildScrollView(
       scrollDirection: Axis.vertical,
@@ -683,250 +791,272 @@ class _PlanificationViewState extends State<PlanificationView> {
         ),
         child: _selectedViewMode == 'semaine' && groupedPlans.isNotEmpty
             ? Column(
-          children: groupedPlans.entries.map((entry) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: Text(
-                    entry.key,
-                    style: dayHeaderStyle,
-                  ),
-                ),
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minWidth: MediaQuery.of(context).size.width,
-                  ),
-                  child: DataTable(
-                    columnSpacing: 12,
-                    dataRowHeight: 70,
-                    headingRowColor: MaterialStateColor.resolveWith(
-                            (states) => Colors.deepPurple.withOpacity(0.1)),
-                    columns: [
-                      DataColumn(label: Text('Client', style: headerTextStyle)),
-                      DataColumn(label: Text('Modèle', style: headerTextStyle)),
-                      DataColumn(label: Text('Taille', style: headerTextStyle)),
-                      DataColumn(label: Text('Machine', style: headerTextStyle)),
-                      DataColumn(label: Text('Salle', style: headerTextStyle)),
-                      DataColumn(label: Text('Début', style: headerTextStyle)),
-                      DataColumn(label: Text('Fin', style: headerTextStyle)),
-                      DataColumn(label: Text('Statut', style: headerTextStyle)),
-                      DataColumn(label: Text('Actions', style: headerTextStyle)),
-                    ],
-                    rows: entry.value.asMap().entries.map((rowEntry) {
-                      final plan = rowEntry.value;
-                      final commande =
-                      plan.commandes.isNotEmpty ? plan.commandes.first : null;
-                      final modeleData = commande?.modeles.isNotEmpty == true
-                          ? commande!.modeles.first
-                          : null;
+                children: groupedPlans.entries.map((entry) {
+                  return FadeInUp(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: Text(
+                            entry.key,
+                            style: dayHeaderStyle,
+                          ),
+                        ),
+                        ConstrainedBox(
+                          constraints: BoxConstraints(
+                            minWidth: MediaQuery.of(context).size.width,
+                          ),
+                          child: Card(
+                            elevation: 5,
+                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            margin: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            child: DataTable(
+                              columnSpacing: 12,
+                              dataRowHeight: 70,
+                              headingRowColor: MaterialStateProperty.all(Colors.blueGrey[100]),
+                              columns: [
+                                DataColumn(label: Text('Client', style: headerTextStyle)),
+                                DataColumn(label: Text('Modèle', style: headerTextStyle)),
+                                DataColumn(label: Text('Taille', style: headerTextStyle)),
+                                DataColumn(label: Text('Machine', style: headerTextStyle)),
+                                DataColumn(label: Text('Salle', style: headerTextStyle)),
+                                DataColumn(label: Text('Début', style: headerTextStyle)),
+                                DataColumn(label: Text('Fin', style: headerTextStyle)),
+                                DataColumn(label: Text('Statut', style: headerTextStyle)),
+                                DataColumn(label: Text('Actions', style: headerTextStyle)),
+                              ],
+                              rows: entry.value.asMap().entries.map((rowEntry) {
+                                final plan = rowEntry.value;
+                                final commande =
+                                    plan.commandes.isNotEmpty ? plan.commandes.first : null;
+                                final modeleData = commande?.modeles.isNotEmpty == true
+                                    ? commande!.modeles.first
+                                    : null;
 
-                      Future<String?> getModelName() async {
-                        if (plan.modele != null) {
-                          return plan.modele!.nom;
-                        } else if (modeleData?.modele != null) {
-                          if (modeleData!.modele is String) {
-                            return await ApiService()
-                                .getModeleNom(modeleData.modele as String);
-                          } else if (modeleData!.modele is Modele) {
-                            return (modeleData.modele as Modele).nom;
-                          }
-                        }
-                        return 'Non spécifié';
-                      }
+                                Future<String?> getModelName() async {
+                                  if (plan.modele != null) {
+                                    return plan.modele!.nom;
+                                  } else if (modeleData?.modele != null) {
+                                    if (modeleData!.modele is String) {
+                                      return await ApiService()
+                                          .getModeleNom(modeleData.modele as String);
+                                    } else if (modeleData!.modele is Modele) {
+                                      return (modeleData.modele as Modele).nom;
+                                    }
+                                  }
+                                  return 'Non spécifié';
+                                }
 
-                      return DataRow(
-                        cells: [
-                          DataCell(Text(
-                            plan.commandes.isNotEmpty
-                                ? plan.commandes.first.client.name
-                                : 'Aucun client',
-                            style: cellTextStyle,
-                            overflow: TextOverflow.ellipsis,
-                          )),
-                          DataCell(FutureBuilder<String?>(
-                            future: getModelName(),
-                            builder: (context, snapshot) {
-                              final modelName = snapshot.data ?? 'Chargement...';
-                              return Text(
-                                modelName,
-                                style: cellTextStyle,
-                                overflow: TextOverflow.ellipsis,
-                              );
-                            },
-                          )),
-                          DataCell(Text(
-                            plan.taille ?? modeleData?.taille ?? 'Non spécifié',
-                            style: cellTextStyle,
-                            overflow: TextOverflow.ellipsis,
-                          )),
-                          DataCell(Text(
-                            plan.machines.isNotEmpty
-                                ? plan.machines.first.nom
-                                : 'Aucune machine',
-                            style: cellTextStyle,
-                            overflow: TextOverflow.ellipsis,
-                          )),
-                          DataCell(Text(
-                            plan.machines.isNotEmpty
-                                ? plan.machines.first.salle.nom
-                                : 'N/A',
-                            style: cellTextStyle,
-                            overflow: TextOverflow.ellipsis,
-                          )),
-                          DataCell(Text(
-                            _formatDateTime(plan.debutPrevue),
-                            style: cellTextStyle,
-                          )),
-                          DataCell(Text(
-                            _formatDateTime(plan.finPrevue),
-                            style: cellTextStyle,
-                          )),
-                          DataCell(_buildStatusBadge(plan.statut)),
-                          DataCell(
-                            FutureBuilder<bool>(
-                              future: AuthService.isAdminOrManager(),
-                              builder: (context, snapshot) {
-                                final isAdminOrManager = snapshot.data ?? false;
-                                return isAdminOrManager && plan.id != null
-                                    ? ElevatedButton(
-                                  onPressed: plan.statut == 'terminée'
-                                      ? null
-                                      : () => _terminerPlanification(plan.id !),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.greenAccent,
-                                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    minimumSize: Size(80, 30),
-                                    textStyle: TextStyle(fontSize: 12),
-                                  ),
-                                  child: Text('Terminer'),
-                                )
-                                    : SizedBox.shrink();
-                              },
+                                return DataRow(
+                                  cells: [
+                                    DataCell(Text(
+                                      plan.commandes.isNotEmpty
+                                          ? plan.commandes.first.client.name
+                                          : 'Aucun client',
+                                      style: cellTextStyle,
+                                      overflow: TextOverflow.ellipsis,
+                                    )),
+                                    DataCell(FutureBuilder<String?>(
+                                      future: getModelName(),
+                                      builder: (context, snapshot) {
+                                        final modelName = snapshot.data ?? 'Chargement...';
+                                        return Text(
+                                          modelName,
+                                          style: cellTextStyle,
+                                          overflow: TextOverflow.ellipsis,
+                                        );
+                                      },
+                                    )),
+                                    DataCell(Text(
+                                      plan.taille ?? modeleData?.taille ?? 'Non spécifié',
+                                      style: cellTextStyle,
+                                      overflow: TextOverflow.ellipsis,
+                                    )),
+                                    DataCell(Text(
+                                      plan.machines.isNotEmpty
+                                          ? plan.machines.first.nom
+                                          : 'Aucune machine',
+                                      style: cellTextStyle,
+                                      overflow: TextOverflow.ellipsis,
+                                    )),
+                                    DataCell(Text(
+                                      plan.machines.isNotEmpty
+                                          ? plan.machines.first.salle.nom
+                                          : 'N/A',
+                                      style: cellTextStyle,
+                                      overflow: TextOverflow.ellipsis,
+                                    )),
+                                    DataCell(Text(
+                                      _formatDateTime(plan.debutPrevue),
+                                      style: cellTextStyle,
+                                    )),
+                                    DataCell(Text(
+                                      _formatDateTime(plan.finPrevue),
+                                      style: cellTextStyle,
+                                    )),
+                                    DataCell(_buildStatusBadge(plan.statut)),
+                                    DataCell(
+                                      FutureBuilder<bool>(
+                                        future: AuthService.isAdminOrManager(),
+                                        builder: (context, snapshot) {
+                                          final isAdminOrManager = snapshot.data ?? false;
+                                          return isAdminOrManager && plan.id != null
+                                              ? ZoomIn(
+                                                  child: ElevatedButton(
+                                                    onPressed: plan.statut == 'terminée'
+                                                        ? null
+                                                        : () => _terminerPlanification(plan.id!),
+                                                    style: ElevatedButton.styleFrom(
+                                                      backgroundColor: Colors.blueGrey[800],
+                                                      shape: RoundedRectangleBorder(
+                                                          borderRadius: BorderRadius.circular(12)),
+                                                      padding:
+                                                          EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                                      minimumSize: Size(80, 30),
+                                                    ),
+                                                    child: Text(
+                                                      'Terminer',
+                                                      style: TextStyle(fontSize: 12, color: Colors.white),
+                                                    ),
+                                                  ),
+                                                )
+                                              : SizedBox.shrink();
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                );
+                              }).toList(),
                             ),
                           ),
-                        ],
-                      );
-                    }).toList(),
-                  ),
-                ),
-              ],
-            );
-          }).toList(),
-        )
-            : DataTable(
-          columnSpacing: 12,
-          dataRowHeight: 70,
-          headingRowColor: MaterialStateColor.resolveWith(
-                  (states) => Colors.deepPurple.withOpacity(0.1)),
-          columns: [
-            DataColumn(label: Text('Client', style: headerTextStyle)),
-            DataColumn(label: Text('Modèle', style: headerTextStyle)),
-            DataColumn(label: Text('Taille', style: headerTextStyle)),
-            DataColumn(label: Text('Machine', style: headerTextStyle)),
-            DataColumn(label: Text('Salle', style: headerTextStyle)),
-            DataColumn(label: Text('Début', style: headerTextStyle)),
-            DataColumn(label: Text('Fin', style: headerTextStyle)),
-            DataColumn(label: Text('Statut', style: headerTextStyle)),
-            DataColumn(label: Text('Actions', style: headerTextStyle)),
-          ],
-          rows: planifications.asMap().entries.map((entry) {
-            final plan = entry.value;
-            final commande =
-            plan.commandes.isNotEmpty ? plan.commandes.first : null;
-            final modeleData = commande?.modeles.isNotEmpty == true
-                ? commande!.modeles.first
-                : null;
-
-            Future<String?> getModelName() async {
-              if (plan.modele != null) {
-                return plan.modele!.nom;
-              } else if (modeleData?.modele != null) {
-                if (modeleData!.modele is String) {
-                  return await ApiService()
-                      .getModeleNom(modeleData.modele as String);
-                } else if (modeleData!.modele is Modele) {
-                  return (modeleData.modele as Modele).nom;
-                }
-              }
-              return 'Non spécifié';
-            }
-
-            return DataRow(
-              cells: [
-                DataCell(Text(
-                  plan.commandes.isNotEmpty
-                      ? plan.commandes.first.client.name
-                      : 'Aucun client',
-                  style: cellTextStyle,
-                  overflow: TextOverflow.ellipsis,
-                )),
-                DataCell(FutureBuilder<String?>(
-                  future: getModelName(),
-                  builder: (context, snapshot) {
-                    final modelName = snapshot.data ?? 'Chargement...';
-                    return Text(
-                      modelName,
-                      style: cellTextStyle,
-                      overflow: TextOverflow.ellipsis,
-                    );
-                  },
-                )),
-                DataCell(Text(
-                  plan.taille ?? modeleData?.taille ?? 'Non spécifié',
-                  style: cellTextStyle,
-                  overflow: TextOverflow.ellipsis,
-                )),
-                DataCell(Text(
-                  plan.machines.isNotEmpty
-                      ? plan.machines.first.nom
-                      : 'Aucune machine',
-                  style: cellTextStyle,
-                  overflow: TextOverflow.ellipsis,
-                )),
-                DataCell(Text(
-                  plan.machines.isNotEmpty
-                      ? plan.machines.first.salle.nom
-                      : 'N/A',
-                  style: cellTextStyle,
-                  overflow: TextOverflow.ellipsis,
-                )),
-                DataCell(Text(
-                  _formatDateTime(plan.debutPrevue),
-                  style: cellTextStyle,
-                )),
-                DataCell(Text(
-                  _formatDateTime(plan.finPrevue),
-                  style: cellTextStyle,
-                )),
-                DataCell(_buildStatusBadge(plan.statut)),
-                DataCell(
-                  FutureBuilder<bool>(
-                    future: AuthService.isAdminOrManager(),
-                    builder: (context, snapshot) {
-                      final isAdminOrManager = snapshot.data ?? false;
-                      return isAdminOrManager && plan.id != null
-                          ? ElevatedButton(
-                        onPressed: plan.statut == 'terminée'
-                            ? null
-                            : () => _terminerPlanification(plan.id!),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.greenAccent,
-                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          minimumSize: Size(80, 30),
-                          textStyle: TextStyle(fontSize: 12),
                         ),
-                        child: Text('Terminer'),
-                      )
-                          : SizedBox.shrink();
-                    },
-                  ),
+                      ],
+                    ),
+                  );
+                }).toList(),
+              )
+            : Card(
+                elevation: 5,
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                margin: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: DataTable(
+                  columnSpacing: 12,
+                  dataRowHeight: 70,
+                  headingRowColor: MaterialStateProperty.all(Colors.blueGrey[100]),
+                  columns: [
+                    DataColumn(label: Text('Client', style: headerTextStyle)),
+                    DataColumn(label: Text('Modèle', style: headerTextStyle)),
+                    DataColumn(label: Text('Taille', style: headerTextStyle)),
+                    DataColumn(label: Text('Machine', style: headerTextStyle)),
+                    DataColumn(label: Text('Salle', style: headerTextStyle)),
+                    DataColumn(label: Text('Début', style: headerTextStyle)),
+                    DataColumn(label: Text('Fin', style: headerTextStyle)),
+                    DataColumn(label: Text('Statut', style: headerTextStyle)),
+                    DataColumn(label: Text('Actions', style: headerTextStyle)),
+                  ],
+                  rows: planifications.asMap().entries.map((entry) {
+                    final plan = entry.value;
+                    final commande =
+                        plan.commandes.isNotEmpty ? plan.commandes.first : null;
+                    final modeleData = commande?.modeles.isNotEmpty == true
+                        ? commande!.modeles.first
+                        : null;
+
+                    Future<String?> getModelName() async {
+                      if (plan.modele != null) {
+                        return plan.modele!.nom;
+                      } else if (modeleData?.modele != null) {
+                        if (modeleData!.modele is String) {
+                          return await ApiService().getModeleNom(modeleData.modele as String);
+                        } else if (modeleData!.modele is Modele) {
+                          return (modeleData.modele as Modele).nom;
+                        }
+                      }
+                      return 'Non spécifié';
+                    }
+
+                    return DataRow(
+                      cells: [
+                        DataCell(Text(
+                          plan.commandes.isNotEmpty
+                              ? plan.commandes.first.client.name
+                              : 'Aucun client',
+                          style: cellTextStyle,
+                          overflow: TextOverflow.ellipsis,
+                        )),
+                        DataCell(FutureBuilder<String?>(
+                          future: getModelName(),
+                          builder: (context, snapshot) {
+                            final modelName = snapshot.data ?? 'Chargement...';
+                            return Text(
+                              modelName,
+                              style: cellTextStyle,
+                              overflow: TextOverflow.ellipsis,
+                            );
+                          },
+                        )),
+                        DataCell(Text(
+                          plan.taille ?? modeleData?.taille ?? 'Non spécifié',
+                          style: cellTextStyle,
+                          overflow: TextOverflow.ellipsis,
+                        )),
+                        DataCell(Text(
+                          plan.machines.isNotEmpty
+                              ? plan.machines.first.nom
+                              : 'Aucune machine',
+                          style: cellTextStyle,
+                          overflow: TextOverflow.ellipsis,
+                        )),
+                        DataCell(Text(
+                          plan.machines.isNotEmpty
+                              ? plan.machines.first.salle.nom
+                              : 'N/A',
+                          style: cellTextStyle,
+                          overflow: TextOverflow.ellipsis,
+                        )),
+                        DataCell(Text(
+                          _formatDateTime(plan.debutPrevue),
+                          style: cellTextStyle,
+                        )),
+                        DataCell(Text(
+                          _formatDateTime(plan.finPrevue),
+                          style: cellTextStyle,
+                        )),
+                        DataCell(_buildStatusBadge(plan.statut)),
+                        DataCell(
+                          FutureBuilder<bool>(
+                            future: AuthService.isAdminOrManager(),
+                            builder: (context, snapshot) {
+                              final isAdminOrManager = snapshot.data ?? false;
+                              return isAdminOrManager && plan.id != null
+                                  ? ZoomIn(
+                                      child: ElevatedButton(
+                                        onPressed: plan.statut == 'terminée'
+                                            ? null
+                                            : () => _terminerPlanification(plan.id!),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.blueGrey[800],
+                                          shape: RoundedRectangleBorder(
+                                              borderRadius: BorderRadius.circular(12)),
+                                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                          minimumSize: Size(80, 30),
+                                        ),
+                                        child: Text(
+                                          'Terminer',
+                                          style: TextStyle(fontSize: 12, color: Colors.white),
+                                        ),
+                                      ),
+                                    )
+                                  : SizedBox.shrink();
+                            },
+                          ),
+                        ),
+                      ],
+                    );
+                  }).toList(),
                 ),
-              ],
-            );
-          }).toList(),
-        ),
+              ),
       ),
     );
   }
@@ -934,13 +1064,13 @@ class _PlanificationViewState extends State<PlanificationView> {
   Color _getStatusColor(String statut) {
     switch (statut) {
       case 'en attente':
-        return Colors.orange;
+        return Colors.orange[600]!;
       case 'en cours':
-        return Colors.blue;
+        return Colors.blue[600]!;
       case 'terminée':
-        return Colors.green;
+        return Colors.green[600]!;
       default:
-        return Colors.grey;
+        return Colors.blueGrey[600]!;
     }
   }
 
@@ -948,29 +1078,23 @@ class _PlanificationViewState extends State<PlanificationView> {
     if (date != null) {
       tz.initializeTimeZones();
       final tunis = tz.getLocation('Africa/Tunis');
-      // Convert UTC DateTime to Africa/Tunis
       final tunisDate = tz.TZDateTime.from(date, tunis);
-      /*
-      print("Raw UTC DateTime: $date");
-      print("Converted Africa/Tunis DateTime: $tunisDate");
-      print("Formatted DateTime: ${DateFormat('dd/MM/yyyy HH:mm').format(tunisDate)}");
-      */
-      return DateFormat('dd/MM/yyyy  HH:mm').format(tunisDate);
+      return DateFormat('dd/MM/yyyy HH:mm').format(tunisDate);
     }
     return '--/--/---- --:--';
   }
 
   Widget _buildStatusBadge(String statut) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: _getStatusColor(statut).withOpacity(0.2),
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
         statut[0].toUpperCase() + statut.substring(1),
         style: TextStyle(
-          fontSize: 8,
+          fontSize: 12,
           fontWeight: FontWeight.bold,
           color: _getStatusColor(statut),
         ),
