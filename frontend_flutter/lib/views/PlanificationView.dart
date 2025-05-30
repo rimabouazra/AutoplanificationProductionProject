@@ -112,37 +112,36 @@ class _PlanificationViewState extends State<PlanificationView> {
     await showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.white.withOpacity(0.9),
         title: Text(
           "Modifier les heures de travail",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
+          style: TextStyle(
+            fontFamily: 'PlayfairDisplay',
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            color: Color(0xFF26A69A),
+          ),
         ),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            _buildHourDropdown(
-              value: newStartHour,
-              onChanged: (value) => newStartHour = value !,
-              hint: 'Heure de début',
-            ),
-            SizedBox(height: 8),
-            _buildHourDropdown(
-              value: newEndHour,
-              onChanged: (value) => newEndHour = value !,
-              hint: 'Heure de fin',
-            ),
+            _buildHourDropdown(value: newStartHour, onChanged: (value) => newStartHour = value!, hint: 'Heure de début'),
+            SizedBox(height: 12),
+            _buildHourDropdown(value: newEndHour, onChanged: (value) => newEndHour = value!, hint: 'Heure de fin'),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text("Annuler", style: TextStyle(color: Colors.deepPurple)),
+            child: Text("Annuler", style: TextStyle(fontFamily: 'Roboto', color: Color(0xFF78909C))),
           ),
           FutureBuilder<bool>(
             future: AuthService.isAdminOrManager(),
             builder: (context, snapshot) {
               final isAdminOrManager = snapshot.data ?? false;
-              return TextButton(
-                onPressed: isAdminOrManager && newStartHour != null && newEndHour != null
+              return ElevatedButton(
+                onPressed: isAdminOrManager
                     ? () async {
                   try {
                     await provider.updateWorkHours(newStartHour, newEndHour);
@@ -157,7 +156,11 @@ class _PlanificationViewState extends State<PlanificationView> {
                   }
                 }
                     : null,
-                child: Text("Confirmer", style: TextStyle(color: Colors.deepPurple)),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Color(0xFFFF6F61),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+                child: Text("Confirmer", style: TextStyle(fontFamily: 'Roboto', color: Colors.white)),
               );
             },
           ),
@@ -165,15 +168,20 @@ class _PlanificationViewState extends State<PlanificationView> {
       ),
     );
   }
-
   void _showWaitingPlanificationsDialog(BuildContext context) async {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.white.withOpacity(0.9),
         title: Text(
           "Planifications en Attente",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.deepPurple),
-        ),
+          style: TextStyle(
+            fontFamily: 'PlayfairDisplay',
+            fontWeight: FontWeight.bold,
+            fontSize: 20,
+            color: Color(0xFF26A69A),
+          ),        ),
         content: Container(
           width: double.maxFinite,
           constraints: BoxConstraints(maxHeight: 400),
@@ -181,8 +189,7 @@ class _PlanificationViewState extends State<PlanificationView> {
               ? Center(
             child: Text(
               "Aucune planification en attente",
-              style: TextStyle(color: Colors.grey[600]),
-            ),
+              style: TextStyle(fontFamily: 'Roboto', color: Color(0xFF78909C), fontSize: 14),            ),
           )
               : ReorderableListView(
             onReorder: (oldIndex, newIndex) {
@@ -207,7 +214,7 @@ class _PlanificationViewState extends State<PlanificationView> {
                 if (modeleData?.modele != null) {
                   if (modeleData!.modele is String) {
                     return await ApiService().getModeleNom(modeleData.modele as String);
-                  } else if (modeleData!.modele is Modele) {
+                  } else if (modeleData.modele is Modele) {
                     return (modeleData.modele as Modele).nom;
                   }
                 }
@@ -220,15 +227,15 @@ class _PlanificationViewState extends State<PlanificationView> {
                 child: Card(
                   margin: EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                   elevation: 4,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  color: Colors.white.withOpacity(0.9),
                   child: FutureBuilder<String?>(
                     future: getModelName(),
                     builder: (context, snapshot) {
                       final modelName = snapshot.data ?? 'Chargement...';
                       return ListTile(
                         contentPadding: EdgeInsets.all(12),
+                        leading: Icon(Icons.drag_handle, color: Color(0xFF78909C)),
                         title: Text(
                           "Client: ${commande?.client.name ?? 'Inconnu'}",
                           style: TextStyle(
@@ -240,27 +247,12 @@ class _PlanificationViewState extends State<PlanificationView> {
                         subtitle: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            SizedBox(height: 4),
-                            Text(
-                              "Modele: $modelName",
-                              style: TextStyle(fontSize: 20, color: Colors.grey[800]),
-                            ),
-                            Text(
-                              "Taille: ${waitingPlan.taille ?? modeleData?.taille ?? 'Non spécifié'}",
-                              style: TextStyle(fontSize: 20, color: Colors.grey[800]),
-                            ),
-                            Text(
-                              "Couleur: ${waitingPlan.couleur ?? modeleData?.couleur ?? 'Non spécifié'}",
-                              style: TextStyle(fontSize: 20, color: Colors.grey[800]),
-                            ),
-                            Text(
-                              "Quantité: ${waitingPlan.quantite?.toString() ?? modeleData?.quantite?.toString() ?? 'Non spécifié'}",
-                            style: TextStyle(fontSize: 20, color: Colors.grey[800]),
-                            ),
-                            Text(
-                              "Ajouté le :  ${waitingPlan.createdAt != null ? DateFormat("dd/MM/yyyy HH:mm").format(waitingPlan.createdAt!) : 'Non spécifié'}",
-                              style: TextStyle(fontSize: 20, color: Colors.grey[800]),
-                            ),
+                            SizedBox(height: 8),
+                            Text("Modele: $modelName", style: TextStyle(fontFamily: 'Roboto', fontSize: 14, color: Color(0xFF78909C))),
+                            Text("Taille: ${waitingPlan.taille ?? modeleData?.taille ?? 'Non spécifié'}", style: TextStyle(fontFamily: 'Roboto', fontSize: 14, color: Color(0xFF78909C))),
+                            Text("Couleur: ${waitingPlan.couleur ?? modeleData?.couleur ?? 'Non spécifié'}", style: TextStyle(fontFamily: 'Roboto', fontSize: 14, color: Color(0xFF78909C))),
+                            Text("Quantité: ${waitingPlan.quantite?.toString() ?? modeleData?.quantite.toString() ?? 'Non spécifié'}", style: TextStyle(fontFamily: 'Roboto', fontSize: 14, color: Color(0xFF78909C))),
+                            Text("Ajouté le : ${waitingPlan.createdAt != null ? DateFormat("dd/MM/yyyy HH:mm").format(waitingPlan.createdAt!) : 'Non spécifié'}", style: TextStyle(fontFamily: 'Roboto', fontSize: 14, color: Color(0xFF78909C))),
                           ],
                         ),
                       );
@@ -272,12 +264,13 @@ class _PlanificationViewState extends State<PlanificationView> {
           ),
         ),
         actions: [
-          TextButton(
+          ElevatedButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(
-              "Fermer",
-              style: TextStyle(color: Colors.deepPurple),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Color(0xFFFF6F61),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
+            child: Text("Fermer", style: TextStyle(fontFamily: 'Roboto', color: Colors.white)),
           ),
         ],
       ),
@@ -317,55 +310,51 @@ class _PlanificationViewState extends State<PlanificationView> {
         automaticallyImplyLeading: false,
         title: Text(
           "Planifications",
-          style: TextStyle(fontWeight: FontWeight.bold, color: Colors.white),
+          style: TextStyle(
+            fontFamily: 'PlayfairDisplay',
+            fontWeight: FontWeight.bold,
+            fontSize: 24,
+            color: Colors.white,
+          ),
+
         ),
-        backgroundColor: Colors.deepPurple,
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF26A69A), Color(0xFF00695C)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+            ),
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
+          ),
+        ),
         centerTitle: true,
-        elevation: 0,
+        elevation: 4,
         actions: [
-          IconButton(
-            icon: Icon(Icons.access_time),
-            onPressed: () => _showUpdateWorkHoursDialog(context),
-            tooltip: 'Modifier les heures de travail',
-          ),
-          IconButton(
-            icon: Icon(Icons.list),
-            onPressed: () => _showWaitingPlanificationsDialog(context),
-            tooltip: 'Voir les planifications en attente',
-          ),
-          IconButton(
-            icon: Icon(Icons.refresh),
-            onPressed: () {
-              final provider = Provider.of<PlanificationProvider>(context, listen: false);
-              provider.fetchPlanifications();
-              _fetchWaitingPlanifications();
+          _buildAppBarIcon(Icons.access_time, () => _showUpdateWorkHoursDialog(context), 'Modifier les heures de travail'),
+          _buildAppBarIcon(Icons.list, () => _showWaitingPlanificationsDialog(context), 'Voir les planifications en attente'),
+          _buildAppBarIcon(Icons.refresh, () {
+            final provider = Provider.of<PlanificationProvider>(context, listen: false);
+            provider.fetchPlanifications();
+            _fetchWaitingPlanifications();
+            _isDateRangeInitialized = false;
+            setState(() {
+              _startDate = DateTime.now();
+              _endDate = null;
+            });
+            if (provider.planifications.isNotEmpty) {
+              _calculateDateRange(provider.planifications);
+            }
+          }, 'Rafraîchir les planifications'),
+          _buildAppBarIcon(Icons.today, () {
+            setState(() {
+              _startDate = DateTime.now();
+              _endDate = null;
               _isDateRangeInitialized = false;
-              setState(() {
-                _startDate = DateTime.now();
-                _endDate = null;
-              });
-              if (provider.planifications.isNotEmpty) {
-                _calculateDateRange(provider.planifications);
-              }
-            },
-            tooltip: 'Rafraîchir les planifications',
-          ),
-          IconButton(
-            icon: Icon(Icons.today),
-            onPressed: () {
-              setState(() {
-                _startDate = DateTime.now();
-                _endDate = null;
-                _isDateRangeInitialized = false;
-              });
-            },
-            tooltip: 'Réinitialiser la plage de dates',
-          ),
-          IconButton(
-            icon: Icon(Icons.logout),
-            onPressed: () => _confirmLogout(context),
-            tooltip: 'Déconnexion',
-          ),
+            });
+          }, 'Réinitialiser la plage de dates'),
+          _buildAppBarIcon(Icons.logout, () => _confirmLogout(context), 'Déconnexion'),
         ],
       ),
       body: Consumer<PlanificationProvider>(
@@ -463,84 +452,108 @@ class _PlanificationViewState extends State<PlanificationView> {
     });
   }
 
-
-  Widget _buildFilterBar(BuildContext context, PlanificationProvider provider) {
-    return FadeIn(
-      duration: Duration(milliseconds: 500),
-      child: Container(
-        padding: EdgeInsets.all(8),
-        color: Colors.grey[100],
-        child: SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          child: Wrap(
-            spacing: 8,
-            runSpacing: 8,
-            children: [
-              _buildDateSelector(context, true),
-              if (_selectedViewMode == 'mois') ...[
-                Text('à', style: TextStyle(fontWeight: FontWeight.bold)),
-                _buildDateSelector(context, false),
-              ],
-              _buildDropdown(
-                value: _selectedSalleType,
-                items: ['tous', 'noir', 'blanc'],
-                hint: 'Type de salle',
-                onChanged: (value) => setState(() => _selectedSalleType = value),
-                width: 120,
-              ),
-              _buildDropdown(
-                value: _selectedViewMode,
-                items: ['journée', 'semaine', 'mois'],
-                hint: 'Mode de vue',
-                onChanged: (value) {
-                  setState(() {
-                    _selectedViewMode = value!;
-                    if (_startDate != null) {
-                      switch (value) {
-                        case 'journée':
-                          _endDate = _startDate!.add(Duration(days: 1, minutes: -1));
-                          break;
-                        case 'semaine':
-                          _endDate = _startDate!
-                              .subtract(Duration(days: _startDate!.weekday - 1))
-                              .add(Duration(days: 6, hours: 23, minutes: 59));
-                          break;
-                        case 'mois':
-                          _endDate = DateTime(_startDate!.year, _startDate!.month + 1, 0, 23, 59);
-                          break;
-                      }
-                    }
-                  });
-                },
-                width: 120,
-              ),
-              if (_selectedViewMode == 'journée') ...[
-                _buildHourDropdown(
-                  value: _startHour,
-                  onChanged: (value) => setState(() => _startHour = value!),
-                  hint: 'Début',
-                ),
-                _buildHourDropdown(
-                  value: _endHour,
-                  onChanged: (value) => setState(() => _endHour = value!),
-                  hint: 'Fin',
-                ),
-              ],
-              _buildDropdown(
-                value: _selectedStatus,
-                items: ['tous', 'en attente', 'en cours', 'terminée'],
-                hint: 'État',
-                onChanged: (value) => setState(() => _selectedStatus = value!),
-                width: 120,
-              ),
-              _buildZoomControls(),
+  Widget _buildAppBarIcon(IconData icon, VoidCallback onPressed, String tooltip) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(24),
+        onTap: onPressed,
+        child: Container(
+          padding: EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withOpacity(0.2),
+            boxShadow: [
+              BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(2, 2)),
+              BoxShadow(color: Colors.white24, blurRadius: 8, offset: Offset(-2, -2)),
             ],
           ),
+          child: Icon(icon, color: Colors.white, size: 24),
         ),
       ),
     );
   }
 
+  Widget _buildFilterBar(BuildContext context, PlanificationProvider provider) {
+    return FadeIn(
+      duration: Duration(milliseconds: 500),
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        color: Colors.white.withOpacity(0.9),
+        child: Padding(
+          padding: EdgeInsets.all(12),
+          child: SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Wrap(
+              spacing: 12,
+              runSpacing: 12,
+              children: [
+                _buildDateSelector(context, true),
+                if (_selectedViewMode == 'mois') ...[
+                  Text('à', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF37474F))),
+                  _buildDateSelector(context, false),
+                ],
+                _buildDropdown(
+                  value: _selectedSalleType,
+                  items: ['tous', 'noir', 'blanc'],
+                  hint: 'Type de salle',
+                  onChanged: (value) => setState(() => _selectedSalleType = value),
+                  width: 140,
+                ),
+                _buildDropdown(
+                  value: _selectedViewMode,
+                  items: ['journée', 'semaine', 'mois'],
+                  hint: 'Mode de vue',
+                  onChanged: (value) {
+                    setState(() {
+                      _selectedViewMode = value!;
+                      if (_startDate != null) {
+                        switch (value) {
+                          case 'journée':
+                            _endDate = _startDate!.add(Duration(days: 1, minutes: -1));
+                            break;
+                          case 'semaine':
+                            _endDate = _startDate!
+                                .subtract(Duration(days: _startDate!.weekday - 1))
+                                .add(Duration(days: 6, hours: 23, minutes: 59));
+                            break;
+                          case 'mois':
+                            _endDate = DateTime(_startDate!.year, _startDate!.month + 1, 0, 23, 59);
+                            break;
+                        }
+                      }
+                    });
+                  },
+                  width: 140,
+                ),
+                if (_selectedViewMode == 'journée') ...[
+                  _buildHourDropdown(
+                    value: _startHour,
+                    onChanged: (value) => setState(() => _startHour = value!),
+                    hint: 'Début',
+                  ),
+                  _buildHourDropdown(
+                    value: _endHour,
+                    onChanged: (value) => setState(() => _endHour = value!),
+                    hint: 'Fin',
+                  ),
+                ],
+                _buildDropdown(
+                  value: _selectedStatus,
+                  items: ['tous', 'en attente', 'en cours', 'terminée'],
+                  hint: 'État',
+                  onChanged: (value) => setState(() => _selectedStatus = value!),
+                  width: 140,
+                ),
+                _buildZoomControls(),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
   Widget _buildDateSelector(BuildContext context, bool isStartDate) {
     return TextButton.icon(
       style: TextButton.styleFrom(
@@ -564,31 +577,35 @@ class _PlanificationViewState extends State<PlanificationView> {
     required List<String> items,
     required String hint,
     required ValueChanged<String?> onChanged,
-    double width = 120,
+    double width = 140,
   }) {
     return Container(
       width: width,
-      padding: EdgeInsets.symmetric(horizontal: 6),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(2, 2)),
+          BoxShadow(color: Colors.white24, blurRadius: 6, offset: Offset(-2, -2)),
+        ],
       ),
       child: DropdownButton<String>(
         isExpanded: true,
         value: value,
-        hint: Text(hint, style: TextStyle(fontSize: 12)),
+        hint: Text(hint, style: TextStyle(fontFamily: 'Roboto', fontSize: 14, color: Color(0xFF78909C))),
         items: items.map((item) {
           return DropdownMenuItem<String>(
             value: item,
             child: Text(
               item[0].toUpperCase() + item.substring(1),
-              style: TextStyle(fontSize: 12),
+              style: TextStyle(fontFamily: 'Roboto', fontSize: 14, color: Color(0xFF37474F)),
             ),
           );
         }).toList(),
         onChanged: onChanged,
         underline: SizedBox(),
+        icon: Icon(Icons.arrow_drop_down, color: Color(0xFF26A69A)),
       ),
     );
   }
@@ -599,25 +616,29 @@ class _PlanificationViewState extends State<PlanificationView> {
     required String hint,
   }) {
     return Container(
-      width: 70,
-      padding: EdgeInsets.symmetric(horizontal: 6),
+      width: 80,
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(8),
-        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+        color: Colors.white.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(color: Colors.black12, blurRadius: 6, offset: Offset(2, 2)),
+          BoxShadow(color: Colors.white24, blurRadius: 6, offset: Offset(-2, -2)),
+        ],
       ),
       child: DropdownButton<int>(
         isExpanded: true,
         value: value,
-        hint: Text(hint, style: TextStyle(fontSize: 12)),
+        hint: Text(hint, style: TextStyle(fontFamily: 'Roboto', fontSize: 14, color: Color(0xFF78909C))),
         items: List.generate(24, (index) => index)
             .map((hour) => DropdownMenuItem(
           value: hour,
-          child: Text('$hour h', style: TextStyle(fontSize: 12)),
+          child: Text('$hour h', style: TextStyle(fontFamily: 'Roboto', fontSize: 14, color: Color(0xFF37474F))),
         ))
             .toList(),
         onChanged: onChanged,
         underline: SizedBox(),
+        icon: Icon(Icons.arrow_drop_down, color: Color(0xFF26A69A)),
       ),
     );
   }
@@ -666,160 +687,191 @@ class _PlanificationViewState extends State<PlanificationView> {
     Map<String, List<Planification>> groupedPlans = {};
     if (_selectedViewMode == 'semaine') {
       for (var plan in planifications) {
-        final dayKey = DateFormat('EEEE dd/MM', 'fr_FR').format(plan.debutPrevue!);        groupedPlans.putIfAbsent(dayKey, () => []).add(plan);
+        final dayKey = DateFormat('EEEE dd/MM', 'fr_FR').format(plan.debutPrevue!);
+        groupedPlans.putIfAbsent(dayKey, () => []).add(plan);
       }
     }
 
     // Define consistent text styles
-    const headerTextStyle = TextStyle(fontWeight: FontWeight.bold, fontSize: 18);
-    const cellTextStyle = TextStyle(fontSize: 16);
-    const dayHeaderStyle = TextStyle(fontWeight: FontWeight.bold, fontSize: 20);
+    const headerTextStyle = TextStyle(
+      fontFamily: 'PlayfairDisplay',
+      fontWeight: FontWeight.bold,
+      fontSize: 18,
+      color: Color(0xFF37474F),
+    );
+    const cellTextStyle = TextStyle(
+      fontFamily: 'Roboto',
+      fontSize: 14,
+      color: Color(0xFF37474F),
+    );
+    const dayHeaderStyle = TextStyle(
+      fontFamily: 'PlayfairDisplay',
+      fontWeight: FontWeight.bold,
+      fontSize: 20,
+      color: Color(0xFF26A69A),
+    );
 
     return SingleChildScrollView(
       scrollDirection: Axis.vertical,
-      child: ConstrainedBox(
-        constraints: BoxConstraints(
-          minWidth: MediaQuery.of(context).size.width,
-        ),
+      child: Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        color: Colors.white.withOpacity(0.9),
         child: _selectedViewMode == 'semaine' && groupedPlans.isNotEmpty
             ? Column(
-          children: groupedPlans.entries.map((entry) {
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: EdgeInsets.all(8.0),
-                  child: Text(
-                    entry.key,
-                    style: dayHeaderStyle,
+          children: groupedPlans.entries.toList().asMap().entries.map((entry) {
+            final index = entry.key;
+            final mapEntry = entry.value;
+            return FadeInUp(
+              delay: Duration(milliseconds: index * 100),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(12),
+                    child: Text(
+                      mapEntry.key,
+                      style: dayHeaderStyle,
+                    ),
                   ),
-                ),
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minWidth: MediaQuery.of(context).size.width,
-                  ),
-                  child: DataTable(
-                    columnSpacing: 12,
-                    dataRowHeight: 70,
-                    headingRowColor: MaterialStateColor.resolveWith(
-                            (states) => Colors.deepPurple.withOpacity(0.1)),
-                    columns: [
-                      DataColumn(label: Text('Client', style: headerTextStyle)),
-                      DataColumn(label: Text('Modèle', style: headerTextStyle)),
-                      DataColumn(label: Text('Taille', style: headerTextStyle)),
-                      DataColumn(label: Text('Machine', style: headerTextStyle)),
-                      DataColumn(label: Text('Salle', style: headerTextStyle)),
-                      DataColumn(label: Text('Début', style: headerTextStyle)),
-                      DataColumn(label: Text('Fin', style: headerTextStyle)),
-                      DataColumn(label: Text('Statut', style: headerTextStyle)),
-                      DataColumn(label: Text('Actions', style: headerTextStyle)),
-                    ],
-                    rows: entry.value.asMap().entries.map((rowEntry) {
-                      final plan = rowEntry.value;
-                      final commande =
-                      plan.commandes.isNotEmpty ? plan.commandes.first : null;
-                      final modeleData = commande?.modeles.isNotEmpty == true
-                          ? commande!.modeles.first
-                          : null;
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minWidth: MediaQuery.of(context).size.width,
+                    ),
+                    child: DataTable(
+                      columnSpacing: 16,
+                      dataRowHeight: 64,
+                      headingRowColor: MaterialStateColor.resolveWith(
+                              (states) => Color(0xFF26A69A).withOpacity(0.1)),
+                      columns: [
+                        DataColumn(label: Text('Client', style: headerTextStyle)),
+                        DataColumn(label: Text('Modèle', style: headerTextStyle)),
+                        DataColumn(label: Text('Taille', style: headerTextStyle)),
+                        DataColumn(label: Text('Machine', style: headerTextStyle)),
+                        DataColumn(label: Text('Salle', style: headerTextStyle)),
+                        DataColumn(label: Text('Début', style: headerTextStyle)),
+                        DataColumn(label: Text('Fin', style: headerTextStyle)),
+                        DataColumn(label: Text('Statut', style: headerTextStyle)),
+                        DataColumn(label: Text('Actions', style: headerTextStyle)),
+                      ],
+                      rows: mapEntry.value.asMap().entries.map((rowEntry) {
+                        final plan = rowEntry.value;
+                        final commande =
+                        plan.commandes.isNotEmpty ? plan.commandes.first : null;
+                        final modeleData = commande?.modeles.isNotEmpty == true
+                            ? commande!.modeles.first
+                            : null;
 
-                      Future<String?> getModelName() async {
-                        if (plan.modele != null) {
-                          return plan.modele!.nom;
-                        } else if (modeleData?.modele != null) {
-                          if (modeleData!.modele is String) {
-                            return await ApiService()
-                                .getModeleNom(modeleData.modele as String);
-                          } else if (modeleData!.modele is Modele) {
-                            return (modeleData.modele as Modele).nom;
+                        Future<String?> getModelName() async {
+                          if (plan.modele != null) {
+                            return plan.modele!.nom;
+                          } else if (modeleData?.modele != null) {
+                            if (modeleData!.modele is String) {
+                              return await ApiService()
+                                  .getModeleNom(modeleData.modele as String);
+                            } else if (modeleData!.modele is Modele) {
+                              return (modeleData.modele as Modele).nom;
+                            }
                           }
+                          return 'Non spécifié';
                         }
-                        return 'Non spécifié';
-                      }
 
-                      return DataRow(
-                        cells: [
-                          DataCell(Text(
-                            plan.commandes.isNotEmpty
-                                ? plan.commandes.first.client.name
-                                : 'Aucun client',
-                            style: cellTextStyle,
-                            overflow: TextOverflow.ellipsis,
-                          )),
-                          DataCell(FutureBuilder<String?>(
-                            future: getModelName(),
-                            builder: (context, snapshot) {
-                              final modelName = snapshot.data ?? 'Chargement...';
-                              return Text(
-                                modelName,
-                                style: cellTextStyle,
-                                overflow: TextOverflow.ellipsis,
-                              );
-                            },
-                          )),
-                          DataCell(Text(
-                            plan.taille ?? modeleData?.taille ?? 'Non spécifié',
-                            style: cellTextStyle,
-                            overflow: TextOverflow.ellipsis,
-                          )),
-                          DataCell(Text(
-                            plan.machines.isNotEmpty
-                                ? plan.machines.first.nom
-                                : 'Aucune machine',
-                            style: cellTextStyle,
-                            overflow: TextOverflow.ellipsis,
-                          )),
-                          DataCell(Text(
-                            plan.machines.isNotEmpty
-                                ? plan.machines.first.salle.nom
-                                : 'N/A',
-                            style: cellTextStyle,
-                            overflow: TextOverflow.ellipsis,
-                          )),
-                          DataCell(Text(
-                            _formatDateTime(plan.debutPrevue),
-                            style: cellTextStyle,
-                          )),
-                          DataCell(Text(
-                            _formatDateTime(plan.finPrevue),
-                            style: cellTextStyle,
-                          )),
-                          DataCell(_buildStatusBadge(plan.statut)),
-                          DataCell(
-                            FutureBuilder<bool>(
-                              future: AuthService.isAdminOrManager(),
+                        return DataRow(
+                          color: MaterialStateProperty.resolveWith((states) =>
+                          rowEntry.key % 2 == 0 ? Colors.white : Color(0xFFF5F7FA)),
+                          cells: [
+                            DataCell(Text(
+                              plan.commandes.isNotEmpty
+                                  ? plan.commandes.first.client.name
+                                  : 'Aucun client',
+                              style: cellTextStyle,
+                              overflow: TextOverflow.ellipsis,
+                            )),
+                            DataCell(FutureBuilder<String?>(
+                              future: getModelName(),
                               builder: (context, snapshot) {
-                                final isAdminOrManager = snapshot.data ?? false;
-                                return isAdminOrManager && plan.id != null
-                                    ? ElevatedButton(
-                                  onPressed: plan.statut == 'terminée'
-                                      ? null
-                                      : () => _terminerPlanification(plan.id !),
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.greenAccent,
-                                    padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                    minimumSize: Size(80, 30),
-                                    textStyle: TextStyle(fontSize: 12),
-                                  ),
-                                  child: Text('Terminer'),
-                                )
-                                    : SizedBox.shrink();
+                                final modelName = snapshot.data ?? 'Chargement...';
+                                return Text(
+                                  modelName,
+                                  style: cellTextStyle,
+                                  overflow: TextOverflow.ellipsis,
+                                );
                               },
+                            )),
+                            DataCell(Text(
+                              plan.taille ?? modeleData?.taille ?? 'Non spécifié',
+                              style: cellTextStyle,
+                              overflow: TextOverflow.ellipsis,
+                            )),
+                            DataCell(Text(
+                              plan.machines.isNotEmpty
+                                  ? plan.machines.first.nom
+                                  : 'Aucune machine',
+                              style: cellTextStyle,
+                              overflow: TextOverflow.ellipsis,
+                            )),
+                            DataCell(Text(
+                              plan.machines.isNotEmpty
+                                  ? plan.machines.first.salle.nom
+                                  : 'N/A',
+                              style: cellTextStyle,
+                              overflow: TextOverflow.ellipsis,
+                            )),
+                            DataCell(Text(
+                              _formatDateTime(plan.debutPrevue),
+                              style: cellTextStyle,
+                            )),
+                            DataCell(Text(
+                              _formatDateTime(plan.finPrevue),
+                              style: cellTextStyle,
+                            )),
+                            DataCell(_buildStatusBadge(plan.statut)),
+                            DataCell(
+                              FutureBuilder<bool>(
+                                future: AuthService.isAdminOrManager(),
+                                builder: (context, snapshot) {
+                                  final isAdminOrManager = snapshot.data ?? false;
+                                  return isAdminOrManager && plan.id != null
+                                      ? ElevatedButton(
+                                    onPressed: plan.statut == 'terminée'
+                                        ? null
+                                        : () => _terminerPlanification(plan.id!),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Color(0xFFFF6F61),
+                                      shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(8)),
+                                      padding: EdgeInsets.symmetric(
+                                          horizontal: 12, vertical: 8),
+                                      minimumSize: Size(80, 36),
+                                    ),
+                                    child: Text(
+                                      'Terminer',
+                                      style: TextStyle(
+                                        fontFamily: 'Roboto',
+                                        fontSize: 12,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                      : SizedBox.shrink();
+                                },
+                              ),
                             ),
-                          ),
-                        ],
-                      );
-                    }).toList(),
+                          ],
+                        );
+                      }).toList(),
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             );
           }).toList(),
         )
             : DataTable(
-          columnSpacing: 12,
-          dataRowHeight: 70,
+          columnSpacing: 16,
+          dataRowHeight: 64,
           headingRowColor: MaterialStateColor.resolveWith(
-                  (states) => Colors.deepPurple.withOpacity(0.1)),
+                  (states) => Color(0xFF26A69A).withOpacity(0.1)),
           columns: [
             DataColumn(label: Text('Client', style: headerTextStyle)),
             DataColumn(label: Text('Modèle', style: headerTextStyle)),
@@ -854,6 +906,8 @@ class _PlanificationViewState extends State<PlanificationView> {
             }
 
             return DataRow(
+              color: MaterialStateProperty.resolveWith((states) =>
+              entry.key % 2 == 0 ? Colors.white : Color(0xFFF5F7FA)),
               cells: [
                 DataCell(Text(
                   plan.commandes.isNotEmpty
@@ -912,12 +966,21 @@ class _PlanificationViewState extends State<PlanificationView> {
                             ? null
                             : () => _terminerPlanification(plan.id!),
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.greenAccent,
-                          padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          minimumSize: Size(80, 30),
-                          textStyle: TextStyle(fontSize: 12),
+                          backgroundColor: Color(0xFFFF6F61),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8)),
+                          padding: EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
+                          minimumSize: Size(80, 36),
                         ),
-                        child: Text('Terminer'),
+                        child: Text(
+                          'Terminer',
+                          style: TextStyle(
+                            fontFamily: 'Roboto',
+                            fontSize: 12,
+                            color: Colors.white,
+                          ),
+                        ),
                       )
                           : SizedBox.shrink();
                     },
@@ -930,7 +993,6 @@ class _PlanificationViewState extends State<PlanificationView> {
       ),
     );
   }
-
   Color _getStatusColor(String statut) {
     switch (statut) {
       case 'en attente':
@@ -962,16 +1024,17 @@ class _PlanificationViewState extends State<PlanificationView> {
 
   Widget _buildStatusBadge(String statut) {
     return Container(
-      padding: EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: _getStatusColor(statut).withOpacity(0.2),
-        borderRadius: BorderRadius.circular(10),
+        color: _getStatusColor(statut).withOpacity(0.3),
+        borderRadius: BorderRadius.circular(12),
       ),
       child: Text(
         statut[0].toUpperCase() + statut.substring(1),
         style: TextStyle(
-          fontSize: 8,
-          fontWeight: FontWeight.bold,
+          fontFamily: 'Roboto',
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
           color: _getStatusColor(statut),
         ),
       ),

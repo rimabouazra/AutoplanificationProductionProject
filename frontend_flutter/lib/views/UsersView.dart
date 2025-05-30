@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
 import 'package:frontend/providers/userProvider.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:provider/provider.dart';
 import '../models/user.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -35,69 +36,88 @@ class _UsersViewState extends State<UsersView> {
     }
   }
 
+  // Helper method for neumorphic AppBar icons
+  Widget _buildAppBarIcon(IconData icon, VoidCallback onPressed, String tooltip) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(24),
+        onTap: onPressed,
+        child: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: Colors.white.withOpacity(0.2),
+            boxShadow: const [
+              BoxShadow(color: Colors.black12, blurRadius: 8, offset: Offset(2, 2)),
+              BoxShadow(color: Colors.white24, blurRadius: 8, offset: Offset(-2, -2)),
+            ],
+          ),
+          child: Icon(icon, color: Colors.white, size: 24),
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
-    if (!_isAuthorized) {
-      return Scaffold(
-        body: Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Colors.blueGrey[50]!, Colors.white],
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-            ),
-          ),
-          child: Center(
-            child: FadeIn(
-              child: Text(
-                "Vous n'avez pas la permission d'accéder à cette page.",
-                style: const TextStyle(
-                  fontFamily: 'PlayfairDisplay',
-                  fontSize: 18,
-                  color: Colors.red,
-                ),
-                textAlign: TextAlign.center,
-              ),
-            ),
-          ),
-        ),
-      );
-    }
-
     return Scaffold(
+      backgroundColor: Colors.transparent,
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: Colors.blueGrey[800],
         title: FadeInDown(
           child: const Text(
             "Gestion des Utilisateurs",
             style: TextStyle(
               fontFamily: 'PlayfairDisplay',
               fontWeight: FontWeight.bold,
+              fontSize: 24,
               color: Colors.white,
             ),
           ),
         ),
-        centerTitle: true,
-        actions: [
-          FadeInRight(
-            child: IconButton(
-              icon: const Icon(Icons.logout, color: Colors.white),
-              tooltip: "Déconnexion",
-              onPressed: _logout,
+        backgroundColor: Colors.transparent,
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: LinearGradient(
+              colors: [Color(0xFF26A69A), Color(0xFF00695C)],
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
             ),
+            borderRadius: BorderRadius.vertical(bottom: Radius.circular(16)),
           ),
+        ),
+        centerTitle: true,
+        elevation: 4,
+        actions: [
+          _buildAppBarIcon(Icons.logout, _logout, "Déconnexion"),
         ],
       ),
       body: Container(
-        decoration: BoxDecoration(
+        decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Colors.blueGrey[50]!, Colors.white],
+            colors: [Color(0xFFE0F2F1), Color(0xFFFFFFFF)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
         ),
-        child: _buildBody(context),
+        child: _isAuthorized ? _buildBody(context) : _buildUnauthorizedView(),
+      ),
+    );
+  }
+
+  Widget _buildUnauthorizedView() {
+    return Center(
+      child: FadeIn(
+        child: const Text(
+          "Vous n'avez pas la permission d'accéder à cette page.",
+          style: TextStyle(
+            fontFamily: 'PlayfairDisplay',
+            fontSize: 18,
+            color: Color(0xFFEF5350),
+          ),
+          textAlign: TextAlign.center,
+        ),
       ),
     );
   }
@@ -105,44 +125,44 @@ class _UsersViewState extends State<UsersView> {
   Widget _buildBody(BuildContext context) {
     final userProvider = Provider.of<UserProvider>(context);
     final pendingUsers =
-        userProvider.users.where((u) => u.status == 'pending').toList();
+    userProvider.users.where((u) => u.status == 'pending').toList();
     final approvedUsers =
-        userProvider.users.where((u) => u.status == 'approved').toList();
+    userProvider.users.where((u) => u.status == 'approved').toList();
 
     return RefreshIndicator(
       onRefresh: () async => await userProvider.fetchUsers(),
-      color: Colors.blueGrey[800],
+      color: const Color(0xFF26A69A),
       child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            FadeInLeft(
-              child: _buildSectionHeader("➕ Demandes d'inscription"),
-            ),
-            if (pendingUsers.isEmpty)
-              FadeIn(
-                child: _buildEmptyState("Aucune demande en attente"),
-              ),
-            ...pendingUsers.asMap().entries.map((entry) => FadeInUp(
+        child: Card(
+          elevation: 4,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          color: Colors.white.withOpacity(0.9),
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FadeInLeft(child: _buildSectionHeader("➕ Demandes d'inscription")),
+                if (pendingUsers.isEmpty)
+                  FadeIn(child: _buildEmptyState("Aucune demande en attente")),
+                ...pendingUsers.asMap().entries.map((entry) => FadeInUp(
                   delay: Duration(milliseconds: entry.key * 100),
                   child: _buildPendingUserCard(entry.value),
                 )),
-            const SizedBox(height: 24),
-            const Divider(height: 1, color: Colors.blueGrey),
-            const SizedBox(height: 24),
-            FadeInLeft(
-              child: _buildSectionHeader("👥 Utilisateurs existants"),
-            ),
-            if (approvedUsers.isEmpty)
-              FadeIn(
-                child: _buildEmptyState("Aucun utilisateur approuvé"),
-              ),
-            ...approvedUsers.asMap().entries.map((entry) => FadeInUp(
+                const SizedBox(height: 24),
+                const Divider(height: 1, color: Color(0xFF78909C)),
+                const SizedBox(height: 24),
+                FadeInLeft(child: _buildSectionHeader("👥 Utilisateurs existants")),
+                if (approvedUsers.isEmpty)
+                  FadeIn(child: _buildEmptyState("Aucun utilisateur approuvé")),
+                ...approvedUsers.asMap().entries.map((entry) => FadeInUp(
                   delay: Duration(milliseconds: entry.key * 100),
                   child: _buildApprovedUserCard(entry.value),
                 )),
-          ],
+              ],
+            ),
+          ),
         ),
       ),
     );
@@ -153,11 +173,11 @@ class _UsersViewState extends State<UsersView> {
       padding: const EdgeInsets.only(bottom: 12.0),
       child: Text(
         title,
-        style: TextStyle(
+        style: const TextStyle(
           fontFamily: 'PlayfairDisplay',
           fontSize: 20,
           fontWeight: FontWeight.bold,
-          color: Colors.blueGrey[800],
+          color: Color(0xFF26A69A),
         ),
       ),
     );
@@ -170,9 +190,10 @@ class _UsersViewState extends State<UsersView> {
         child: Text(
           message,
           style: TextStyle(
-            color: Colors.blueGrey[600],
+            fontFamily: 'Roboto',
             fontStyle: FontStyle.italic,
-            fontSize: 16,
+            fontSize: 14,
+            color: const Color(0xFF78909C),
           ),
         ),
       ),
@@ -186,17 +207,19 @@ class _UsersViewState extends State<UsersView> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
+      color: Colors.white.withOpacity(0.9),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
             CircleAvatar(
-              backgroundColor: Colors.blueGrey[100],
+              backgroundColor: const Color(0xFF26A69A).withOpacity(0.2),
               child: Text(
                 user.nom[0].toUpperCase(),
-                style: TextStyle(
-                  color: Colors.blueGrey[800],
+                style: const TextStyle(
+                  fontFamily: 'Roboto',
                   fontWeight: FontWeight.bold,
+                  color: Color(0xFF26A69A),
                 ),
               ),
             ),
@@ -211,14 +234,16 @@ class _UsersViewState extends State<UsersView> {
                       fontFamily: 'PlayfairDisplay',
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
+                      color: Color(0xFF37474F),
                     ),
                   ),
                   const SizedBox(height: 4),
                   Text(
                     user.email,
                     style: TextStyle(
-                      color: Colors.blueGrey[600],
+                      fontFamily: 'Roboto',
                       fontSize: 14,
+                      color: const Color(0xFF78909C),
                     ),
                   ),
                 ],
@@ -237,14 +262,14 @@ class _UsersViewState extends State<UsersView> {
       children: [
         ZoomIn(
           child: IconButton(
-            icon: const Icon(Icons.check_circle, color: Colors.green),
+            icon: const Icon(Icons.check_circle, color: Color(0xFF4CAF50)),
             tooltip: "Accepter",
             onPressed: () => _approveUser(user),
           ),
         ),
         ZoomIn(
           child: IconButton(
-            icon: const Icon(Icons.cancel, color: Colors.red),
+            icon: const Icon(Icons.cancel, color: Color(0xFFEF5350)),
             tooltip: "Refuser",
             onPressed: () => _rejectUser(user.id),
           ),
@@ -260,10 +285,11 @@ class _UsersViewState extends State<UsersView> {
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(12),
       ),
+      color: Colors.white.withOpacity(0.9),
       child: ListTile(
         leading: CircleAvatar(
-          backgroundColor: Colors.blueGrey[100],
-          child: Icon(Icons.person, color: Colors.blueGrey[800]),
+          backgroundColor: const Color(0xFF26A69A).withOpacity(0.2),
+          child: const Icon(Icons.person, color: Color(0xFF26A69A)),
         ),
         title: Text(
           user.nom,
@@ -271,6 +297,7 @@ class _UsersViewState extends State<UsersView> {
             fontFamily: 'PlayfairDisplay',
             fontWeight: FontWeight.bold,
             fontSize: 16,
+            color: Color(0xFF37474F),
           ),
         ),
         subtitle: Column(
@@ -278,13 +305,21 @@ class _UsersViewState extends State<UsersView> {
           children: [
             Text(
               user.email,
-              style: TextStyle(color: Colors.blueGrey[600]),
+              style: TextStyle(
+                fontFamily: 'Roboto',
+                fontSize: 14,
+                color: const Color(0xFF78909C),
+              ),
             ),
             const SizedBox(height: 4),
             Chip(
               label: Text(
                 user.role?.toUpperCase().replaceAll('_', ' ') ?? 'NON DÉFINI',
-                style: const TextStyle(fontSize: 12, color: Colors.white),
+                style: const TextStyle(
+                  fontFamily: 'Roboto',
+                  fontSize: 12,
+                  color: Colors.white,
+                ),
               ),
               backgroundColor: _getRoleColor(user.role),
               visualDensity: VisualDensity.compact,
@@ -296,14 +331,14 @@ class _UsersViewState extends State<UsersView> {
           children: [
             ZoomIn(
               child: IconButton(
-                icon: const Icon(Icons.edit, color: Colors.blue),
+                icon: const Icon(Icons.edit, color: Color(0xFF26A69A)),
                 tooltip: "Modifier le rôle",
                 onPressed: () => _editUserRole(user),
               ),
             ),
             ZoomIn(
               child: IconButton(
-                icon: const Icon(Icons.delete, color: Colors.red),
+                icon: const Icon(Icons.delete, color: Color(0xFFEF5350)),
                 tooltip: "Supprimer l'utilisateur",
                 onPressed: () => _confirmDeleteUser(user),
               ),
@@ -317,17 +352,17 @@ class _UsersViewState extends State<UsersView> {
   Color _getRoleColor(String? role) {
     switch (role) {
       case 'admin':
-        return Colors.red[600]!;
+        return const Color(0xFFEF5350);
       case 'manager':
-        return Colors.blue[600]!;
+        return const Color(0xFF42A5F5);
       case 'responsable_modele':
-        return Colors.green[600]!;
+        return const Color(0xFF4CAF50);
       case 'responsable_matiere':
-        return Colors.orange[600]!;
+        return const Color(0xFFFFA726);
       case 'ouvrier':
-        return Colors.purple[600]!;
+        return const Color(0xFFAB47BC);
       default:
-        return Colors.blueGrey[600]!;
+        return const Color(0xFF78909C);
     }
   }
 
@@ -342,7 +377,7 @@ class _UsersViewState extends State<UsersView> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("${user.nom} a été approuvé en tant que $role."),
-          backgroundColor: Colors.green,
+          backgroundColor: const Color(0xFF4CAF50),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -354,12 +389,12 @@ class _UsersViewState extends State<UsersView> {
 
   void _rejectUser(String id) async {
     final success =
-        await Provider.of<UserProvider>(context, listen: false).rejectUser(id);
+    await Provider.of<UserProvider>(context, listen: false).rejectUser(id);
     if (success) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Text("Demande rejetée."),
-          backgroundColor: Colors.redAccent,
+          backgroundColor: const Color(0xFFEF5350),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -388,7 +423,7 @@ class _UsersViewState extends State<UsersView> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text("Rôle de ${user.nom} mis à jour à $role."),
-          backgroundColor: Colors.green,
+          backgroundColor: const Color(0xFF4CAF50),
           behavior: SnackBarBehavior.floating,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),
@@ -403,26 +438,36 @@ class _UsersViewState extends State<UsersView> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.white.withOpacity(0.9),
         title: const Text(
           "Confirmer la suppression",
           style: TextStyle(
             fontFamily: 'PlayfairDisplay',
             fontWeight: FontWeight.bold,
-            color: Colors.blueGrey,
+            color: Color(0xFF26A69A),
           ),
         ),
         content: Text(
           "Voulez-vous vraiment supprimer l'utilisateur ${user.nom} ?",
-          style: const TextStyle(color: Colors.blueGrey),
+          style: TextStyle(
+            fontFamily: 'Roboto',
+            color: const Color(0xFF78909C),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text("Annuler", style: TextStyle(color: Colors.blueGrey)),
+            child: const Text(
+              "Annuler",
+              style: TextStyle(
+                fontFamily: 'Roboto',
+                color: Color(0xFF78909C),
+              ),
+            ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red[600],
+              backgroundColor: const Color(0xFFEF5350),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -430,7 +475,10 @@ class _UsersViewState extends State<UsersView> {
             onPressed: () => Navigator.pop(context, true),
             child: const Text(
               "Supprimer",
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(
+                fontFamily: 'Roboto',
+                color: Colors.white,
+              ),
             ),
           ),
         ],
@@ -445,7 +493,7 @@ class _UsersViewState extends State<UsersView> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text("Utilisateur ${user.nom} supprimé."),
-            backgroundColor: Colors.green,
+            backgroundColor: const Color(0xFF4CAF50),
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(12),
@@ -463,12 +511,13 @@ class _UsersViewState extends State<UsersView> {
       builder: (context) {
         return AlertDialog(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          backgroundColor: Colors.white.withOpacity(0.9),
           title: const Text(
             "Attribuer un rôle",
             style: TextStyle(
               fontFamily: 'PlayfairDisplay',
               fontWeight: FontWeight.bold,
-              color: Colors.blueGrey,
+              color: Color(0xFF26A69A),
             ),
           ),
           content: Column(
@@ -476,7 +525,10 @@ class _UsersViewState extends State<UsersView> {
             children: [
               const Text(
                 "Sélectionnez le rôle pour cet utilisateur:",
-                style: TextStyle(color: Colors.blueGrey),
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  color: Color(0xFF78909C),
+                ),
               ),
               const SizedBox(height: 16),
               DropdownButtonFormField<String>(
@@ -488,7 +540,7 @@ class _UsersViewState extends State<UsersView> {
                     borderRadius: BorderRadius.circular(12),
                     borderSide: BorderSide.none,
                   ),
-                  prefixIcon: const Icon(Icons.person, color: Colors.blueGrey),
+                  prefixIcon: const Icon(Icons.person, color: Color(0xFF26A69A)),
                 ),
                 items: [
                   'admin',
@@ -501,7 +553,11 @@ class _UsersViewState extends State<UsersView> {
                     value: role,
                     child: Text(
                       role.replaceAll('_', ' ').toUpperCase(),
-                      style: const TextStyle(fontSize: 14),
+                      style: const TextStyle(
+                        fontFamily: 'Roboto',
+                        fontSize: 14,
+                        color: Color(0xFF37474F),
+                      ),
                     ),
                   );
                 }).toList(),
@@ -514,12 +570,15 @@ class _UsersViewState extends State<UsersView> {
               onPressed: () => Navigator.pop(context),
               child: const Text(
                 "Annuler",
-                style: TextStyle(color: Colors.blueGrey),
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  color: Color(0xFF78909C),
+                ),
               ),
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blueGrey[800],
+                backgroundColor: const Color(0xFFFF6F61),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -527,7 +586,10 @@ class _UsersViewState extends State<UsersView> {
               onPressed: () => Navigator.pop(context, selectedRole),
               child: const Text(
                 "Confirmer",
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(
+                  fontFamily: 'Roboto',
+                  color: Colors.white,
+                ),
               ),
             ),
           ],
@@ -541,29 +603,36 @@ class _UsersViewState extends State<UsersView> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        backgroundColor: Colors.white.withOpacity(0.9),
         title: const Text(
           "Confirmer la déconnexion",
           style: TextStyle(
             fontFamily: 'PlayfairDisplay',
             fontWeight: FontWeight.bold,
-            color: Colors.blueGrey,
+            color: Color(0xFF26A69A),
           ),
         ),
         content: const Text(
           "Voulez-vous vraiment vous déconnexion ?",
-          style: TextStyle(color: Colors.blueGrey),
+          style: TextStyle(
+            fontFamily: 'Roboto',
+            color: Color(0xFF78909C),
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
             child: const Text(
               "Annuler",
-              style: TextStyle(color: Colors.blueGrey),
+              style: TextStyle(
+                fontFamily: 'Roboto',
+                color: Color(0xFF78909C),
+              ),
             ),
           ),
           ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red[600],
+              backgroundColor: const Color(0xFFEF5350),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(12),
               ),
@@ -571,7 +640,10 @@ class _UsersViewState extends State<UsersView> {
             onPressed: () => Navigator.pop(context, true),
             child: const Text(
               "Déconnexion",
-              style: TextStyle(color: Colors.white),
+              style: TextStyle(
+                fontFamily: 'Roboto',
+                color: Colors.white,
+              ),
             ),
           ),
         ],
