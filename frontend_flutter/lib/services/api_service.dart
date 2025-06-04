@@ -771,20 +771,29 @@ class ApiService {
   }
 
   static Future<void> updateModele(String id, String nom, List<String> tailles,
-      String? base, List<Consommation> consommation,
+      List<String>? bases, List<Consommation> consommation,
       [List<TailleBase> taillesBases = const [],String? description]) async {
     final response = await http.put(
-      Uri.parse("$baseUrl/api/modeles/$id"),
+      Uri.parse("$baseUrl/api/modeles/update/$id"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
         "nom": nom,
         "tailles": tailles,
-        "base": base,
+        "bases": bases ?? [],
         'consommation': consommation.map((c) => c.toJson()).toList(),
         'taillesBases': taillesBases.map((tb) => tb.toJson()).toList(),
         'description': description,
       }),
     );
+    print("Requête envoyée à l'API : ${jsonEncode({
+        'nom': nom,
+        'tailles': tailles,
+        'bases': bases ?? [],
+        'consommation': consommation.map((c) => c.toJson()).toList(),
+        'taillesBases': taillesBases.map((tb) => tb.toJson()).toList(),
+        'description': description,
+      })}");
+  print("Réponse API : ${response.statusCode} - ${response.body}");
     if (response.statusCode != 200) {
       throw Exception("Échec de la modification du modèle");
     }
