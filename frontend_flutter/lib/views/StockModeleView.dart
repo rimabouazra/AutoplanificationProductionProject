@@ -279,20 +279,20 @@ class _StockModeleViewState extends State<StockModeleView> {
                       },
                     ),
                     SizedBox(height: 16),
-                    TextField(
-                      controller: _consommationController,
-                      decoration: InputDecoration(
-                        labelText: 'Consommation (optionnel)',
-                        prefixIcon: Icon(Icons.production_quantity_limits, color: Colors.blueGrey),
-                        filled: true,
-                        fillColor: Colors.white.withOpacity(0.9),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                      keyboardType: TextInputType.number,
-                    ),
+                    //TextField(
+                      //controller: _consommationController,
+                      //decoration: InputDecoration(
+                        //labelText: 'Consommation (optionnel)',
+                        //prefixIcon: Icon(Icons.production_quantity_limits, color: Colors.blueGrey),
+                        //filled: true,
+                        //fillColor: Colors.white.withOpacity(0.9),
+                        //border: OutlineInputBorder(
+                          //borderRadius: BorderRadius.circular(12),
+                          //borderSide: BorderSide.none,
+                        //),
+                      //),
+                      //keyboardType: TextInputType.number,
+                    //),
                   ],
                 ),
               );
