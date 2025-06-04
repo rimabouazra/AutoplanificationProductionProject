@@ -362,60 +362,88 @@ class _StockModeleViewState extends State<StockModeleView> {
     );
   }
 
-  void _editTailleAssociation(Modele modele, String tailleModele, int tailleIndex) {
-    final modeleProvider = Provider.of<ModeleProvider>(context, listen: false);
-    final bases = modeleProvider.modeles;
-    String? selectedBase;
-    String? selectedTailleBase;
+void _editTailleAssociation(Modele modele, String tailleModele, int tailleIndex) {
+  final modeleProvider = Provider.of<ModeleProvider>(context, listen: false);
+  final bases = modeleProvider.modeles;
+  String? selectedBase;
+  String? selectedTailleBase;
 
-    // Vérifier si cette taille est déjà associée à une base
-    final existingAssociation = modele.taillesBases.firstWhere(
-      (tb) => tailleIndex < tb.tailles.length && tb.tailles[tailleIndex].isNotEmpty,
-      orElse: () => TailleBase(baseId: '', tailles: []),
-    );
+  // Vérifier si cette taille est déjà associée à une base
+  final existingAssociation = modele.taillesBases.firstWhere(
+    (tb) => tailleIndex < tb.tailles.length && tb.tailles[tailleIndex].isNotEmpty,
+    orElse: () => TailleBase(baseId: '', tailles: []),
+  );
 
-    if (existingAssociation.baseId.isNotEmpty) {
-      selectedBase = modeleProvider.modeles
-          .firstWhere(
-            (m) => m.id == existingAssociation.baseId,
-            orElse: () => Modele(id: '', nom: 'Inconnu', tailles: [], consommation: []),
-          )
-          .nom;
-      selectedTailleBase = existingAssociation.tailles[tailleIndex];
-    }
+  if (existingAssociation.baseId.isNotEmpty) {
+    selectedBase = modeleProvider.modeles
+        .firstWhere(
+          (m) => m.id == existingAssociation.baseId,
+          orElse: () => Modele(id: '', nom: 'Inconnu', tailles: [], consommation: []),
+        )
+        .nom;
+    selectedTailleBase = existingAssociation.tailles[tailleIndex];
+  }
 
-    showDialog<void>(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-              title: Text(
-                'Modifier association pour $tailleModele',
-                style: TextStyle(fontFamily: 'PlayfairDisplay', fontWeight: FontWeight.bold),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
+  showDialog<void>(
+    context: context,
+    builder: (context) {
+      return StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: Text(
+              'Modifier association pour $tailleModele',
+              style: TextStyle(fontFamily: 'PlayfairDisplay', fontWeight: FontWeight.bold),
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  value: selectedBase,
+                  onChanged: (String? newValue) {
+                    setState(() {
+                      selectedBase = newValue;
+                      selectedTailleBase = null;
+                    });
+                  },
+                  items: [
+                    DropdownMenuItem<String>(value: null, child: Text("Aucune base")),
+                    ...bases
+                        .map((base) =>
+                            DropdownMenuItem<String>(value: base.nom, child: Text(base.nom)))
+                        .toList(),
+                  ],
+                  decoration: InputDecoration(
+                    labelText: 'Base',
+                    prefixIcon: Icon(Icons.category, color: Colors.blueGrey),
+                    filled: true,
+                    fillColor: Colors.white.withOpacity(0.9),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide.none,
+                    ),
+                  ),
+                ),
+                if (selectedBase != null)
                   DropdownButtonFormField<String>(
-                    value: selectedBase,
+                    value: selectedTailleBase,
                     onChanged: (String? newValue) {
                       setState(() {
-                        selectedBase = newValue;
-                        selectedTailleBase = null;
+                        selectedTailleBase = newValue;
                       });
                     },
                     items: [
-                      DropdownMenuItem<String>(value: null, child: Text("Aucune base")),
+                      DropdownMenuItem<String>(value: null, child: Text("Sélectionner")),
                       ...bases
-                          .map((base) =>
-                              DropdownMenuItem<String>(value: base.nom, child: Text(base.nom)))
+                          .firstWhere((b) => b.nom == selectedBase)
+                          .tailles
+                          .map((taille) => DropdownMenuItem<String>(
+                              value: taille, child: Text(taille)))
                           .toList(),
                     ],
                     decoration: InputDecoration(
-                      labelText: 'Base',
-                      prefixIcon: Icon(Icons.category, color: Colors.blueGrey),
+                      labelText: 'Taille correspondante',
+                      prefixIcon: Icon(Icons.format_size, color: Colors.blueGrey),
                       filled: true,
                       fillColor: Colors.white.withOpacity(0.9),
                       border: OutlineInputBorder(
@@ -424,107 +452,70 @@ class _StockModeleViewState extends State<StockModeleView> {
                       ),
                     ),
                   ),
-                  if (selectedBase != null)
-                    DropdownButtonFormField<String>(
-                      value: selectedTailleBase,
-                      onChanged: (String? newValue) {
-                        setState(() {
-                          selectedTailleBase = newValue;
-                        });
-                      },
-                      items: [
-                        DropdownMenuItem<String>(value: null, child: Text("Sélectionner")),
-                        ...bases
-                            .firstWhere((b) => b.nom == selectedBase)
-                            .tailles
-                            .map((taille) => DropdownMenuItem<String>(
-                                value: taille, child: Text(taille)))
-                            .toList(),
-                      ],
-                      decoration: InputDecoration(
-                        labelText: 'Taille correspondante',
-                        prefixIcon: Icon(Icons.format_size, color: Colors.blueGrey),
-                        filled: true,
-                        fillColor: Colors.white.withOpacity(0.9),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
-                          borderSide: BorderSide.none,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: Text('Annuler'),
-                ),
-                ElevatedButton(
-                  onPressed: () async {
-                    if (selectedBase != null && selectedTailleBase != null) {
-                      final baseId = bases.firstWhere((b) => b.nom == selectedBase).id;
-                      final updatedTaillesBases = [...modele.taillesBases];
-                      // Supprimer toutes les associations pour cette taille
-                      for (var tb in updatedTaillesBases) {
-                        if (tailleIndex < tb.tailles.length) {
-                          tb.tailles[tailleIndex] = '';
-                        }
-                      }
-                      // Trouver ou créer une TailleBase pour la base sélectionnée
-                      var existingBase = updatedTaillesBases.firstWhere(
-                        (tb) => tb.baseId == baseId,
-                        orElse: () => TailleBase(
-                          baseId: baseId,
-                          tailles: List.filled(modele.tailles.length, ''),
-                        ),
-                      );
-                      if (existingBase.baseId.isEmpty) {
-                        updatedTaillesBases.add(existingBase);
-                      }
-                      existingBase.tailles[tailleIndex] = selectedTailleBase!;
-                      await modeleProvider.updateModele(
-                        modele.id,
-                        modele.nom,
-                        modele.tailles,
-                        null,
-                        modele.consommation,
-                        updatedTaillesBases,
-                        modele.description,
-                      );
-                    } else {
-                      // Supprimer l'association pour cette taille
-                      final updatedTaillesBases = [...modele.taillesBases];
-                      for (var tb in updatedTaillesBases) {
-                        if (tailleIndex < tb.tailles.length) {
-                          tb.tailles[tailleIndex] = '';
-                        }
-                      }
-                      await modeleProvider.updateModele(
-                        modele.id,
-                        modele.nom,
-                        modele.tailles,
-                        null,
-                        modele.consommation,
-                        updatedTaillesBases,
-                        modele.description,
-                      );
-                    }
-                    Navigator.pop(context);
-                  },
-                  child: Text('Enregistrer'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.blueGrey[800],
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
               ],
-            );
-          },
-        );
-      },
-    );
-  }
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: Text('Annuler'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  print("Début modification association pour taille: $tailleModele");
+                  final updatedTaillesBases = [...modele.taillesBases];
+                  if (selectedBase != null && selectedTailleBase != null) {
+                    final baseId = bases.firstWhere((b) => b.nom == selectedBase).id;
+                    var existingBase = updatedTaillesBases.firstWhere(
+                      (tb) => tb.baseId == baseId,
+                      orElse: () => TailleBase(
+                        baseId: baseId,
+                        tailles: List.filled(modele.tailles.length, ''),
+                      ),
+                    );
+                    if (existingBase.baseId.isEmpty) {
+                      updatedTaillesBases.add(existingBase);
+                    }
+                    // Supprimer les autres associations pour cette taille
+                    for (var tb in updatedTaillesBases) {
+                      if (tailleIndex < tb.tailles.length) {
+                        tb.tailles[tailleIndex] = '';
+                      }
+                    }
+                    existingBase.tailles[tailleIndex] = selectedTailleBase!;
+                  } else {
+                    // Supprimer l'association pour cette taille
+                    for (var tb in updatedTaillesBases) {
+                      if (tailleIndex < tb.tailles.length) {
+                        tb.tailles[tailleIndex] = '';
+                      }
+                    }
+                  }
+                  print("TaillesBases envoyées: $updatedTaillesBases");
+                  await modeleProvider.updateModele(
+                    modele.id,
+                    modele.nom,
+                    modele.tailles,
+                    null, // Pas de modification des bases ici
+                    modele.consommation,
+                    updatedTaillesBases,
+                    modele.description,
+                  );
+                  Navigator.pop(context);
+                },
+                child: Text('Enregistrer'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blueGrey[800],
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ],
+          );
+        },
+      );
+    },
+  );
+}
 
   void _showAssociationDialog(
     BuildContext context,

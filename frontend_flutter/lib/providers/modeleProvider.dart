@@ -39,17 +39,21 @@ class ModeleProvider with ChangeNotifier {
     return modele.tailles;
   }
 
-  Future<void> updateModele(String id, String nom, List<String> tailles,
-      String? base, List<Consommation> consommation,
-      [List<TailleBase> taillesBases = const [], String? description]) async {
-    try {
-      await ApiService.updateModele(
-          id, nom, tailles, base, consommation, taillesBases, description);
-      fetchModeles(); // Rafraîchir la liste des modèles
-    } catch (e) {
-      print("Erreur lors de la modification du modèle: $e");
-    }
+Future<void> updateModele(
+    String id,
+    String nom,
+    List<String> tailles,
+    List<String>? bases,
+    List<Consommation> consommation,
+    [List<TailleBase> taillesBases = const [], String? description]) async {
+  try {
+    print("Appel de updateModele avec id: $id, nom: $nom, tailles: $tailles, bases: $bases, taillesBases: $taillesBases");//debug
+    await ApiService.updateModele(id, nom, tailles, bases, consommation, taillesBases, description);
+    fetchModeles(); // Rafraîchir la liste des modèles
+  } catch (e) {
+    print("Erreur lors de la modification du modèle: $e");
   }
+}
 
   Future<void> deleteModele(String id) async {
     try {
