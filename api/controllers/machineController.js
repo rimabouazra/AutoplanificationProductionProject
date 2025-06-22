@@ -1,7 +1,7 @@
 const Machine = require("../models/Machine");
 const Modele = require("../models/Modele");
 const Salle = require("../models/Salle");
-
+const moment = require('moment-timezone');
 // Middleware de vérification de rôle
 const checkRole = (requiredRoles) => {
     return (req, res, next) => {
