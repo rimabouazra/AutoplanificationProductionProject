@@ -97,52 +97,107 @@ exports.getMachinesBySalle = async (req, res) => {
 
 
 exports.updateMachine = [
-    checkRole(['admin', 'manager', 'responsable_modele']), async (req, res) => {
-        try {
-            const { nom, etat, salle, modele, taille } = req.body;
+  checkRole(['admin', 'manager', 'responsable_modele']),
+  async (req, res) => {
+    try {
+      const { nom, etat, salle, modele, taille } = req.body;
+      const machineId = req.params.id;
 
-            const machine = await Machine.findById(req.params.id);
-            if (!machine) {
-                return res.status(404).json({ message: "Machine non trouvée" });
-            }
+      // Vérifier si la machine existe
+      const machine = await Machine.findById(machineId);
+      if (!machine) {
+        return res.status(404).json({ message: "Machine non trouvée" });
+      }
 
-
-            // Mise à jour des champs si fournis
-            if (nom) machine.nom = nom;
-            if (etat) machine.etat = etat;
-            if (salle) machine.salle = salle;
-            if (modele) {
-                const modeleExistant = await Modele.findById(modele);
-                if (!modeleExistant) {
-                    return res.status(404).json({ message: "Modèle non trouvé" });
-                }
-                machine.modele = modele;
-            }
-            if (taille) machine.taille = taille;
-
-            await machine.save();
-            res.status(200).json(machine);
-        } catch (error) {
-            res.status(500).json({ message: "Erreur lors de la mise à jour de la machine", error });
+      // Si l'état doit être changé à "disponible", vérifier les planifications actives
+      if (etat === "disponible") {
+        const now = moment().tz('Africa/Tunis').toDate();
+        const activePlanification = await Planification.findOne({
+          machines: machineId,
+          statut: { $ne: "terminée" },
+          debutPrevue: { $lte: now },
+          finPrevue: { $gt: now },
+        });
+        if (activePlanification) {
+          return res.status(400).json({
+            message: "Impossible de définir la machine comme disponible : elle est utilisée dans une planification active",
+          });
         }
-    }];
+      }
+
+      // Mise à jour des champs si fournis
+      if (nom) machine.nom = nom;
+      if (etat) machine.etat = etat;
+      if (salle) {
+        // Vérifier si la nouvelle salle existe
+        const salleExistante = await Salle.findById(salle);
+        if (!salleExistante) {
+          return res.status(404).json({ message: "Salle non trouvée" });
+        }
+        // Mettre à jour la référence de la salle dans la machine
+        machine.salle = salle;
+        // Ajouter la machine à la nouvelle salle
+        salleExistante.machines.push(machine._id);
+        await salleExistante.save();
+        // Retirer la machine de l'ancienne salle
+        await Salle.findByIdAndUpdate(machine.salle, {
+          $pull: { machines: machine._id }
+        });
+      }
+      if (modele) {
+        const modeleExistant = await Modele.findById(modele);
+        if (!modeleExistant) {
+          return res.status(404).json({ message: "Modèle non trouvé" });
+        }
+        machine.modele = modele;
+      }
+      if (taille) machine.taille = taille;
+
+      await machine.save();
+      res.status(200).json(machine);
+    } catch (error) {
+      console.error("Erreur lors de la mise à jour de la machine :", error);
+      res.status(500).json({ message: "Erreur lors de la mise à jour de la machine", error: error.message });
+    }
+  }
+];
 
 exports.deleteMachine = [
-    checkRole(['admin', 'manager']), async (req, res) => {
-        try {
-            const machine = await Machine.findByIdAndDelete(req.params.id);
-            if (!machine) {
-                return res.status(404).json({ message: "Machine non trouvée" });
-            }
-            if (machine.salle) {
-                await Salle.findByIdAndUpdate(machine.salle, {
-                    $pull: { machines: machine._id }
-                });
-            }
+  checkRole(['admin', 'manager']),
+  async (req, res) => {
+    try {
+      const machine = await Machine.findById(req.params.id);
+      if (!machine) {
+        return res.status(404).json({ message: "Machine non trouvée" });
+      }
 
-            await Machine.findByIdAndDelete(req.params.id);
-            res.status(200).json({ message: "Machine supprimée avec succès" });
-        } catch (error) {
-            res.status(500).json({ message: "Erreur lors de la suppression de la machine", error });
-        }
-    }];
+      // Vérifier si la machine est utilisée dans une planification active
+      const now = moment().tz('Africa/Tunis').toDate();
+      const activePlanification = await Planification.findOne({
+        machines: req.params.id,
+        statut: { $ne: "terminée" },
+        debutPrevue: { $lte: now },
+        finPrevue: { $gt: now },
+      });
+      if (activePlanification) {
+        return res.status(400).json({
+          message: "Impossible de supprimer la machine : elle est utilisée dans une planification active",
+        });
+      }
+
+      // Retirer la machine de la salle associée
+      if (machine.salle) {
+        await Salle.findByIdAndUpdate(machine.salle, {
+          $pull: { machines: machine._id }
+        });
+      }
+
+      // Supprimer la machine
+      await Machine.findByIdAndDelete(req.params.id);
+      res.status(200).json({ message: "Machine supprimée avec succès" });
+    } catch (error) {
+      console.error("Erreur lors de la suppression de la machine :", error);
+      res.status(500).json({ message: "Erreur lors de la suppression de la machine", error: error.message });
+    }
+  }
+];

@@ -1027,8 +1027,22 @@ exports.deletePlanification = async (req, res) => {
     if (!deletedPlanification) {
       return res.status(404).json({ message: "Planification non trouvée" });
     }
-    res.status(200).json({ message: "Planification supprimée avec succès" });
+
+    // Mettre à jour les machines associées à "disponible"
+    for (const machineId of deletedPlanification.machines) {
+      const machine = await Machine.findById(machineId);
+      if (machine && machine.etat !== "disponible") {
+        machine.etat = "disponible";
+        await machine.save();
+      }
+    }
+
+    // Traiter la liste d'attente pour réassigner les machines disponibles
+    await exports.processWaitingList();
+
+    res.status(200).json({ message: "Planification supprimée avec succès, machines libérées" });
   } catch (error) {
+    console.error("Erreur lors de la suppression de la planification :", error);
     res.status(500).json({ message: "Erreur serveur", error: error.message });
   }
 };

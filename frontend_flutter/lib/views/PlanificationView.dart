@@ -1085,18 +1085,20 @@ class _PlanificationViewState extends State<PlanificationView> {
   }
 
   Widget _buildStatusBadge(String statut) {
+    final displayStatut = statut == 'waiting_resources' ? 'en attente' : statut;
+
     return Container(
       padding: EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: _getStatusColor(statut).withOpacity(0.2),
+        color: _getStatusColor(displayStatut).withOpacity(0.2),
         borderRadius: BorderRadius.circular(8),
       ),
       child: Text(
-        statut[0].toUpperCase() + statut.substring(1),
+        displayStatut[0].toUpperCase() + displayStatut.substring(1),
         style: TextStyle(
           fontSize: 12,
           fontWeight: FontWeight.bold,
-          color: _getStatusColor(statut),
+          color: _getStatusColor(displayStatut),
         ),
       ),
     );

@@ -202,15 +202,26 @@ exports.deleteCommande = async (req, res) => {
       if (planif.commandes.length === 0) {
         // Supprimer la planification si elle n'a plus de commandes
         await Planification.findByIdAndDelete(planif._id);
+        // Mettre à jour les machines associées à "disponible"
+        for (const machineId of planif.machines) {
+          const machine = await Machine.findById(machineId);
+          if (machine && machine.etat !== "disponible") {
+            machine.etat = "disponible";
+            await machine.save();
+          }
+        }
       } else {
         // Sinon, sauvegarder la planification mise à jour
         await planif.save();
       }
     }
 
-    res.status(200).json({ message: "Commande et planification supprimées" });
+    // Traiter la liste d'attente pour réassigner les machines disponibles
+    await planificationController.processWaitingList();
 
+    res.status(200).json({ message: "Commande et planifications associées supprimées, machines libérées" });
   } catch (error) {
+    console.error("Erreur lors de la suppression de la commande :", error);
     res.status(500).json({ message: "Erreur lors de la suppression de la commande", error: error.message });
   }
 };

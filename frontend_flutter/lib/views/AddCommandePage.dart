@@ -70,8 +70,8 @@ class _AddCommandePageState extends State<AddCommandePage> {
           if (textEditingValue.text.isEmpty) {
             return const Iterable<String>.empty();
           }
-          return clientProvider.clients.map((c) => c.name).where((name) =>
-              name.toLowerCase().contains(textEditingValue.text.toLowerCase()));
+          return clientProvider.clients.map((c) => c.name!).where((name) =>
+              name!.toLowerCase().contains(textEditingValue.text.toLowerCase()));
         },
         onSelected: (String selection) {
           setState(() {
@@ -84,10 +84,10 @@ class _AddCommandePageState extends State<AddCommandePage> {
             focusNode: focusNode,
             onFieldSubmitted: (value) async {
               if (!clientProvider.clients
-                  .any((c) => c.name.toLowerCase() == value.toLowerCase())) {
+                  .any((c) => c.name!.toLowerCase() == value.toLowerCase())) {
                 final newClient = await clientProvider.addClient(value);
                 setState(() {
-                  clientController.text = newClient.name;
+                  clientController.text = newClient.name!;
                 });
               }
             },
@@ -123,6 +123,8 @@ class _AddCommandePageState extends State<AddCommandePage> {
             modeleController.text = selection;
             tailles = Provider.of<ModeleProvider>(context, listen: false)
                 .getTaillesByModele(selection);
+            // Clear tailleController if the model changes to avoid stale data
+            tailleController.clear();
           });
         },
         fieldViewBuilder: (context, controller, focusNode, onEditingComplete) {
@@ -144,7 +146,6 @@ class _AddCommandePageState extends State<AddCommandePage> {
       ),
     );
   }
-
   Widget _buildTailleField() {
     return FadeInUp(
       child: Autocomplete<String>(
@@ -265,8 +266,8 @@ class _AddCommandePageState extends State<AddCommandePage> {
         couleur: couleurController.text,
         quantite: int.parse(quantiteController.text),
       ));
-      modeleController.clear();
-      tailleController.clear();
+      //modeleController.clear();
+      //tailleController.clear();
       //couleurController.clear();
       //quantiteController.clear();
     });
