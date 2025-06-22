@@ -43,7 +43,7 @@ class _HomePageState extends State<HomePage> {
 
   final List<Map<String, String>> carouselItems = [
     {
-      'image': 'assets/images/hero1.jpg',
+      'image': 'assets/images/About.jpg',
       "title": 'Sustainable Style',
       'subtitle': 'Des conceptions éco-responsables pour un avenir meilleur.',
     },
